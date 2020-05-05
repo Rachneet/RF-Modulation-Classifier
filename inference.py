@@ -179,7 +179,10 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
         z2.append(z1)
 
     # set up figure
-    fig = ff.create_annotated_heatmap(list(reversed(cmap)), x=x, y=y, annotation_text=z_text, colorscale='Peach')
+    colorscale = [[0, 'white'], [1, 'Peach']]
+    # font_colors = ['white', 'black']
+    fig = ff.create_annotated_heatmap(list(reversed(cmap)), x=x, y=y, annotation_text=z_text,
+                                      colorscale=colorscale)
 
     # add title
 

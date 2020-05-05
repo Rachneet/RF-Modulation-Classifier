@@ -145,4 +145,4 @@ class CNN(nn.Module):
 
 if __name__=="__main__":
     model = CNN(n_classes=8)
-    print(summary(model,torch.ones((1,128,2)),show_input=False, show_hierarchical=True))
+    print(summary(model,torch.ones((1,1024,2)),show_input=False, show_hierarchical=True))

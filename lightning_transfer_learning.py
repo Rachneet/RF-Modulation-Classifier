@@ -1,3 +1,22 @@
+"""Transfer Learning for RF Signals.
+This illustrates how one could fine-tune a pre-trained
+network (by default, a custom CNN is used) using pytorch-lightning. The dataset is
+trained for 15 epochs. The training consists in three stages. From epoch 0 to
+4, the feature extractor (the pre-trained network) is frozen except maybe for
+the BatchNorm layers (depending on whether `train_bn = True`). The BatchNorm
+layers (if `train_bn = True`) and the parameters of the classifier are trained
+as a single parameters group with lr = 1e-2. From epoch 5 to 9, the last two
+layer groups of the pre-trained network are unfrozen(here: the conv layers) and added to the
+optimizer as a new parameter group with lr = 1e-4 (while lr = 1e-3 for the
+first parameter group in the optimizer). Eventually, from epoch 10, all the
+remaining layer groups of the pre-trained network are unfrozen and added to
+the optimizer as a third parameter group. From epoch 10, the parameters of the
+pre-trained network are trained with lr = 1e-5 while those of the classifier
+are trained with lr = 1e-4.
+Note:
+    See: https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html
+"""
+
 import torch
 import torch.nn as nn
 from typing import Optional, Generator, Union
@@ -15,6 +34,7 @@ from torch.utils.data import DataLoader,SubsetRandomSampler
 from pytorch_lightning.logging.neptune import NeptuneLogger
 
 from py_lightning import LightningCNN, DatasetFromHDF5
+from cnn_model import CNN
 
 BN_TYPES = (torch.nn.BatchNorm1d, torch.nn.BatchNorm2d, torch.nn.BatchNorm3d)
 # --------------------------------------------Utility Functions--------------------------------------------------
@@ -103,7 +123,7 @@ class TransferLearningModel(pl.LightningModule):
        """
 
     def __init__(self,
-                 hparams: argparse.Namespace, data_path):
+                 hparams: argparse.Namespace):
         super().__init__()
         self.hparams = hparams
         self.train_dataset = None
@@ -111,16 +131,15 @@ class TransferLearningModel(pl.LightningModule):
         self.test_dataset = None
         self.all_true = []
         self.all_pred = []
-        self.data_path = data_path
+        self.data_path = hparams.data_path
         self.__build_model()
 
     def __build_model(self):
         """Define model layers & loss."""
-
         # 1. Load pre-trained model
         backbone = self.hparams.backbone
 
-        _layers = list(backbone.children())[:-3]  # all except fc layers  # maybe modify later
+        _layers = list(backbone.children())[:-6]  # all except fc layers  # maybe modify later
         self.feature_extractor = nn.Sequential(*_layers)
         freeze(module=self.feature_extractor,train_bn=self.hparams.train_bn)  # freeze all layers
 
@@ -141,6 +160,7 @@ class TransferLearningModel(pl.LightningModule):
         x = self.feature_extractor(x)
         x = x.squeeze()
         x = x.reshape(*x.shape[:1], -1)
+
         # modify later
         x = self.fc(x)
         return x
@@ -331,15 +351,16 @@ class TransferLearningModel(pl.LightningModule):
 
     @staticmethod
     def add_model_specific_args(parent_parser):
-        model = LightningCNN.load_from_checkpoint(
-            checkpoint_path='/media/backup/Arsenal/thesis_results/lightning_vsg_snr_0/version_SAN-10/'
-                            'checkpoints/epoch=24.ckpt',
-            # hparams=hparams,
-            map_location=None
-        )
 
         parser = argparse.ArgumentParser(parents=[parent_parser])
-        parser.add_argument('--backbone',default=model)
+        model = torch.load("/media/backup/Arsenal/thesis_results/trained_cnn_intf_free_vsg10",map_location='cuda:0')
+
+        # model = LightningCNN.load_from_checkpoint(
+        #     checkpoint_path='/media/backup/Arsenal/thesis_results/lightning_vsg_snr_0/version_SAN-10/'
+        #                     'checkpoints/epoch=24.ckpt',
+        #     map_location=None
+        # )
+        parser.add_argument('--backbone', default=model)
         parser.add_argument('--epochs',default=15,type=int)
         parser.add_argument('--batch-size',default=512,type=int)
         parser.add_argument('--shuffle', default=False, type=bool)
@@ -351,17 +372,25 @@ class TransferLearningModel(pl.LightningModule):
         parser.add_argument('--train-bn',default=True,type=bool)
         parser.add_argument('--milestones',default=[5, 10],type=list)
         parser.add_argument('--max_epochs', default=15)
+        # adding model params
+        parser.add_argument('--in_dims', default=2)
+        parser.add_argument('--filters', default=64)
+        parser.add_argument('--kernel_size', type=list, nargs='+', default=[3, 3, 3, 3, 3, 3])
+        parser.add_argument('--pool_size', default=3)
+        parser.add_argument('--fc_neurons', default=128)
+        parser.add_argument('--n_classes', default=8)
 
         return parser
 
 # =========================================NEPTUNE AI===============================================================
 
-CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/lightning_tl_vsg_0_5/'
+
+CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/lightning_tl_vsg_10_20/'           # change this
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="lightning_tl_vsg_snr_0_5",   # change this for new runs
+    experiment_name="lightning_tl_vsg_snr_10_20",   # change this  for new runs
 )
 
 # ===================================================================================================================
@@ -371,30 +400,60 @@ def main(hparams: argparse.Namespace) -> None:
     Args:
         hparams: Model hyper-parameters
     """
-    model = TransferLearningModel(hparams, data_path=hparams.data_path)
+    # print(vars(hparams))
+    model = TransferLearningModel(hparams)
+
     if not os.path.exists(CHECKPOINTS_DIR):   # redundant maybe
         os.makedirs(CHECKPOINTS_DIR)
     model_checkpoint = pl.callbacks.ModelCheckpoint(filepath=CHECKPOINTS_DIR)
 
+    early_stop_callback = pl.callbacks.EarlyStopping(
+        monitor='val_loss',
+        min_delta=0.00,
+        patience=3,
+        verbose=False,
+        mode='min'
+    )
+
     trainer = pl.Trainer(logger=neptune_logger,
         gpus=hparams.gpus,
         max_nb_epochs=hparams.max_epochs,
-                         checkpoint_callback=model_checkpoint)
+        checkpoint_callback=model_checkpoint, early_stop_callback=early_stop_callback)
 
     trainer.fit(model)
+    # load best model for testing
+    file_name = ''
+    for subdir, dirs, files in os.walk(CHECKPOINTS_DIR):
+        for file in files:
+            if file[-4:] == 'ckpt':
+                file_name = file
+
+    model = TransferLearningModel.load_from_checkpoint(
+        checkpoint_path=CHECKPOINTS_DIR+file_name,
+        hparams=hparams,
+        map_location=None
+    )
+
     trainer.test(model)
     neptune_logger.experiment.log_artifact(CHECKPOINTS_DIR)
     neptune_logger.experiment.stop()
 
 
 def get_args() -> argparse.Namespace:
-    root_path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr5_1024.h5"
+    root_path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5"
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument('--data_path',default=root_path, help='path to dataset')
     parser = TransferLearningModel.add_model_specific_args(parent_parser)
     return parser.parse_args()
 
 # --------------------------------------------------MAIN-------------------------------------------------------------
+# def load_weights(self,hparams):
+#     checkpoint_path = '/media/backup/Arsenal/thesis_results/lightning_vsg_snr_0/version_SAN-10/checkpoints' \
+#                       'epoch=24.ckpt'
+#     checkpoint = torch.load(checkpoint_path, map_location=lambda storage, loc: storage, )
+#     pretrained_dict = checkpoint["state_dict"]
+#     model = TransferLearningModel(hparams, data_path=hparams.data_path)
+#     model_dict = self.state_dict()
 
 if __name__ == "__main__":
     # model = CNN(n_classes=8)
@@ -408,5 +467,3 @@ if __name__ == "__main__":
     # correct = (torch.eq(pred,true).sum().detach().cpu().data.numpy()/list(pred.size())[0])
     # print(torch.tensor(correct))
     main(get_args())
-
-

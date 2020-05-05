@@ -74,8 +74,7 @@ class LightningCNN(pl.LightningModule):
         self.test_dataset = None
         self.all_true, self.all_pred, self.all_snr = [], [], []  # for final metrics calculation
         self.hparams = hparams
-        # kernel_size = [int(item)for item in hparams.kernel_size.strip('][').split(',')]
-
+        # print(vars(hparams))
         # layer 1
         self.conv1 = nn.Sequential(
             nn.Conv2d(hparams.in_dims, hparams.filters, hparams.kernel_size[0],padding=2),
@@ -174,6 +173,7 @@ class LightningCNN(pl.LightningModule):
         optimizer = torch.optim.SGD(self.parameters(), lr=self.hparams.learning_rate,momentum=self.hparams.momentum)
         # exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)   # dynamic reduction based on val_loss
+        # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[9,18,27],gamma=0.1)
         return [optimizer],[scheduler]
 
     def cross_entropy_loss(self,logits, labels):
@@ -380,7 +380,7 @@ class LightningCNN(pl.LightningModule):
 def test_lightning(hparams):
 
     model = LightningCNN.load_from_checkpoint(
-    checkpoint_path='/media/backup/Arsenal/thesis_results/lightning_vsg_snr_0/version_SAN-10/checkpoints/epoch=24.ckpt',
+    checkpoint_path='/media/backup/Arsenal/thesis_results/lightning_vsg_snr_10/epoch=26.ckpt',
     hparams=hparams,
     map_location=None
     )
@@ -397,12 +397,12 @@ def test_lightning(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/lightning_test/'
+CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/lightning_vsg_snr_20/'
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="lightning_vsg_snr_0",   # change this for new runs
+    experiment_name="lightning_vsg_snr_20",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -426,14 +426,14 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr0_1024.h5"
+    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5"
     out_path = "/media/backup/Arsenal/thesis_results/"
 
     parser = ArgumentParser()
     parser.add_argument('--output_path', default=out_path)
     parser.add_argument('--data_path', default=path)
     parser.add_argument('--gpus', default=1)
-    parser.add_argument('--max_epochs', default=1)
+    parser.add_argument('--max_epochs', default=30)
     parser.add_argument('--batch_size', default=512)
     parser.add_argument('--num_workers', default=10)
     parser.add_argument('--shuffle', default=False)
