@@ -85,15 +85,15 @@ def load_batch(path,batch_size=256,mode="train"):
 
         # analyze data
         df = pd.DataFrame()
-        df['iq'] = list(map(lambda x:np.array(x,dtype=np.float32),iq))
-        df['normalized_iq'] = df.iq.apply(lambda x: preprocessing.scale(x, with_mean=False))
-        df.drop('iq', axis=1, inplace=True)
+        # df['iq'] = list(map(lambda x:np.array(x,dtype=np.float32),iq))
+        # df['normalized_iq'] = df.iq.apply(lambda x: preprocessing.scale(x, with_mean=False))
+        # df.drop('iq', axis=1, inplace=True)
         df['labels'] = list(map(lambda x: np.array(x,dtype=np.float32), labels))
         # df['snr'] = list(map(lambda x: x, snrs))
 
         # df['labels'] = df.labels.apply(lambda x: np.append(x,np.array([0], dtype=np.float32)))
         # print("second df done")
-        df = df.sample(frac=1, random_state=4)
+        # df = df.sample(frac=1, random_state=4)
         # print("====start merge====")
         # combined_df = pd.concat([df,df2[:n]],ignore_index=True)
         # combined_df['normalized_iq'] = combined_df.iq.apply(lambda x: preprocessing.scale(np.array(x), with_mean=False))
@@ -106,11 +106,11 @@ def load_batch(path,batch_size=256,mode="train"):
         test_bound = int(0.85 * df.labels.shape[0])
 
 
-        # df['label_id'] = df['labels'].apply(lambda x: label_idx(x))
+        df['label_id'] = df['labels'].apply(lambda x: label_idx(x))
 
         # df = df.groupby('label_id').apply(lambda s: s.sample(5000)).reset_index(drop=True)
         # df.drop('label_id', axis=1, inplace=True)
-        # print(df.label_id.value_counts())
+        print(df.label_id.value_counts())
 
         # combined_df = combined_df.sample(frac=1,random_state=4)
         # print("sampling done")
@@ -172,21 +172,21 @@ def load_batch(path,batch_size=256,mode="train"):
 
 if __name__=="__main__":
 
-    iq = np.array([[[0.2 , 0.2],[0.2 , 0.2]],
-     [[0.3 , 0.3],[0.2 , 0.2]],
-     [[0.4 , 0.4],[0.2 , 0.2]],
-     [[0.5 , 0.5],[0.2 , 0.2]],
-     [[0.6,  0.6],[0.2 , 0.2]]])
-    print(iq.shape)
-    labels = np.array([[1,0,0,0],[0,1,0,0],
-              [0,0,1,0],[0,0,0,1],[0,1,0,0]])
-    df = pd.DataFrame()
-    # df['iq'] = list(map(lambda x: np.array(x), iq))
-    # df['labels'] = list(map(lambda x: np.array(x), labels))
-    x =[[0, 0, 0, 0, 0, 0, 1, 0, 0]]
-    print(np.array(x))
-    true_label = label_idx(x[0])
-    print(true_label)
+    # iq = np.array([[[0.2 , 0.2],[0.2 , 0.2]],
+    #  [[0.3 , 0.3],[0.2 , 0.2]],
+    #  [[0.4 , 0.4],[0.2 , 0.2]],
+    #  [[0.5 , 0.5],[0.2 , 0.2]],
+    #  [[0.6,  0.6],[0.2 , 0.2]]])
+    # print(iq.shape)
+    # labels = np.array([[1,0,0,0],[0,1,0,0],
+    #           [0,0,1,0],[0,0,0,1],[0,1,0,0]])
+    # df = pd.DataFrame()
+    # # df['iq'] = list(map(lambda x: np.array(x), iq))
+    # # df['labels'] = list(map(lambda x: np.array(x), labels))
+    # x =[[0, 0, 0, 0, 0, 0, 1, 0, 0]]
+    # print(np.array(x))
+    # true_label = label_idx(x[0])
+    # print(true_label)
     # with h5.File("test.h5", 'w') as hdf:
     #     dt = h5.special_dtype(vlen=np.dtype('float32'))
     #     hdf.create_dataset('iq', data=df.iq.values, chunks=True,
@@ -224,5 +224,5 @@ if __name__=="__main__":
     # print(label_data.shape)
     # label_data = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
     # print(label_data.shape)
-    # load_batch("/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5",mode='')
+    load_batch("/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_usrp_snr20_sir25_1024.h5",mode='')
 

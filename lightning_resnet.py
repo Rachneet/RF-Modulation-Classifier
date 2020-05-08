@@ -32,6 +32,8 @@ from sklearn.exceptions import ConvergenceWarning
 import warnings
 warnings.simplefilter('always',ConvergenceWarning)
 
+from resnet import *
+
 # ================================================Visualization=============================================
 
 # comet_logger = CometLogger(
@@ -77,110 +79,19 @@ class DatasetFromHDF5(Dataset):
 
 # ===============================================MODEL==============================================================
 
-class LightningCNN(pl.LightningModule):
+class LightningResnet(pl.LightningModule):
     def __init__(self,hparams):
 
-        super(LightningCNN,self).__init__()
+        super(LightningResnet,self).__init__()
 
         self.train_dataset = None
         self.val_dataset = None
         self.test_dataset = None
         self.all_true, self.all_pred, self.all_snr = [], [], []  # for final metrics calculation
         self.hparams = hparams
-        # print(vars(hparams))
-        # layer 1
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(hparams.in_dims, hparams.filters, hparams.kernel_size[0],padding=2),
-            nn.BatchNorm2d(hparams.filters),
-            nn.ReLU(),
-            nn.MaxPool2d(hparams.pool_size)
-        )
-
-        # layer 2
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[1],padding=2),
-            nn.BatchNorm2d(hparams.filters),
-            nn.ReLU(),
-            nn.MaxPool2d(hparams.pool_size)
-        )
-
-        # layer 3,4,5
-        self.conv3 = nn.Sequential(
-            nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[2],padding=2),
-            nn.BatchNorm2d(hparams.filters),
-            nn.ReLU(),
-            nn.MaxPool2d(hparams.pool_size)
-        )
-
-        self.conv4 = nn.Sequential(
-            nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[3],padding=2),
-            nn.BatchNorm2d(hparams.filters),
-            nn.ReLU(),
-            nn.MaxPool2d(hparams.pool_size)
-        )
-
-        self.conv5 = nn.Sequential(
-            nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[4],padding=2),
-            nn.BatchNorm2d(hparams.filters),
-            nn.ReLU(),
-            nn.MaxPool2d(hparams.pool_size)
-        )
-
-        # layer 6
-        self.conv6 = nn.Sequential(
-            nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[5],padding=2),
-            nn.BatchNorm2d(hparams.filters),
-            nn.ReLU(),
-            nn.MaxPool2d(hparams.pool_size)
-        )
-
-        # dimension = int(((max_seq_length - 96) / 27 * filters)-94)
-        # print("Dimension before FC layer: ", dimension)
-
-        # layer 7
-        self.fc1 = nn.Sequential(
-            nn.Linear(int(hparams.fc_neurons/2),hparams.fc_neurons),
-            nn.ReLU(),
-            nn.Dropout(p=0.5)
-        )
-
-        # layer 8
-        self.fc2 = nn.Sequential(
-            nn.Linear(hparams.fc_neurons, hparams.fc_neurons),
-            nn.ReLU(),
-            nn.Dropout(p=0.5)
-        )
-
-        # layer 9
-        self.fc3 = nn.Linear(hparams.fc_neurons, hparams.n_classes)
-
-        if hparams.filters == 256 and hparams.fc_neurons == 1024:
-            self._create_weights(mean=0.0, std=0.05)
-        elif hparams.filters == 1024 and hparams.fc_neurons == 2048:
-            self._create_weights(mean=0.0, std=0.02)
-
-    def _create_weights(self, mean=0.0, std=0.05):
-        for module in self.modules():
-            if isinstance(module, nn.Conv1d) or isinstance(module, nn.Linear):
-                module.weight.data.normal_(mean, std)
-
-    def forward(self, input):
-
-        input = input.permute(0,2,1)
-        input = input.unsqueeze(dim=3)
-        output = self.conv1(input)
-        output = self.conv2(output)
-        output = self.conv3(output)
-        output = self.conv4(output)
-        output = self.conv5(output)
-        output = self.conv6(output)
-        output = output.view(output.size(0), -1)
-        output = self.fc1(output)
-        output = self.fc2(output)
-        output = self.fc3(output)
-
-        return output
-
+        # print(vars(hparams)
+        # get model
+        self.res_model = resnet101(hparams.in_dims, hparams.n_classes)
 
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(self.parameters(), lr=self.hparams.learning_rate,momentum=self.hparams.momentum)
@@ -196,7 +107,7 @@ class LightningCNN(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y, z = batch
-        logits = self.forward(x)
+        logits = self.res_model(x)
         y = torch.max(y, 1)[1]
         loss = self.cross_entropy_loss(logits,y)
 
@@ -212,7 +123,7 @@ class LightningCNN(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         x, y, z = batch
-        y_pred = self.forward(x)
+        y_pred = self.res_model(x)
         y = torch.max(y,1)[1]
         # print(y)
         loss = self.cross_entropy_loss(y_pred,y)
@@ -393,7 +304,7 @@ class LightningCNN(pl.LightningModule):
 # function to test the model separately
 def test_lightning(hparams):
 
-    model = LightningCNN.load_from_checkpoint(
+    model = LightningResnet.load_from_checkpoint(
     checkpoint_path='/media/backup/Arsenal/thesis_results/lightning_intf_bpsk_snr20_sir25/epoch=29.ckpt',
     hparams=hparams,
     map_location=None
@@ -423,7 +334,7 @@ neptune_logger = NeptuneLogger(
 
 def main(hparams):
 
-    model = LightningCNN(hparams)
+    model = LightningResnet(hparams)
     # exp = Experiment(save_dir=os.getcwd())
     if not os.path.exists(CHECKPOINTS_DIR):
         os.makedirs(CHECKPOINTS_DIR)
@@ -445,7 +356,7 @@ def main(hparams):
         for file in files:
             if file[-4:] == 'ckpt':
                 file_name = file
-    model = LightningCNN.load_from_checkpoint(
+    model = LightningResnet.load_from_checkpoint(
         checkpoint_path=CHECKPOINTS_DIR+file_name,
         hparams=hparams,
         map_location=None
@@ -473,10 +384,6 @@ if __name__=="__main__":
     parser.add_argument('--learning_rate', default=1e-2)
     parser.add_argument('--momentum', default=0.9)
     parser.add_argument('--in_dims', default=2)
-    parser.add_argument('--filters', default=64)
-    parser.add_argument('--kernel_size', type=list, nargs='+', default=[3,3,3,3,3,3])
-    parser.add_argument('--pool_size', default=3)
-    parser.add_argument('--fc_neurons', type=int, default=128)
     parser.add_argument('--n_classes', default=8)
     args = parser.parse_args()
 

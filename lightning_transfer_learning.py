@@ -353,11 +353,11 @@ class TransferLearningModel(pl.LightningModule):
     def add_model_specific_args(parent_parser):
 
         parser = argparse.ArgumentParser(parents=[parent_parser])
-        model = torch.load("/media/backup/Arsenal/thesis_results/trained_cnn_intf_free_vsg10",map_location='cuda:0')
+        model = torch.load("/media/backup/Arsenal/thesis_results/trained_cnn_intf_free_vsg20",map_location='cuda:0')
 
         # model = LightningCNN.load_from_checkpoint(
-        #     checkpoint_path='/media/backup/Arsenal/thesis_results/lightning_vsg_snr_0/version_SAN-10/'
-        #                     'checkpoints/epoch=24.ckpt',
+        #     checkpoint_path='/media/backup/Arsenal/thesis_results/lightning_vsg_snr_20/'
+        #                     '/epoch=24.ckpt',
         #     map_location=None
         # )
         parser.add_argument('--backbone', default=model)
@@ -385,12 +385,12 @@ class TransferLearningModel(pl.LightningModule):
 # =========================================NEPTUNE AI===============================================================
 
 
-CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/lightning_tl_vsg_10_20/'           # change this
+CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/lightning_tl_intf/'           # change this
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="lightning_tl_vsg_snr_10_20",   # change this  for new runs
+    experiment_name="lightning_tl_intf",   # change this  for new runs
 )
 
 # ===================================================================================================================
@@ -418,7 +418,7 @@ def main(hparams: argparse.Namespace) -> None:
     trainer = pl.Trainer(logger=neptune_logger,
         gpus=hparams.gpus,
         max_nb_epochs=hparams.max_epochs,
-        checkpoint_callback=model_checkpoint, early_stop_callback=early_stop_callback)
+        checkpoint_callback=model_checkpoint)
 
     trainer.fit(model)
     # load best model for testing
@@ -440,7 +440,7 @@ def main(hparams: argparse.Namespace) -> None:
 
 
 def get_args() -> argparse.Namespace:
-    root_path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5"
+    root_path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_usrp_snr20_sir25_1024.h5"
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument('--data_path',default=root_path, help='path to dataset')
     parser = TransferLearningModel.add_model_specific_args(parent_parser)
@@ -467,3 +467,4 @@ if __name__ == "__main__":
     # correct = (torch.eq(pred,true).sum().detach().cpu().data.numpy()/list(pred.size())[0])
     # print(torch.tensor(correct))
     main(get_args())
+    # pass

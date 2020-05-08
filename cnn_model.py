@@ -8,7 +8,7 @@ from pytorch_model_summary import summary
 
 class CNN(nn.Module):
     def __init__(self, n_classes, input_dim=2
-                 ,max_seq_length=1024,filters=64,kernel_sizes=[3,3,3,3,3,3],pool_size=3,
+                 ,max_seq_length=128,filters=64,kernel_sizes=[3,3,3,3,3,3],pool_size=3,
                 n_fc_neurons=128):
 
         super(CNN,self).__init__()
@@ -70,12 +70,12 @@ class CNN(nn.Module):
             nn.MaxPool2d(pool_size)
         )
 
-        # dimension = int(((max_seq_length - 96) / 27 * filters)-94)
-        # print("Dimension before FC layer: ", dimension)
+        dimension = int(((max_seq_length - 96) / 27 * filters)-11)
+        print("Dimension before FC layer: ", dimension)
 
         # layer 7
         self.fc1 = nn.Sequential(
-            nn.Linear(n_fc_neurons,n_fc_neurons),
+            nn.Linear(128,n_fc_neurons),
             nn.ReLU(),
             nn.Dropout(p=0.5)
         )
@@ -132,6 +132,9 @@ class CNN(nn.Module):
 
         output = output.view(output.size(0), -1)
         # print("o/p befor fc:", output.shape)
+        # x = torch.cat((output, torch.tensor([[0,1,2,4,5,6],[0,1,2,3,4,5]], dtype=torch.float)), 1)
+        # print(x.shape)
+        # print(x)
         # print(output.shape)
         output = self.fc1(output)
         output = self.fc2(output)
@@ -145,4 +148,4 @@ class CNN(nn.Module):
 
 if __name__=="__main__":
     model = CNN(n_classes=8)
-    print(summary(model,torch.ones((1,1024,2)),show_input=False, show_hierarchical=True))
+    print(summary(model,torch.ones((1,1024,2)),show_input=False, show_hierarchical=False))
