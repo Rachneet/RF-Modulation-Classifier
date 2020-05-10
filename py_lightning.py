@@ -23,7 +23,7 @@ from collections import OrderedDict
 import csv
 from scikitplot.metrics import plot_confusion_matrix
 import matplotlib.pyplot as plt
-from ica_analysis import compute_ica
+from intf_processing import compute_ica,featurize
 from argparse import Namespace
 torch.manual_seed(4)  # for reproducibility of results
 
@@ -46,12 +46,13 @@ warnings.simplefilter('always',ConvergenceWarning)
 
 
 class DatasetFromHDF5(Dataset):
-    def __init__(self, filename, iq,labels,snrs):
+    def __init__(self, filename, iq,labels,snrs,feature_flag=False):
         self.filename = filename
         self.iq = iq
         self.labels = labels
         self.snrs = snrs
-        # self.data = preprocessing.scale(self.data, with_mean=False)
+        self.features = np.array([])
+        self.feature_flag = feature_flag
 
     def __len__(self):
         with h5.File(self.filename, 'r') as file:
@@ -63,17 +64,27 @@ class DatasetFromHDF5(Dataset):
             data = file[self.iq][item]
             label = file[self.labels][item]
             snr = file[self.snrs][item]
+            features = self.features
         # ----------- Blind source separation ------------------------
         # x = np.expand_dims(data, axis=0)
-        # x = x.reshape(-1, 256)
+        # x = x.reshape(-1, 2048)
         # S = compute_ica(x)
         # out = np.dot(S, x)
-        # signals = out.reshape(-1, 128, 2)
+        # signals = out.reshape(-1, 1024, 2)
+        # --------------------- Featurize data ------------------------
+        if self.feature_flag:
+            features = featurize(data)
+            features = preprocessing.scale(features, with_mean=False).astype(np.float32)
         # -------------------------------------------------------------
         data = preprocessing.scale(data,with_mean=False).astype(np.float32)
         label = label.astype(np.float32)
         snr = snr.astype(np.int8)
-        return data,label,snr
+
+        if self.feature_flag:
+            return data, label, snr, features
+        else:
+            return data,label,snr
+
 
 # ===============================================MODEL==============================================================
 
@@ -134,12 +145,14 @@ class LightningCNN(pl.LightningModule):
             nn.MaxPool2d(hparams.pool_size)
         )
 
-        # dimension = int(((max_seq_length - 96) / 27 * filters)-94)
-        # print("Dimension before FC layer: ", dimension)
+        if hparams.featurize:
+            in_dim = hparams.fc_neurons+hparams.n_features
+        else:
+            in_dim = hparams.fc_neurons
 
         # layer 7
         self.fc1 = nn.Sequential(
-            nn.Linear(int(hparams.fc_neurons/2),hparams.fc_neurons),
+            nn.Linear(in_dim,hparams.fc_neurons),
             nn.ReLU(),
             nn.Dropout(p=0.5)
         )
@@ -164,7 +177,7 @@ class LightningCNN(pl.LightningModule):
             if isinstance(module, nn.Conv1d) or isinstance(module, nn.Linear):
                 module.weight.data.normal_(mean, std)
 
-    def forward(self, input):
+    def forward(self, input, features):
 
         input = input.permute(0,2,1)
         input = input.unsqueeze(dim=3)
@@ -175,6 +188,9 @@ class LightningCNN(pl.LightningModule):
         output = self.conv5(output)
         output = self.conv6(output)
         output = output.view(output.size(0), -1)
+        if self.hparams.featurize:
+            # add hand crafted features to cnn features
+            output = torch.cat((output, features), 1)
         output = self.fc1(output)
         output = self.fc2(output)
         output = self.fc3(output)
@@ -195,8 +211,13 @@ class LightningCNN(pl.LightningModule):
         return loss(logits, labels)
 
     def training_step(self, batch, batch_idx):
-        x, y, z = batch
-        logits = self.forward(x)
+        if self.hparams.featurize:
+            x, y, z, f = batch
+            logits = self.forward(x, f)
+        else:
+            x, y, z = batch
+            logits = self.forward(x,0)
+
         y = torch.max(y, 1)[1]
         loss = self.cross_entropy_loss(logits,y)
 
@@ -211,8 +232,13 @@ class LightningCNN(pl.LightningModule):
 
 
     def validation_step(self, batch, batch_idx):
-        x, y, z = batch
-        y_pred = self.forward(x)
+        if self.hparams.featurize:
+            x, y, z, f = batch
+            y_pred = self.forward(x, f)
+        else:
+            x, y, z = batch
+            y_pred = self.forward(x, 0)
+
         y = torch.max(y,1)[1]
         # print(y)
         loss = self.cross_entropy_loss(y_pred,y)
@@ -260,8 +286,13 @@ class LightningCNN(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         # to do
-        x, y, z = batch
-        y_pred = self.forward(x)
+        if self.hparams.featurize:
+            x, y, z, f = batch
+            y_pred = self.forward(x, f)
+        else:
+            x, y, z = batch
+            y_pred = self.forward(x, 0)
+
         y = torch.max(y,1)[1]
         loss = self.cross_entropy_loss(y_pred,y)
 
@@ -331,7 +362,7 @@ class LightningCNN(pl.LightningModule):
         # Log charts
         fig, ax = plt.subplots(figsize=(16, 12))
         plot_confusion_matrix(self.all_true, self.all_pred, ax=ax)
-        # neptune_logger.experiment.log_image('confusion_matrix', fig)
+        neptune_logger.experiment.log_image('confusion_matrix', fig)
         # Save checkpoints folder
         neptune_logger.experiment.log_artifact(CHECKPOINTS_DIR + "output.csv")
         result = {'progress_bar': tqdm_dict, 'log': {'test_loss':test_loss_mean}}
@@ -339,7 +370,7 @@ class LightningCNN(pl.LightningModule):
 
 
     def prepare_data(self, valid_fraction=0.05, test_fraction=0.1):
-        dataset = DatasetFromHDF5(self.hparams.data_path, 'iq', 'labels', 'snrs')
+        dataset = DatasetFromHDF5(self.hparams.data_path, 'iq', 'labels', 'sirs', self.hparams.featurize)
         num_train = len(dataset)
         indices = list(range(num_train))
         val_split = int(math.floor(valid_fraction * num_train))
@@ -394,7 +425,7 @@ class LightningCNN(pl.LightningModule):
 def test_lightning(hparams):
 
     model = LightningCNN.load_from_checkpoint(
-    checkpoint_path='/media/backup/Arsenal/thesis_results/lightning_intf_bpsk_snr20_sir25/epoch=29.ckpt',
+    checkpoint_path='/media/backup/Arsenal/thesis_results/intf_bpsk_snr10_all/epoch=29.ckpt',
     hparams=hparams,
     map_location=None
     )
@@ -411,12 +442,12 @@ def test_lightning(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/ext_intf_bpsk_snr20_sir25/'
+CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/intf_16qam_snr10_all/'
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="ext_intf_bpsk_snr20_sir25",   # change this for new runs
+    experiment_name="intf_16qam_snr10_all",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -459,7 +490,7 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_snr20_sir25_ext.h5"
+    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_16qam_snr10_1024.h5"
     out_path = "/media/backup/Arsenal/thesis_results/"
 
     parser = ArgumentParser()
@@ -478,10 +509,20 @@ if __name__=="__main__":
     parser.add_argument('--pool_size', default=3)
     parser.add_argument('--fc_neurons', type=int, default=128)
     parser.add_argument('--n_classes', default=8)
+    parser.add_argument('--n_features', default=10)
+    parser.add_argument('--featurize', default=False)
     args = parser.parse_args()
 
     main(args)
     # test_lightning(args)
-
+    # file = h5.File(path,'r')
+    # iq, labels, snrs = file['iq'],file['labels'],file['sirs']
+    # print(iq.shape)
+    # x = len(np.unique(iq,axis=0))
+    # print(x)
+    # if x == iq.shape[0]:
+    #     print('No duplicates')
+    # else:
+    #     print('Duplicates exist')
 
 

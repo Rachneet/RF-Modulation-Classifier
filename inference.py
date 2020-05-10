@@ -42,14 +42,14 @@ def compute_results(csv_path):
     df = pd.read_csv(csv_path, delimiter=",", quoting=csv.QUOTE_MINIMAL)
     # print(df.head())
     groups = df.groupby('SNR')
-    snrs = [0, 5, 10, 15, 20]
+    snrs = [5, 10, 15, 20, 25]
     total_count,result = {},{}
 
     for snr in snrs:
         data = groups.get_group(snr).reset_index(drop=True)
-        output = evaluate(data['True label'].values, data['Predicted label'].values,
+        output = evaluate(data['True_label'].values, data['Predicted_label'].values,
                           ['accuracy', 'confusion_matrix'])
-        unique, counts = np.unique(data['True label'].values, return_counts=True)
+        unique, counts = np.unique(data['True_label'].values, return_counts=True)
         result[snr] = output
         total_count[snr] = counts
 
@@ -161,7 +161,7 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
     # print(temp2)
 
     x = ["SC <br>BPSK", "SC <br>QPSK", "SC 16-<br>QAM", "SC 64-<br>QAM",
-         "OFDM <br>BPSK", "OFDM <br>QPSK", "OFDM 16-<br>QAM", "OFDM 64-<br>QAM","UNK"]
+         "OFDM <br>BPSK", "OFDM <br>QPSK", "OFDM 16-<br>QAM", "OFDM 64-<br>QAM"]
 
     y = list(reversed(x))
 
@@ -179,14 +179,14 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
         z2.append(z1)
 
     # set up figure
-    colorscale = [[0, 'white'], [1, 'Peach']]
+    colorscale = [[0, 'white'], [1, 'rgb(255,119,51)']]
     # font_colors = ['white', 'black']
     fig = ff.create_annotated_heatmap(list(reversed(cmap)), x=x, y=y, annotation_text=z_text,
                                       colorscale=colorscale)
 
     # add title
 
-    fig.update_layout(title_text='<b>CNN Performance with the presence of Unknown Signals <br>on VSG at SNR ' + str(snr) + 'dB </b>',
+    fig.update_layout(title_text='<b>CNN Performance with the presence of Interfering BPSK Signals <br> at SIR ' + str(snr) + 'dB </b>',
                       # xaxis = dict(title='x'),
                       # yaxis = dict(title='x')
                       )
@@ -262,29 +262,29 @@ if __name__ == "__main__":
     # inference(datapath="/media/backup/Arsenal/rf_dataset_inets/",batch_size=512)
     # pass
     datapath = "/media/backup/Arsenal/thesis_results/"
+    #
+    # file = datapath+'intf_bpsk_snr20_all/output.csv'
+    # df = pd.read_csv(file)
+    # # print(df.head())
+    # output = {}
+    # y_true = df['True_label'].values
+    # y_pred = df['Predicted_label'].values
+    # print(metrics.accuracy_score(y_true, y_pred))
+    # cmap =  metrics.confusion_matrix(y_true, y_pred)
+    # print(cmap)
+    # unique, counts = np.unique(df['True_label'].values, return_counts=True)
+    # print(counts)
+    # k=25
+    # plot_confusion_matrix(cmap, counts, "cmap_intf_bpsk_sir_" + str(k), k)
 
-    file = datapath+'output_unk_vsg_snr20.csv'
-    df = pd.read_csv(file)
-    # print(df.head())
-    output = {}
-    y_true = df['True label'].values
-    y_pred = df['Predicted label'].values
-    print(metrics.accuracy_score(y_true, y_pred))
-    cmap =  metrics.confusion_matrix(y_true, y_pred)
-    print(cmap)
-    unique, counts = np.unique(df['True label'].values, return_counts=True)
-    print(counts)
-    k=20
-    plot_confusion_matrix(cmap, counts, "cmap_vsg_unk_snr_" + str(k), k)
-
-    # count,output = compute_results(datapath+"output_unk_vsg_snr20.csv")
+    count,output = compute_results(datapath+"intf_16qam_snr20_ica/output.csv")
     # print(count,output)
     # print(count)
-    # for k,v in output.items():
-    #     # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_vsg_cfo5_snr_"+str(k),k)
-    #     # print(v['confusion_matrix'])
-    #
-    #     print(v['accuracy'])
+    for k,v in output.items():
+        # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_vsg_cfo5_snr_"+str(k),k)
+        # print(v['confusion_matrix'])
+
+        print(v['accuracy'])
 
     # file = datapath+"output_cnn_vsg_cfo5_all_test.csv"
     # df = pd.read_csv(file)

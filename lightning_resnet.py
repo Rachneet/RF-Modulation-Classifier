@@ -23,7 +23,7 @@ from collections import OrderedDict
 import csv
 from scikitplot.metrics import plot_confusion_matrix
 import matplotlib.pyplot as plt
-from ica_analysis import compute_ica
+from intf_processing import compute_ica
 from argparse import Namespace
 torch.manual_seed(4)  # for reproducibility of results
 
