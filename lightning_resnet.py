@@ -23,7 +23,6 @@ from collections import OrderedDict
 import csv
 from scikitplot.metrics import plot_confusion_matrix
 import matplotlib.pyplot as plt
-from intf_processing import compute_ica
 from argparse import Namespace
 torch.manual_seed(4)  # for reproducibility of results
 
@@ -80,7 +79,7 @@ class DatasetFromHDF5(Dataset):
 # ===============================================MODEL==============================================================
 
 class LightningResnet(pl.LightningModule):
-    def __init__(self,hparams):
+    def __init__(self, hparams):
 
         super(LightningResnet,self).__init__()
 
@@ -91,7 +90,15 @@ class LightningResnet(pl.LightningModule):
         self.hparams = hparams
         # print(vars(hparams)
         # get model
-        self.res_model = resnet101(hparams.in_dims, hparams.n_classes)
+        self.res_enc = ResnetEncoder(hparams.in_dims,hparams.block_sizes,hparams.depths,block=hparams.res_block)
+        self.res_dec = ResnetDecoder(self.res_enc.blocks[-1].blocks[-1].expanded_channels, hparams.n_classes)
+
+    def forward(self,x):
+        x = x.permute(0, 2, 1)
+        x = x.unsqueeze(dim=3)
+        x = self.res_enc(x)
+        x = self.res_dec(x)
+        return x
 
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(self.parameters(), lr=self.hparams.learning_rate,momentum=self.hparams.momentum)
@@ -107,7 +114,7 @@ class LightningResnet(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y, z = batch
-        logits = self.res_model(x)
+        logits = self.forward(x)
         y = torch.max(y, 1)[1]
         loss = self.cross_entropy_loss(logits,y)
 
@@ -123,7 +130,7 @@ class LightningResnet(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         x, y, z = batch
-        y_pred = self.res_model(x)
+        y_pred = self.forward(x)
         y = torch.max(y,1)[1]
         # print(y)
         loss = self.cross_entropy_loss(y_pred,y)
@@ -250,7 +257,7 @@ class LightningResnet(pl.LightningModule):
 
 
     def prepare_data(self, valid_fraction=0.05, test_fraction=0.1):
-        dataset = DatasetFromHDF5(self.hparams.data_path, 'iq', 'labels', 'snrs')
+        dataset = DatasetFromHDF5(self.hparams.data_path, 'iq', 'labels', 'sirs')
         num_train = len(dataset)
         indices = list(range(num_train))
         val_split = int(math.floor(valid_fraction * num_train))
@@ -305,7 +312,7 @@ class LightningResnet(pl.LightningModule):
 def test_lightning(hparams):
 
     model = LightningResnet.load_from_checkpoint(
-    checkpoint_path='/media/backup/Arsenal/thesis_results/lightning_intf_bpsk_snr20_sir25/epoch=29.ckpt',
+    checkpoint_path='/media/backup/Arsenal/thesis_results/res_intf_bpsk_snr10_all/epoch=12.ckpt',
     hparams=hparams,
     map_location=None
     )
@@ -322,12 +329,12 @@ def test_lightning(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/ext_intf_bpsk_snr20_sir25/'
+CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/res_intf_bpsk_snr10_all/'
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="ext_intf_bpsk_snr20_sir25",   # change this for new runs
+    experiment_name="res_intf_bpsk_snr10_all",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -368,9 +375,10 @@ def main(hparams):
 
 # ==================================================PASSING ARGS=====================================================
 
+
 if __name__=="__main__":
 
-    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_snr20_sir25_ext.h5"
+    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_snr10_1024.h5"
     out_path = "/media/backup/Arsenal/thesis_results/"
 
     parser = ArgumentParser()
@@ -385,10 +393,12 @@ if __name__=="__main__":
     parser.add_argument('--momentum', default=0.9)
     parser.add_argument('--in_dims', default=2)
     parser.add_argument('--n_classes', default=8)
+    parser.add_argument('--block_sizes',type=list, default=[64,128,256,512])
+    parser.add_argument('--depths', type=list, default=[3, 4, 23, 3])
+    parser.add_argument('--res_block', default=ResnetBottleneckBlock)
+
     args = parser.parse_args()
 
-    main(args)
-    # test_lightning(args)
-
-
+    # main(args)
+    test_lightning(args)
 

@@ -8,45 +8,8 @@ from sklearn import preprocessing
 import dataloader as dl
 import pandas as pd
 
+
 def merge_files():
-
-    # file1_path = "/data/all_RFSignal_cdv/mixed_recordings/interference/ota/no_cfo/tx_usrp/rx_usrp/intf_vsg/i_SC_16QAM/npz/OFDM_QPSK_filtered.npz"
-    # file2_path = '/data/all_RFSignal_cdv/mixed_recordings/interference/ota/no_cfo/tx_usrp/rx_usrp/intf_vsg/i_SC_16QAM/npz/OFDM_16QAM_filtered.npz'
-    # x = np.load(file1_path)
-    # d = x['matrix']
-    # l = x['labels']
-    # s = x['snrs']
-    # # i=0
-    # # for row in d:
-    # #     print(row)
-    # #     i+=1
-    # #     if i==3:
-    # #         break
-    # # print(d.shape[0])
-    # h5_path = '/data/all_RFSignal_cdv/mixed_recordings/interference/ota/out.h5'
-    # new_arr = np.apply_along_axis(sort_matrix_entries, axis=1, arr=d)
-    # print(new_arr.shape)
-
-    #if not os.path.exists(h5_path):
-
-    # with h5.File(h5_path,'w') as hdf:
-    #     hdf.create_dataset('iq',data=new_arr,chunks=True,maxshape=(None,50000,2),compression='gzip')
-    #     hdf.create_dataset('labels', data=l, chunks=True, maxshape=(None,), compression='gzip')
-    #     hdf.create_dataset('snrs', data=s, chunks=True, maxshape=(None,), compression='gzip')
-    #
-    # with h5.File(h5_path,'a') as hf:
-    #     hf["iq"].resize((hf["iq"].shape[0] + d.shape[0]), axis=0)
-    #     hf["iq"][-d.shape[0]:] = new_arr
-    #     hf["labels"].resize((hf["labels"].shape[0] + l.shape[0]), axis=0)
-    #     hf["labels"][-l.shape[0]:] = l
-    #     hf["snrs"].resize((hf["snrs"].shape[0] + s.shape[0]), axis=0)
-    #     hf["snrs"][-s.shape[0]:] = s
-    #     print(hf['iq'].shape)
-    #     print(hf['iq'][:2])
-    #     print(hf['labels'].shape)
-    #     print(hf['labels'][:2])
-    #     print(hf['snrs'].shape)
-    #     print(hf['snrs'][:2])
 
     root_folder = "/media/backup/Arsenal/interference_new/interference/ota"
     param_folder = "/no_cfo/tx_usrp/rx_usrp/intf_vsg/i_SC_16QAM"
@@ -81,7 +44,7 @@ def merge_files():
     total_samples = sum(num_samples)
     print("Samples accounted for: {}".format(total_samples))
     print("Starting merge...")
-    #
+
     for i,path in enumerate(file_paths):
         data = np.load(path)
         iq = data['matrix']
@@ -112,38 +75,6 @@ def merge_files():
 
         print("Files merged:", i+1)
 
-
-
-
-    #     if i>0:
-    #         merged_arr = np.vstack((merged_arr,mat))
-    #         print(merged_arr.shape )
-    #     elif i==0:
-    #         merged_arr = mat
-    #         print(merged_arr.shape)
-    #     print(i)
-    #     i = i+1
-    # merged_arr = np.vstack(arr_list)
-    # print(merged_arr.shape)
-
-
-
-    # file1_path = "/data/all_RFSignal_cdv/mixed_recordings/interference/ota/no_cfo/tx_usrp/rx_usrp/intf_vsg/i_SC_16QAM/npz/OFDM_QPSK_filtered.npz"
-    # file2_path = '/data/all_RFSignal_cdv/mixed_recordings/interference/ota/no_cfo/tx_usrp/rx_usrp/intf_vsg/i_SC_16QAM/npz/OFDM_16QAM_filtered.npz'
-    # f1 = np.load(file1_path)
-    #
-    # f2 = np.load(file2_path)
-    # mat1 = f1['matrix']
-    # mat2 = f2['matrix']
-    # l1 = f1['labels']
-    # print(len(mat1))
-    # p = np.random.permutation(len(mat1))
-    # print(mat1[p], l1[p])
-    #
-    # print(mat1.shape,mat2.shape)
-    # new_mat = np.vstack((mat1,mat2))
-    # print(new_mat.shape)
-    # print(new_mat)
 
 def merge_hdfset():
     path = "/media/backup/Arsenal/rf_dataset_inets/"
@@ -220,8 +151,50 @@ def merge_hdfset():
             print("Datasets processed: {}".format(i))
 
 
+def sample_from_h5(path, output_path):
+    file = h5.File(path,'r')
+    iq, labels, snrs = file['iq'], file['labels'], file['snrs']
+    num_iq = 1024          # iq per sample
+    batch = 256
+    samples_per_segment = int(num_iq / batch)
+    batch_labels = np.zeros((samples_per_segment,8), dtype=np.float32)
+    batch_snrs = np.zeros(samples_per_segment, dtype=np.int8)
+
+    for row in range(len(iq)):
+        # print(iq[row].shape)
+        batch_iq = np.array(np.split(iq[row], samples_per_segment), dtype=np.float32)
+        batch_labels[:] = np.array(labels[row])
+        batch_snrs[:] = np.array(snrs[row])
+        # print(batch_iq.shape)
+        # print(batch_labels.shape)
+        # print(batch_labels)
+        # print(batch_snrs.shape)
+        # print(batch_snrs)
+
+        # print(batch_iq, batch_labels, batch_snrs)
+
+        if not os.path.exists(output_path):
+            with h5.File(output_path, 'w') as hdf:
+                hdf.create_dataset('iq', data=batch_iq, chunks=True, maxshape=(None, batch, 2),
+                                   compression='gzip')
+                hdf.create_dataset('labels', data=batch_labels, chunks=True, maxshape=(None, 8),
+                                   compression='gzip')
+                hdf.create_dataset('snrs', data=batch_snrs, chunks=True, maxshape=(None,), compression='gzip')
+                print(hdf['iq'].shape)
+
+        else:
+            with h5.File(output_path, 'a') as hf:
+                hf["iq"].resize((hf["iq"].shape[0] + batch_iq.shape[0]), axis=0)
+                hf["iq"][-batch_iq.shape[0]:] = batch_iq
+                hf["labels"].resize((hf["labels"].shape[0] + batch_labels.shape[0]), axis=0)
+                hf["labels"][-batch_labels.shape[0]:] = batch_labels
+                hf["snrs"].resize((hf["snrs"].shape[0] + batch_snrs.shape[0]), axis=0)
+                hf["snrs"][-batch_snrs.shape[0]:] = batch_snrs
+                print(hf['iq'].shape)
 
 
 if __name__=="__main__":
     # merge_hdfset()
-    pass
+    data_path = "/media/backup/Arsenal/rf_dataset_inets/usrp_no_intf_all_normed.h5"
+    output_path = "/media/backup/Arsenal/rf_dataset_inets/dataset_usrp_all_256.h5"
+    sample_from_h5(data_path, output_path)

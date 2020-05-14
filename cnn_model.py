@@ -75,7 +75,7 @@ class CNN(nn.Module):
 
         # layer 7
         self.fc1 = nn.Sequential(
-            nn.Linear(128,n_fc_neurons),
+            nn.Linear(64,n_fc_neurons),
             nn.ReLU(),
             nn.Dropout(p=0.5)
         )
@@ -148,4 +148,4 @@ class CNN(nn.Module):
 
 if __name__=="__main__":
     model = CNN(n_classes=8)
-    print(summary(model,torch.ones((1,1024,2)),show_input=False, show_hierarchical=False))
+    print(summary(model,torch.ones((1,256,2)),show_input=False, show_hierarchical=False))

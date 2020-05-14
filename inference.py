@@ -9,6 +9,7 @@ from train import *
 import csv
 import pandas as pd
 from copy import deepcopy
+from tqdm import tqdm
 # torch.cuda.set_device(0)
 
 
@@ -55,8 +56,10 @@ def compute_results(csv_path):
 
     return total_count,result
 
+# datapath,x_test_gen,y_test_gen,y_test_raw,snr_gen,model_name
 
-def inference(datapath,x_test_gen,y_test_gen,y_test_raw,snr_gen,model_name):
+
+def inference(datapath, test_set, model_name):
 
     # x_test,y_test,labels_raw = load_batch(datapath+"vsg_no_intf_sc_normed.h5",batch_size=batch_size,mode='test')
     # iq, labels, snrs = reader.read_hdf5(path)
@@ -71,16 +74,16 @@ def inference(datapath,x_test_gen,y_test_gen,y_test_raw,snr_gen,model_name):
     # print("Data Loaded...")
 
 
-    _labels =[]
-    for _, l in enumerate(y_test_raw):
-        # print(x)
-        _labels.append(label_idx(l))
-
-    unique, counts = np.unique(_labels, return_counts=True)
+    # _labels =[]
+    # for _, l in enumerate(y_test_raw):
+    #     # print(x)
+    #     _labels.append(label_idx(l))
+    #
+    # unique, counts = np.unique(_labels, return_counts=True)
     # print(np.asarray((unique, counts)).T)
 
-    output_file = open("test_cnn_intf_bpsk_snr20_sir25_logs.txt", "w")
-    model = torch.load(model_name)
+    output_file = open("train_intf_free_test_intf_ofdm.txt", "w")
+    model = torch.load(datapath+model_name, map_location='cuda:0')
     # ica = FastICA(n_components=256,tol=1e-5,max_iter=1000)
     model.eval()
 
@@ -90,7 +93,7 @@ def inference(datapath,x_test_gen,y_test_gen,y_test_raw,snr_gen,model_name):
         test_prob = []
         snr_vals = []
 
-        for batch in zip(x_test_gen,y_test_gen,snr_gen):
+        for batch in tqdm(test_set):
             _, n_true_label,snr = batch
             true_label_copy = deepcopy(n_true_label)
             test_true.extend(true_label_copy.cpu().data.numpy())
@@ -115,21 +118,20 @@ def inference(datapath,x_test_gen,y_test_gen,y_test_raw,snr_gen,model_name):
         # test_true = np.array(test_true)
         # test_pred = np.argmax(test_prob, -1)
 
-    fieldnames = ['True label', 'Predicted label', 'SNR']
-    with open(datapath + "output_vsg_intf_bpsk_snr20_sir25.csv", 'w',encoding='utf-8') as csv_file:
+    fieldnames = ['True_label', 'Predicted_label', 'SIR']
+    with open(datapath + "output_train_intf_free_test_intf_ofdm.csv", 'w',encoding='utf-8') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames, quoting=csv.QUOTE_NONNUMERIC)
         writer.writeheader()
         for i, j, k in zip(np.argmax(test_true, -1), np.argmax(test_prob, -1), snr_vals):
             writer.writerow(
-                {'True label': i, 'Predicted label': j, 'SNR': k})
+                {'True_label': i, 'Predicted_label': j, 'SIR': k})
 
     test_metrics = get_evaluation(test_true, test_prob,
                                   list_metrics=["accuracy", "loss", "confusion_matrix"])
     output_file.write(
-        "Test loss: {} Test accuracy: {} \nNum Samples per class: \n{} \nTest confusion matrix: \n{}\n\n".format(
+        "Test loss: {} Test accuracy: {}  \nTest confusion matrix: \n{}\n\n".format(
             test_metrics["loss"],
             test_metrics["accuracy"],
-            np.asarray((unique, counts)).T,
             test_metrics["confusion_matrix"]))
     output_file.close()
 
@@ -179,14 +181,14 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
         z2.append(z1)
 
     # set up figure
-    colorscale = [[0, 'white'], [1, 'rgb(255,119,51)']]
+    colorscale = [[0, 'white'], [1, 'rgb(235,74,64)']]
     # font_colors = ['white', 'black']
     fig = ff.create_annotated_heatmap(list(reversed(cmap)), x=x, y=y, annotation_text=z_text,
                                       colorscale=colorscale)
 
     # add title
 
-    fig.update_layout(title_text='<b>CNN Performance with the presence of Interfering BPSK Signals <br> at SIR ' + str(snr) + 'dB </b>',
+    fig.update_layout(title_text='<b>Resnet Performance with the presence of Interfering QAM Signals <br> at SIR ' + str(snr) + 'dB </b>',
                       # xaxis = dict(title='x'),
                       # yaxis = dict(title='x')
                       )
@@ -224,7 +226,8 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
     fig['data'][0].colorbar = dict(title='Number of <br>Samples',
                                    outlinecolor="black",
                                    outlinewidth=1,
-                                   ticks='outside'
+                                   ticks='outside',
+                                   len=1.05
                                    )
 
     fig.update_yaxes(automargin=True,
@@ -259,32 +262,43 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
 
 
 if __name__ == "__main__":
-    # inference(datapath="/media/backup/Arsenal/rf_dataset_inets/",batch_size=512)
+
+    # ---------------------------------------MAIN-------------------------------------------------------
+    # training_params = {'batch_size':512, 'num_workers':10}
+    # datapath = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_ofdm_snr10_1024.h5"
+    # _, _, test_set = load_data(datapath, 0.05, 0.2, **training_params)
+    # inf_path = "/media/backup/Arsenal/thesis_results/"
+    # inference(inf_path, test_set, "trained_cnn_no_intf_usrp_all")
     # pass
+
+    # -------------PLot individual conf maps------------------------------------------------------------
     datapath = "/media/backup/Arsenal/thesis_results/"
-    #
-    # file = datapath+'intf_bpsk_snr20_all/output.csv'
+    # file = datapath+'output_train_intf_free_test_intf_bpsk.csv'
     # df = pd.read_csv(file)
-    # # print(df.head())
+    # print(df.tail())
     # output = {}
     # y_true = df['True_label'].values
     # y_pred = df['Predicted_label'].values
-    # print(metrics.accuracy_score(y_true, y_pred))
+    # # print(metrics.accuracy_score(y_true, y_pred))
     # cmap =  metrics.confusion_matrix(y_true, y_pred)
-    # print(cmap)
+    # # print(cmap)
     # unique, counts = np.unique(df['True_label'].values, return_counts=True)
-    # print(counts)
+    # # print(counts)
     # k=25
-    # plot_confusion_matrix(cmap, counts, "cmap_intf_bpsk_sir_" + str(k), k)
+    # plot_confusion_matrix(cmap, counts, "cmap_intf_ofdm_sir_" + str(k), k)
 
-    count,output = compute_results(datapath+"intf_16qam_snr20_ica/output.csv")
+    # -------------------Plot collective conf maps-----------------------------------------------------
+
+    count,output = compute_results(datapath+"tl_intf_free_intf_ofdm/output.csv")
     # print(count,output)
     # print(count)
     for k,v in output.items():
-        # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_vsg_cfo5_snr_"+str(k),k)
+        # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_16qam_snr_"+str(k),k)
         # print(v['confusion_matrix'])
 
         print(v['accuracy'])
+
+    # --------------------------------CFO correction--------------------------------------------------
 
     # file = datapath+"output_cnn_vsg_cfo5_all_test.csv"
     # df = pd.read_csv(file)
@@ -295,37 +309,7 @@ if __name__ == "__main__":
     # print(df.head())
     # print(df2.head())
 
-    # iq, labels, snrs = reader.read_hdf5(datapath)
-    # test_bound = int(0.80 * labels.shape[0])
-    # training_params = {"batch_size": 256,
-    #                    "shuffle": False,
-    #                    "num_workers": 4}
-    # x_test_gen = DataLoader(iq[test_bound:], **training_params)
-    # y_test_gen = DataLoader(labels[test_bound:], **training_params)
-    # snr_gen = DataLoader(snrs[test_bound:], **training_params)
-    # y_test_raw = labels[test_bound:]
-    # print("Data Loaded...")
-
-    # _labels = []
-    # for _, l in enumerate(y_test_raw):
-    #     # print(x)
-    #     _labels.append(label_idx(l))
-
-    # unique, counts = np.unique(_labels, return_counts=True)
-    # print(np.asarray((unique, counts)).T)
-
-    # output_file = open("test_cnn_no_intf_vsg_sc_all_logs.txt", "w")
-    # model = torch.load("trained_cnn_no_intf_vsg_sc_all")
-    # model.eval()
-
-    # with torch.no_grad():
-    #
-    #     test_true = []
-    #     test_prob = []
-    #     snr_vals = []
-
-    # for batch in zip(x_test_gen, y_test_gen, snr_gen):
-    #     _, n_true_label, snr = batch
+# ------------------------------------------------------------------------------------------------------------
 
 
 

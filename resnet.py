@@ -137,7 +137,7 @@ class ResnetEncoder(nn.Module):
         )
 
         self.in_out_block_sizes = list(zip(blocks_sizes, blocks_sizes[1:]))
-        print(self.in_out_block_sizes)
+        # print(self.in_out_block_sizes)
         self.blocks = nn.ModuleList([
             ResnetLayer(blocks_sizes[0], blocks_sizes[0], n=depths[0], activation=activation,
                         block=block, *args, **kwargs),

@@ -1,4 +1,3 @@
-from torch.utils.data import DataLoader
 import read_h5 as reader
 import numpy as np
 import random
@@ -6,8 +5,8 @@ import pandas as pd
 import ast
 import h5py as h5
 from sklearn import preprocessing
-import os
-from sklearn.decomposition import FastICA
+from torch.utils.data import DataLoader, Dataset
+from torch.utils.data.sampler import SubsetRandomSampler
 
 
 def label_idx(labels):
@@ -168,6 +167,38 @@ def load_batch(path,batch_size=256,mode="train"):
             pass
 
 
+from py_lightning import DatasetFromHDF5
+import math
+
+
+def load_data(data_path, val_fraction, test_fraction, **training_params):
+
+    dataset = DatasetFromHDF5(data_path, 'iq', 'labels', 'sirs')
+    num_train = len(dataset)
+    indices = list(range(num_train))
+    val_split = int(math.floor(val_fraction * num_train))
+    test_split = val_split + int(math.floor(test_fraction * num_train))
+
+    if not ('shuffle' in training_params and not training_params['shuffle']):
+        np.random.seed(4)
+        np.random.shuffle(indices)
+    if 'num_workers' not in training_params:
+        training_params['num_workers'] = 1
+
+    train_idx, valid_idx, test_idx = indices[test_split:], indices[:val_split], indices[val_split:test_split]
+    train_sampler = SubsetRandomSampler(train_idx)
+    valid_sampler = SubsetRandomSampler(valid_idx)
+    test_sampler = SubsetRandomSampler(test_idx)
+    train_dataset = DataLoader(dataset, batch_size=training_params['batch_size'],
+                                    shuffle=False, num_workers=training_params['num_workers'],
+                                    sampler=train_sampler)
+    val_dataset = DataLoader(dataset, batch_size=training_params['batch_size'],
+                                  shuffle=False, num_workers=training_params['num_workers'],
+                                  sampler=valid_sampler)
+    test_dataset = DataLoader(dataset, batch_size=training_params['batch_size'],
+                                   shuffle=False, num_workers=training_params['num_workers'],
+                                   sampler=test_sampler)
+    return train_dataset, val_dataset, test_dataset
 
 
 if __name__=="__main__":

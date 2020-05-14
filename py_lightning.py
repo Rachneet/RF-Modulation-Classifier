@@ -425,7 +425,7 @@ class LightningCNN(pl.LightningModule):
 def test_lightning(hparams):
 
     model = LightningCNN.load_from_checkpoint(
-    checkpoint_path='/media/backup/Arsenal/thesis_results/intf_bpsk_snr10_all/epoch=29.ckpt',
+    checkpoint_path='/media/backup/Arsenal/thesis_results/intf_ofdm_snr10_all/epoch=29.ckpt',
     hparams=hparams,
     map_location=None
     )
@@ -442,12 +442,12 @@ def test_lightning(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/intf_16qam_snr10_all/'
+CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/intf_ofdm_snr10_all/'
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="intf_16qam_snr10_all",   # change this for new runs
+    experiment_name="intf_ofdm_snr10_all",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -490,7 +490,7 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_16qam_snr10_1024.h5"
+    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_ofdm_snr10_1024.h5"
     out_path = "/media/backup/Arsenal/thesis_results/"
 
     parser = ArgumentParser()
@@ -513,8 +513,8 @@ if __name__=="__main__":
     parser.add_argument('--featurize', default=False)
     args = parser.parse_args()
 
-    main(args)
-    # test_lightning(args)
+    # main(args)
+    test_lightning(args)
     # file = h5.File(path,'r')
     # iq, labels, snrs = file['iq'],file['labels'],file['sirs']
     # print(iq.shape)
