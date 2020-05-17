@@ -249,14 +249,14 @@ class LightningResnet(pl.LightningModule):
         # Log charts
         fig, ax = plt.subplots(figsize=(16, 12))
         plot_confusion_matrix(self.all_true, self.all_pred, ax=ax)
-        # neptune_logger.experiment.log_image('confusion_matrix', fig)
+        neptune_logger.experiment.log_image('confusion_matrix', fig)
         # Save checkpoints folder
         neptune_logger.experiment.log_artifact(CHECKPOINTS_DIR + "output.csv")
         result = {'progress_bar': tqdm_dict, 'log': {'test_loss':test_loss_mean}}
         return result
 
 
-    def prepare_data(self, valid_fraction=0.05, test_fraction=0.1):
+    def prepare_data(self, valid_fraction=0.05, test_fraction=0.2):
         dataset = DatasetFromHDF5(self.hparams.data_path, 'iq', 'labels', 'sirs')
         num_train = len(dataset)
         indices = list(range(num_train))
@@ -311,11 +311,16 @@ class LightningResnet(pl.LightningModule):
 # function to test the model separately
 def test_lightning(hparams):
 
-    model = LightningResnet.load_from_checkpoint(
-    checkpoint_path='/media/backup/Arsenal/thesis_results/res_intf_bpsk_snr10_all/epoch=12.ckpt',
-    hparams=hparams,
-    map_location=None
-    )
+    model = LightningResnet(hparams)
+    checkpoint_path = '/media/backup/Arsenal/thesis_results/res_intf_bpsk_snr10_all/epoch=12.ckpt'
+    checkpoint = torch.load(checkpoint_path, map_location=lambda storage, loc: storage)
+    model.load_state_dict(checkpoint['state_dict'])
+
+    # model = LightningResnet.load_from_checkpoint(
+    # checkpoint_path='/media/backup/Arsenal/thesis_results/res_intf_free_usrp_all/epoch=4.ckpt',
+    # hparams=hparams,
+    # map_location='cuda:0'
+    # )
     # exp = Experiment(name='test_vsg20',save_dir=os.getcwd())
     # logger = TestTubeLogger('tb_logs', name='CNN')
     # callback = [test_callback()]
@@ -329,12 +334,12 @@ def test_lightning(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/res_intf_bpsk_snr10_all/'
+CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/res_sequential_test_bpsk/'
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="res_intf_bpsk_snr10_all",   # change this for new runs
+    experiment_name="res_sequential_test_bpsk",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------

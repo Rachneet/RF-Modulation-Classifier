@@ -22,6 +22,8 @@ import plotly.io as pio
 plotly.io.orca.config.save()
 pio.renderers.default = 'svg'
 
+from lightning_resnet import *
+
 def evaluate(y_true, y_pred, list_metrics):
 
     output = {}
@@ -43,7 +45,7 @@ def compute_results(csv_path):
     df = pd.read_csv(csv_path, delimiter=",", quoting=csv.QUOTE_MINIMAL)
     # print(df.head())
     groups = df.groupby('SNR')
-    snrs = [5, 10, 15, 20, 25]
+    snrs = [0, 5, 10, 15, 20]
     total_count,result = {},{}
 
     for snr in snrs:
@@ -82,9 +84,8 @@ def inference(datapath, test_set, model_name):
     # unique, counts = np.unique(_labels, return_counts=True)
     # print(np.asarray((unique, counts)).T)
 
-    output_file = open("train_intf_free_test_intf_ofdm.txt", "w")
+    output_file = open(datapath+"res_train_intf_free_test_intf_bpsk.txt", "w")
     model = torch.load(datapath+model_name, map_location='cuda:0')
-    # ica = FastICA(n_components=256,tol=1e-5,max_iter=1000)
     model.eval()
 
     with torch.no_grad():
@@ -119,7 +120,7 @@ def inference(datapath, test_set, model_name):
         # test_pred = np.argmax(test_prob, -1)
 
     fieldnames = ['True_label', 'Predicted_label', 'SIR']
-    with open(datapath + "output_train_intf_free_test_intf_ofdm.csv", 'w',encoding='utf-8') as csv_file:
+    with open(datapath + "output_res_train_intf_free_test_intf_bpsk.csv", 'w',encoding='utf-8') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames, quoting=csv.QUOTE_NONNUMERIC)
         writer.writeheader()
         for i, j, k in zip(np.argmax(test_true, -1), np.argmax(test_prob, -1), snr_vals):
@@ -265,10 +266,10 @@ if __name__ == "__main__":
 
     # ---------------------------------------MAIN-------------------------------------------------------
     # training_params = {'batch_size':512, 'num_workers':10}
-    # datapath = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_ofdm_snr10_1024.h5"
+    # datapath = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_snr10_1024.h5"
     # _, _, test_set = load_data(datapath, 0.05, 0.2, **training_params)
     # inf_path = "/media/backup/Arsenal/thesis_results/"
-    # inference(inf_path, test_set, "trained_cnn_no_intf_usrp_all")
+    # inference(inf_path, test_set, "res_intf_free_usrp_all/epoch=4.ckpt")
     # pass
 
     # -------------PLot individual conf maps------------------------------------------------------------
@@ -289,7 +290,7 @@ if __name__ == "__main__":
 
     # -------------------Plot collective conf maps-----------------------------------------------------
 
-    count,output = compute_results(datapath+"tl_intf_free_intf_ofdm/output.csv")
+    count,output = compute_results(datapath+"output_usrp_all_test.csv")
     # print(count,output)
     # print(count)
     for k,v in output.items():

@@ -1,6 +1,6 @@
 import numpy as np
 from Receiver import *
-from dataloader import label_idx
+from dataloader import *
 from cnn_model import *
 import torch
 from torch.autograd import Variable
@@ -820,10 +820,11 @@ def plt_tl_chart():
     # acc = [0.82,0.86,0.87,0.88,0.89]
     # acc2 = [0.83,0.86,0.86,0.87,0.87]
     # acc3 = [0.71,0.80,0.86,0.87,0.87]
-    acc = [0.72, 0.76, 0.79, 0.80, 0.80]
-    acc2 = [0.62,0.74,0.77,0.78,0.78]
+    acc = [0.69,0.78,0.80,0.82,0.82]
+    acc2 = [0.66,0.76,0.79,0.80,0.80]
 
     fig = go.Figure()
+    # fig = plotly.subplots.make_subplots(specs=[[{"secondary_y": True}]], print_grid=True)
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc,
@@ -840,7 +841,7 @@ def plt_tl_chart():
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc2,
-        name='Transfer <br>Learning',
+        name='Transfer <br>Learning (TL)',
         text=acc2,
         textfont=dict(color='black', size=10),
         textposition='auto',
@@ -850,29 +851,33 @@ def plt_tl_chart():
         # offset=0.02
     ))
 
-    fig.add_trace(go.Line(
+    fig.add_trace(go.Scatter(
         x=sirs,
-        y=[26]*5,
-        name='Training time',
+        y=[0.23]*5,
+        name='Training time <br> with TL',
+        mode='lines+markers',
         # text=acc2,
         # textfont=dict(color='black', size=10),
         # textposition='auto',
-        marker_color='#f4b247',
-        marker_line_color='#ff7f0e',
+        marker_color='rgba(5, 112, 176, .8)',
+        # marker_color='#f4b247',
+        # marker_line_color='#ff7f0e',
         yaxis='y2'
         # width=0.25,
         # offset=0.02
     ))
 
-    fig.add_trace(go.Line(
+    fig.add_trace(go.Scatter(
         x=sirs,
-        y=[232] * 5,
-        name='Training time',
+        y=[3.71] * 5,
+        name='Training time <br>w/o TL',
+        mode='lines+markers',
         # text=acc2,
         # textfont=dict(color='black', size=10),
         # textposition='auto',
-        marker_color='#66c56c',
-        marker_line_color='#2ca02c',
+        marker_color='rgba(152, 0, 0, .8)',
+        # marker_color='#66c56c',
+        # marker_line_color='#2ca02c',
         yaxis='y2'
         # width=0.25,
         # offset=0.02
@@ -904,7 +909,7 @@ def plt_tl_chart():
     fig.update_traces(marker_line_width=2, opacity=0.8)
 
     fig.update_layout(
-        title_text='<b>Comparison of Learning Approaches <br>with Interfering BPSK Signals at SNR 10 dB',
+        title_text='<b>Comparison of Learning Approaches <br>with Interfering OFDM Signals at SNR 10 dB',
         title_x=0.50,
         title_y=0.90,
         # yaxis={"mirror": "all"},
@@ -931,22 +936,97 @@ def plt_tl_chart():
             traceorder='normal'
         ),
         yaxis2=dict(
-        title='Training Time (Minutes)',
+        title='Training Time (Hours)',
         title_font=dict(color='black'),
         side='right',
         tickmode='linear',
         tick0=0,
-        dtick=25,
-        range= [0, 300],
+        ticks='inside',
+        dtick=1,
+        range=[0,10],
         overlaying= 'y'
-    )
+    ),
     )
 
-    plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=500, filename='test_bar.html', image='svg')
+    plotly.offline.plot(figure_or_data=fig, image_width=610, image_height=500, filename='test_bar.html', image='svg')
+
+
+def scalability_chart():
+    snrs = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB']
+    acc_256 = [0.463,0.635,0.778,0.882,0.913]
+    acc_512 = [0.519,0.721,0.870,0.960,0.978]
+    acc_1024 = [0.571,0.785,0.915,0.980,0.991]
+    acc_2048 = [0.643,0.864,0.972,0.997,0.999]
+    y_dict = {'256': acc_256, '512': acc_512, '1024': acc_1024, '2048': acc_2048}
+
+    fig = go.Figure()
+    # fig = plotly.subplots.make_subplots(specs=[[{"secondary_y": True}]], print_grid=True)
+    # blue #23aaff, red apple #ff6555, moss green #66c56c, mustard yellow #f4b247
+    names = ['256','512','1024','2048']
+    colors = ['rgba(255, 101, 85, 1)','rgba(35, 170, 255, 1)','rgba(244, 178, 71, 1)','rgba(102, 197, 108, 1)']
+
+    for i in range(len(names)):
+        fig.add_trace(go.Scatter(x=snrs,y=y_dict[names[i]],name=names[i],
+            mode='lines+markers',marker_color=colors[i],
+            # marker_color='#f4b247', marker_line_color='#ff7f0e',
+            # width=0.25
+        ))
+
+    line_ax = [0.5,0.6,0.7,0.8,0.9,1]
+    for i in line_ax:
+        fig.add_shape(type="line",x0=-0.3,y0=i,x1=5,y1=i,
+            line=dict(
+                color="grey",
+                width=1,
+                dash="dashdot",
+            ),
+        )
+
+    fig.update_yaxes(automargin=True, showline=True, ticks="", mirror=True,
+                     linecolor='black', linewidth=1,
+                     tickfont=dict(color="black"),
+                     title=dict(font=dict( color="black",# family="sans-serif",size=15,
+                    ),
+                    text='Accuracy')
+                    )
+
+    fig.update_xaxes(automargin=True, side='bottom', showline=True, ticks='inside',
+                     mirror=True, linecolor='black', linewidth=1,
+                     tickfont=dict(color="black"),
+                     title=dict(font=dict(
+                             # family="sans-serif",
+                             # size=15,
+                             color="black"
+                         ),
+                         text='SNR'
+                     ))
+
+    fig.update_traces(marker_line_width=2)
+    fig.add_annotation(dict(font=dict(color="black", size=10),
+                            x=0.9,
+                            y=0.30,
+                            showarrow=False,
+                            text="Number of IQ samples per signal segment N:",
+                            xref="paper",
+                            yref="paper"))
+    fig.update_layout(
+        title_text='<b>Model Scalability with Number of IQ Samples',
+        title_x=0.50, title_y=0.90,xaxis={"mirror": "all"},
+        paper_bgcolor='white',plot_bgcolor='rgba(0,0,0,0)',
+        width=500,height=500,
+        legend=dict(
+            bordercolor='black',
+            borderwidth=1,
+            bgcolor='rgba(0,0,0,0)',orientation='h',
+            itemsizing='constant',x=0.35,y=0.25,
+            font=dict(size=10, color="black"),traceorder='normal'
+        ),
+    )
+    plotly.offline.plot(figure_or_data=fig, image_width=610, image_height=500, filename='test_line.html', image='svg')
 
 
 if __name__=="__main__":
-    plt_tl_chart()
+    scalability_chart()
     # dataloader.load_batch("/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5")
     # data = np.load("/media/backup/Arsenal/rf_dataset_inets/dataset_interpretation.npz", allow_pickle=True)
     # iq = data['matrix']

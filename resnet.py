@@ -213,6 +213,6 @@ def resnet152(in_channels, n_classes):
 
 
 if __name__=="__main__":
-    model = resnet50(2,8)
+    model = resnet101(2,8)
     # print(summary(model.cuda(),(3,224,224)))
     print(summary(model, torch.ones((1, 1024, 2))))

@@ -23,7 +23,7 @@ from collections import OrderedDict
 import csv
 from scikitplot.metrics import plot_confusion_matrix
 import matplotlib.pyplot as plt
-from intf_processing import compute_ica,featurize
+from intf_processing import *
 from argparse import Namespace
 torch.manual_seed(4)  # for reproducibility of results
 
@@ -76,7 +76,8 @@ class DatasetFromHDF5(Dataset):
             features = featurize(data)
             features = preprocessing.scale(features, with_mean=False).astype(np.float32)
         # -------------------------------------------------------------
-        data = preprocessing.scale(data,with_mean=False).astype(np.float32)
+        # data = preprocessing.scale(data,with_mean=False).astype(np.float32)
+        data = data.astype(np.float32)
         label = label.astype(np.float32)
         snr = snr.astype(np.int8)
 
@@ -152,7 +153,7 @@ class LightningCNN(pl.LightningModule):
 
         # layer 7
         self.fc1 = nn.Sequential(
-            nn.Linear(in_dim,hparams.fc_neurons),
+            nn.Linear(192,hparams.fc_neurons),
             nn.ReLU(),
             nn.Dropout(p=0.5)
         )
@@ -360,16 +361,16 @@ class LightningCNN(pl.LightningModule):
         neptune_logger.experiment.log_metric('test_accuracy', accuracy)
         neptune_logger.experiment.log_metric('test_loss', test_loss_mean)
         # Log charts
-        fig, ax = plt.subplots(figsize=(16, 12))
-        plot_confusion_matrix(self.all_true, self.all_pred, ax=ax)
-        neptune_logger.experiment.log_image('confusion_matrix', fig)
+        # fig, ax = plt.subplots(figsize=(16, 12))
+        # plot_confusion_matrix(self.all_true, self.all_pred, ax=ax)
+        # neptune_logger.experiment.log_image('confusion_matrix', fig)
         # Save checkpoints folder
         neptune_logger.experiment.log_artifact(CHECKPOINTS_DIR + "output.csv")
         result = {'progress_bar': tqdm_dict, 'log': {'test_loss':test_loss_mean}}
         return result
 
 
-    def prepare_data(self, valid_fraction=0.05, test_fraction=0.1):
+    def prepare_data(self, valid_fraction=0.05, test_fraction=0.2):
         dataset = DatasetFromHDF5(self.hparams.data_path, 'iq', 'labels', 'sirs', self.hparams.featurize)
         num_train = len(dataset)
         indices = list(range(num_train))
@@ -442,12 +443,12 @@ def test_lightning(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/intf_ofdm_snr10_all/'
+CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/usrp_2048/'
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="intf_ofdm_snr10_all",   # change this for new runs
+    experiment_name="usrp_2048",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -490,7 +491,7 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_ofdm_snr10_1024.h5"
+    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_usrp_all_2048.h5"
     out_path = "/media/backup/Arsenal/thesis_results/"
 
     parser = ArgumentParser()
@@ -498,7 +499,7 @@ if __name__=="__main__":
     parser.add_argument('--data_path', default=path)
     parser.add_argument('--gpus', default=1)
     parser.add_argument('--max_epochs', default=30)
-    parser.add_argument('--batch_size', default=512)
+    parser.add_argument('--batch_size', default=256)
     parser.add_argument('--num_workers', default=10)
     parser.add_argument('--shuffle', default=False)
     parser.add_argument('--learning_rate', default=1e-2)
@@ -513,8 +514,8 @@ if __name__=="__main__":
     parser.add_argument('--featurize', default=False)
     args = parser.parse_args()
 
-    # main(args)
-    test_lightning(args)
+    main(args)
+    # test_lightning(args)
     # file = h5.File(path,'r')
     # iq, labels, snrs = file['iq'],file['labels'],file['sirs']
     # print(iq.shape)

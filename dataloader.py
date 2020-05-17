@@ -7,6 +7,9 @@ import h5py as h5
 from sklearn import preprocessing
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.sampler import SubsetRandomSampler
+from py_lightning import *
+import math
+from tqdm import tqdm
 
 
 def label_idx(labels):
@@ -167,10 +170,6 @@ def load_batch(path,batch_size=256,mode="train"):
             pass
 
 
-from py_lightning import DatasetFromHDF5
-import math
-
-
 def load_data(data_path, val_fraction, test_fraction, **training_params):
 
     dataset = DatasetFromHDF5(data_path, 'iq', 'labels', 'sirs')
@@ -201,8 +200,77 @@ def load_data(data_path, val_fraction, test_fraction, **training_params):
     return train_dataset, val_dataset, test_dataset
 
 
-if __name__=="__main__":
+def create_set(path, iq, label, sir):
+    iq = iq.reshape(-1,1024,2)
+    label = label.reshape(-1,8)
+    sir = sir.reshape(-1)
+    if not os.path.exists(path):
+        with h5.File(path, 'w') as hdf:
+            hdf.create_dataset('iq', data=iq, chunks=True, maxshape=(None, 1024, 2),
+                               compression='gzip')
+            hdf.create_dataset('labels', data=label, chunks=True, maxshape=(None, 8),
+                               compression='gzip')
+            hdf.create_dataset('sirs', data=sir, chunks=True, maxshape=(None,),
+                               compression='gzip')
+    else:
+        with h5.File(path, 'a') as hf:
+            hf["iq"].resize((hf["iq"].shape[0] + iq.shape[0]), axis=0)
+            hf["iq"][-iq.shape[0]:] = iq
+            hf["labels"].resize((hf["labels"].shape[0] + label.shape[0]), axis=0)
+            hf["labels"][-label.shape[0]:] = label
+            hf["sirs"].resize((hf["sirs"].shape[0] + sir.shape[0]), axis=0)
+            hf["sirs"][-sir.shape[0]:] = sir
 
+
+
+def sequential_set():
+    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_snr10_1024.h5"
+    train_path = "/media/backup/Arsenal/rf_dataset_inets/sequential_sets/train_sequential_intf_bpsk.h5"
+    test_path = "/media/backup/Arsenal/rf_dataset_inets/sequential_sets/test_sequential_intf_bpsk.h5"
+    data = h5.File(path, 'r')
+    iq, labels, sirs = data['iq'], data['labels'], data['sirs']
+    # print(labels.shape)
+    threshold1 = int(0.2*57600)
+    threshold2 = int(0.2*48000)
+    mods = [0,1,2,3,4,5,6,7]
+    for mod in mods:
+        count5, count10, count15, count20, count25 = 0, 0, 0, 0, 0
+        for i in tqdm(range(iq.shape[0])):
+            if label_idx(labels[i]) == mod:
+                if sirs[i] == 5:
+                    if count5 < threshold1:
+                        create_set(test_path, iq[i], labels[i], sirs[i])
+                        count5 += 1
+                    else:
+                        create_set(train_path, iq[i], labels[i], sirs[i])
+                elif sirs[i] == 10:
+                    if count10 < threshold1:
+                        create_set(test_path, iq[i], labels[i], sirs[i])
+                        count10 += 1
+                    else:
+                        create_set(train_path, iq[i], labels[i], sirs[i])
+                elif sirs[i] == 15:
+                    if count15 < threshold1:
+                        create_set(test_path, iq[i], labels[i], sirs[i])
+                        count15 += 1
+                    else:
+                        create_set(train_path, iq[i], labels[i], sirs[i])
+                elif sirs[i] == 20:
+                    if count20 < threshold1:
+                        create_set(test_path, iq[i], labels[i], sirs[i])
+                        count20 += 1
+                    else:
+                        create_set(train_path, iq[i], labels[i], sirs[i])
+                elif sirs[i] == 25:
+                    if count25 < threshold2:
+                        create_set(test_path, iq[i], labels[i], sirs[i])
+                        count25 += 1
+                    else:
+                        create_set(train_path, iq[i], labels[i], sirs[i])
+    # print(count5, count10, count15, count20, count25)
+
+
+if __name__=="__main__":
     # iq = np.array([[[0.2 , 0.2],[0.2 , 0.2]],
     #  [[0.3 , 0.3],[0.2 , 0.2]],
     #  [[0.4 , 0.4],[0.2 , 0.2]],
@@ -243,11 +311,6 @@ if __name__=="__main__":
     #
     # normalize_iq(iq)
 
-    # path_free = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_vsg_cfo1_all.h5"
-    # # path = "/media/backup/Arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/GOLD_XYZ_OSC.0001_1024.hdf5"
-    # data = h5.File(path_free,'r')
-    # iq,labels,snrs = data['iq'],data['labels'],data['snrs']
-
     # print(iq.shape)
     # print(labels.shape)
     # label_data = np.array([np.array([0,0,0,0,0,0,0,0,1]) for label in labels[:100]])
@@ -255,5 +318,6 @@ if __name__=="__main__":
     # print(label_data.shape)
     # label_data = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
     # print(label_data.shape)
-    load_batch("/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_usrp_snr20_sir25_1024.h5",mode='')
-
+    # load_batch("/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_usrp_snr20_sir25_1024.h5",mode='')
+    # sequential_set()
+    pass
