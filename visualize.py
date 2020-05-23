@@ -820,8 +820,8 @@ def plt_tl_chart():
     # acc = [0.82,0.86,0.87,0.88,0.89]
     # acc2 = [0.83,0.86,0.86,0.87,0.87]
     # acc3 = [0.71,0.80,0.86,0.87,0.87]
-    acc = [0.69,0.78,0.80,0.82,0.82]
-    acc2 = [0.66,0.76,0.79,0.80,0.80]
+    acc = [0.78,0.86,0.87,0.87,0.87]
+    acc2 = [0.72,0.82,0.85,0.86,0.86]
 
     fig = go.Figure()
     # fig = plotly.subplots.make_subplots(specs=[[{"secondary_y": True}]], print_grid=True)
@@ -851,36 +851,52 @@ def plt_tl_chart():
         # offset=0.02
     ))
 
+    fig.add_shape(type="line", x0=-0.5, y0=7.29, x1=4.5, y1=7.29,
+                  line=dict(
+                      color="#23aaff",
+                      width=2,
+                      dash="dashdot",
+                  ),
+                  yref='y2',
+                  name='Training time <br>with TL'
+                  )
+
+    fig.add_shape(type="line", x0=-0.5, y0=9.57, x1=4.5, y1=9.57,
+                  line=dict(
+                      color="#ff6555",
+                      width=2,
+                      dash="dashdot",
+                  ),
+                  yref='y2',
+                  name='Training time <br>w/o TL'
+                  )
+
     fig.add_trace(go.Scatter(
         x=sirs,
-        y=[0.23]*5,
-        name='Training time <br> with TL',
-        mode='lines+markers',
-        # text=acc2,
-        # textfont=dict(color='black', size=10),
-        # textposition='auto',
+        y=[100]*5,
+        name='Training time <br>with TL',
+        mode='lines',
+        line=dict(
+            color="#23aaff",
+            width=2,
+            dash="dashdot",
+        ),
         marker_color='rgba(5, 112, 176, .8)',
-        # marker_color='#f4b247',
-        # marker_line_color='#ff7f0e',
         yaxis='y2'
-        # width=0.25,
-        # offset=0.02
     ))
 
     fig.add_trace(go.Scatter(
         x=sirs,
-        y=[3.71] * 5,
+        y=[100] * 5,
         name='Training time <br>w/o TL',
-        mode='lines+markers',
-        # text=acc2,
-        # textfont=dict(color='black', size=10),
-        # textposition='auto',
+        mode='lines',
+        line=dict(
+            color="#ff6555",
+            width=2,
+            dash="dashdot",
+        ),
         marker_color='rgba(152, 0, 0, .8)',
-        # marker_color='#66c56c',
-        # marker_line_color='#2ca02c',
         yaxis='y2'
-        # width=0.25,
-        # offset=0.02
     ))
 
     fig.update_yaxes(automargin=True,showline=True,ticks='inside',mirror=True,
@@ -921,13 +937,13 @@ def plt_tl_chart():
         width=500,
         height=500,
         legend=dict(
-            # bordercolor='black',
-            # borderwidth=1,
+            bordercolor='black',
+            borderwidth=1,
             bgcolor='rgba(0,0,0,0)',
             orientation='h',
             itemsizing='constant',
             x=0,
-            y=1,
+            y=-0.2,
             font=dict(
                 # family="sans-serif",
                 size=10,
@@ -942,8 +958,8 @@ def plt_tl_chart():
         tickmode='linear',
         tick0=0,
         ticks='inside',
-        dtick=1,
-        range=[0,10],
+        dtick=5,
+        range=[0,25],
         overlaying= 'y'
     ),
     )
@@ -974,7 +990,7 @@ def scalability_chart():
 
     line_ax = [0.5,0.6,0.7,0.8,0.9,1]
     for i in line_ax:
-        fig.add_shape(type="line",x0=-0.3,y0=i,x1=5,y1=i,
+        fig.add_shape(type="line",x0=-0.3,y0=i,x1=4.3,y1=i,
             line=dict(
                 color="grey",
                 width=1,
@@ -1024,9 +1040,173 @@ def scalability_chart():
     )
     plotly.offline.plot(figure_or_data=fig, image_width=610, image_height=500, filename='test_line.html', image='svg')
 
+def plot_constellation():
+
+    trace1 = {
+        "mode": "markers+text",
+        # "name": "BPSK constellation",
+        "type": "scatter",
+        "x": [-1, 1],
+        "y": [0,0],
+        "marker": {"size": [10, 10], "color": '#ff6555'},
+        "text": ["0", "1"],
+        "textfont": {"size": 14,"color":"black","family":'Times New Roman'},
+        "textposition": ["top center","top center"],
+        "line": {'color':'black','width':12},
+    }
+
+    trace2 = {
+        "mode": "markers+text",
+        # "name": "QPSK constellation",
+        "type": "scatter",
+        "x": [-0.71, -0.71, 0.71, 0.71],
+        "y": [-0.71, 0.71, -0.71, 0.71],
+        "marker": {"size": [10, 10, 10, 10], "color": '#ff6555'},
+        "text": [" 00", " 01", "10 ", "11 "],
+        "textfont": {"size": 14,"color":"black","family":'Times New Roman'},
+        # "textposition": ["top center"]*4,
+        "textposition": ["middle right", "middle right", "middle left", "middle left"],
+        "line": {'color': 'black', 'width': 12},
+    }
+
+    i1,q1 = [],[]
+    for i in range(-3,4,2):
+        for j in range(-3,4,2):
+            i1.append(i/math.sqrt(10))
+            q1.append(j/math.sqrt(10))
+
+    i2, q2 = [], []
+    for i in range(-7, 8, 2):
+        for j in range(-7, 8, 2):
+            i2.append(i / math.sqrt(42))
+            q2.append(j / math.sqrt(42))
+
+    trace3 = {
+        "mode": "markers+text",
+        # "name": "QPSK constellation",
+        "type": "scatter",
+        "x": i1,
+        "y": q1,
+        "marker": {"size": [10]*16, "color": '#ff6555'},
+        "text": ["1111", "1110", "1010", "1011",
+                 "1101","1100","1000","1001",
+                 "0101","0100","0000","0001",
+                 "0111","0110","0010","0011"],
+        "textfont": {"size": 14 , "color":"black", "family":'Times New Roman'},
+        "textposition": ["top center"]*16,
+        "line": {'color': 'black', 'width': 12},
+    }
+
+    trace4 = {
+        "mode": "markers+text",
+        # "name": "QPSK constellation",
+        "type": "scatter",
+        "x": i2,
+        "y": q2,
+        "marker": {"size": [10] * 64, "color": '#ff6555'},
+        # "text": ["000000"]*64,
+        # "textfont": {"size": 8,"color":"black"},
+        # "textposition": ["top center"]*64,
+        "line": {'color': 'black', 'width': 12},
+    }
+
+    shape1 = dict(x0= -1.05,
+        x1= 1.05,
+        y0= 0,
+        y1= 0,
+        line=dict(color= "black", dash="dot",width=1),
+        type="line",
+        xref="x",
+        yref="y")
+
+    shape2 = dict(x0= 0,
+        x1=0,
+        y0=-1.05,
+        y1= 1.05,
+        line=dict(color= "black", dash="dot",width=1),
+        type="line",
+        xref="x",
+        yref="y")
+
+    # data = [trace1]
+    # fig = go.Figure(data)
+    fig = plotly.subplots.make_subplots(rows=2, cols=2, horizontal_spacing=0.2,vertical_spacing=0.2,
+                                        subplot_titles=("(a) BPSK, M=1","(b) QPSK, M=2","(c) 16-QAM, M=4",
+                                                        "(d) 64-QAM, M=6"))
+    fig.add_trace(trace1, row=1, col=1)
+    fig.add_shape(shape1, row=1, col=1)
+    fig.add_shape(shape2, row=1, col=1)
+    fig.add_trace(trace2, row=1, col=2)
+    fig.add_shape(shape1, row=1, col=2)
+    fig.add_shape(shape2, row=1, col=2)
+    fig.add_trace(trace3, row=2, col=1)
+    fig.add_shape(shape1, row=2, col=1)
+    fig.add_shape(shape2, row=2, col=1)
+    fig.add_trace(trace4, row=2, col=2)
+    fig.add_shape(shape1, row=2, col=2)
+    fig.add_shape(shape2, row=2, col=2)
+
+    row = [1,2]
+    col = [1,2]
+    for i in row:
+        for j in col:
+            fig.update_yaxes(showline=True, mirror='all',ticks='inside',
+                             linecolor='black', linewidth=1,
+                             tickfont=dict(family='Times New Roman',color="black", size=22),
+                             tickmode='linear',
+                             ticklen=10,
+                             tick0=-1.5,
+                             dtick=0.5,
+                             range=[-1.62, 1.62],
+                             title=dict(font=dict(family='Times New Roman',color="black",  # family="sans-serif",size=15,
+                                                size=22),
+                                        text='Quadrature',
+                                        standoff=5),
+                             row=i, col=j
+                             )
+
+            fig.update_xaxes(side='bottom', showline=True, ticks='inside',
+                             mirror='all', linecolor='black', linewidth=1,
+                             tickfont=dict(family='Times New Roman',color="black", size=22),
+                             tickmode='linear',
+                             ticklen=10,
+                             tick0=-1.5,
+                             dtick=0.5,
+                             range=[-1.62, 1.62],
+                             title=dict(font=dict(
+                                 family='Times New Roman',
+                                 size=22,
+                                 color="black"
+                             ),
+                                 text='In-phase'),
+                             row=i, col=j)
+
+
+
+    fig.update_layout(
+        # title_text='<b>Model Scalability with Number of IQ Samples',
+        # title_x=0.50, title_y=0.90,
+        paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
+        # width=500, height=500,
+        showlegend = False,
+    )
+    for i in fig['layout']['annotations']:
+        i['font'] = dict(size=20, color='black',family='Times New Roman')
+    # image_width=500, image_height=500
+    plotly.offline.plot(figure_or_data=fig,image_width=800, image_height=800,filename='const.html', image='svg')
+
+
+# def plot_rc_filter():
+#
+
+
 
 if __name__=="__main__":
-    scalability_chart()
+    plot_constellation()
+    # n = 4
+    # for i in range(16):
+    #     b = bin(i)[2:].zfill(n)
+    #     print(b)
     # dataloader.load_batch("/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5")
     # data = np.load("/media/backup/Arsenal/rf_dataset_inets/dataset_interpretation.npz", allow_pickle=True)
     # iq = data['matrix']

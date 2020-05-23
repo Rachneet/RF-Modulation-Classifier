@@ -153,7 +153,7 @@ class LightningCNN(pl.LightningModule):
 
         # layer 7
         self.fc1 = nn.Sequential(
-            nn.Linear(192,hparams.fc_neurons),
+            nn.Linear(hparams.fc_neurons,hparams.fc_neurons),
             nn.ReLU(),
             nn.Dropout(p=0.5)
         )
@@ -443,12 +443,12 @@ def test_lightning(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/usrp_2048/'
+CHECKPOINTS_DIR = '/home/rachneet/thesis_results/test/'
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="usrp_2048",   # change this for new runs
+    experiment_name="test",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -491,14 +491,14 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_usrp_all_2048.h5"
-    out_path = "/media/backup/Arsenal/thesis_results/"
+    path = "/media/rachneet/arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20.h5"
+    out_path = "/home/rachneet/thesis_results/"
 
     parser = ArgumentParser()
     parser.add_argument('--output_path', default=out_path)
     parser.add_argument('--data_path', default=path)
     parser.add_argument('--gpus', default=1)
-    parser.add_argument('--max_epochs', default=30)
+    parser.add_argument('--max_epochs', default=1)
     parser.add_argument('--batch_size', default=256)
     parser.add_argument('--num_workers', default=10)
     parser.add_argument('--shuffle', default=False)

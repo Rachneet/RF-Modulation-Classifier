@@ -45,7 +45,7 @@ def compute_results(csv_path):
     df = pd.read_csv(csv_path, delimiter=",", quoting=csv.QUOTE_MINIMAL)
     # print(df.head())
     groups = df.groupby('SNR')
-    snrs = [0, 5, 10, 15, 20]
+    snrs = [5, 10, 15, 20, 25]
     total_count,result = {},{}
 
     for snr in snrs:
@@ -270,10 +270,10 @@ if __name__ == "__main__":
     # _, _, test_set = load_data(datapath, 0.05, 0.2, **training_params)
     # inf_path = "/media/backup/Arsenal/thesis_results/"
     # inference(inf_path, test_set, "res_intf_free_usrp_all/epoch=4.ckpt")
-    # pass
+    pass
 
     # -------------PLot individual conf maps------------------------------------------------------------
-    datapath = "/media/backup/Arsenal/thesis_results/"
+    # datapath = "/media/backup/Arsenal/thesis_results/"
     # file = datapath+'output_train_intf_free_test_intf_bpsk.csv'
     # df = pd.read_csv(file)
     # print(df.tail())
@@ -290,14 +290,14 @@ if __name__ == "__main__":
 
     # -------------------Plot collective conf maps-----------------------------------------------------
 
-    count,output = compute_results(datapath+"output_usrp_all_test.csv")
-    # print(count,output)
-    # print(count)
-    for k,v in output.items():
-        # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_16qam_snr_"+str(k),k)
-        # print(v['confusion_matrix'])
-
-        print(v['accuracy'])
+    # count,output = compute_results(datapath+"res_tl_usrp_intf_ofdm/output.csv")
+    # # print(count,output)
+    # # print(count)
+    # for k,v in output.items():
+    #     # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_16qam_snr_"+str(k),k)
+    #     # print(v['confusion_matrix'])
+    #
+    #     print(v['accuracy'])
 
     # --------------------------------CFO correction--------------------------------------------------
 
