@@ -7,14 +7,16 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import random
+from tqdm import tqdm
 from PIL import Image
-import librosa
-import librosa.display
+# import librosa
+# import librosa.display
 import h5py as h5
 import os
 import cv2
 import gc
 import csv
+from ast import literal_eval
 from sklearn import preprocessing
 from tqdm import tqdm
 import scipy.signal as sig
@@ -23,6 +25,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 # plotting libraries
 import plotly
+import commpy
 import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
@@ -81,42 +84,36 @@ def save_cnn_features():
     # data = np.load("/media/backup/Arsenal/rf_dataset_inets/dataset_interpretation.npz", allow_pickle=True)
     # iq = data['matrix']
     # labels = data['labels']
-    path_h5 = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5"
-    iq, labels, snrs = reader.read_hdf5(path_h5)
-    df = pd.DataFrame()
-    df['iq'] = list(map(lambda x: np.array(x, dtype=np.float32), iq))
-    df['normalized_iq'] = df.iq.apply(lambda x: preprocessing.scale(x, with_mean=False))
-    df.drop('iq', axis=1, inplace=True)
-    df['labels'] = list(map(lambda x: np.array(x, dtype=np.float32), labels))
-    df = df.sample(frac=1, random_state=4)
-    train_bound = int(0.75 * df.labels.shape[0])
+    path_h5 = "/media/rachneet/arsenal/rf_dataset_inets/vsg_no_intf_all_normed.h5"
+    training_params = {'batch_size': 512, 'num_workers': 10}
+    train_set, val_set, test_set = load_data(path_h5,0.05,0.2,**training_params)
 
-    x_train = DataLoader(df['normalized_iq'][:train_bound].values,batch_size=512,shuffle=False)
-    y_train = DataLoader(df['labels'][:train_bound].values,batch_size=512,shuffle=False)
-
-    model = torch.load("trained_cnn_intf_free_vsg20",map_location='cuda:0')
+    model = torch.load("/home/rachneet/thesis_results/trained_cnn_no_intf_vsg_all",map_location='cuda:0')
     model.eval()
-    activations = SaveFeatures(list(model.children())[7])
+    # print(list(model.children())[5])
+    activations = SaveFeatures(list(model.children())[5])   # using last conv layer
+    # print(list(model.children())[5])
+    output_path = "/media/rachneet/arsenal/rf_dataset_inets/feature_set_training_conv6_vsg_all.h5"
+    # num_features=8
 
-    output_path = "/media/backup/Arsenal/rf_dataset_inets/feature_set_training_fc8_vsg20.h5"
-    num_features=8
-
-    for iter,batch in enumerate(zip(x_train,y_train)):
+    for batch in tqdm(train_set):
+        print('In loop')
+        print(batch)
         act_features = []
         test_true = []
         test_prob = []
-        _, n_true_label = batch
+        _, n_true_label,_ = batch
 
         batch = [Variable(record).cuda() for record in batch]
 
-        t_data, _ = batch
+        t_data, _,_ = batch
         t_predicted_label = model(t_data)
-        features = t_predicted_label.detach().cpu().data.numpy()
-        # features = activations.features.detach().cpu().data.numpy()
+        # features = t_predicted_label.detach().cpu().data.numpy()
+        features = activations.features.detach().cpu().data.numpy()
         features = features.squeeze()
-        # features = features.reshape(*features.shape[:1],-1)
-        # print(features.shape)
-        # print(features)
+        features = features.reshape(*features.shape[:1],-1)
+        print(features.shape)
+        print(features)
 
         act_features.append(features)
         test_prob.append(t_predicted_label)
@@ -129,23 +126,24 @@ def save_cnn_features():
         print(np.array(act_features).shape)
         # print(y_pred)
         # print(y_true)
+        break
 
-        if not os.path.exists(output_path):
-            with h5.File(output_path,'w') as hdf:
-                hdf.create_dataset('features',data=act_features,chunks=True,maxshape=(None,num_features),compression='gzip')
-                hdf.create_dataset('pred_labels', data=y_pred, chunks=True, maxshape=(None,), compression='gzip')
-                hdf.create_dataset('true_labels', data=y_true, chunks=True, maxshape=(None,), compression='gzip')
-                print(hdf['features'].shape)
-
-        else:
-            with h5.File(output_path, 'a') as hf:
-                hf["features"].resize((hf["features"].shape[0] + act_features.shape[0]), axis=0)
-                hf["features"][-act_features.shape[0]:] = act_features
-                hf["pred_labels"].resize((hf["pred_labels"].shape[0] + y_pred.shape[0]), axis=0)
-                hf["pred_labels"][-y_pred.shape[0]:] = y_pred
-                hf["true_labels"].resize((hf["true_labels"].shape[0] + y_true.shape[0]), axis=0)
-                hf["true_labels"][-y_true.shape[0]:] = y_true
-                print(hf['features'].shape)
+        # if not os.path.exists(output_path):
+        #     with h5.File(output_path,'w') as hdf:
+        #         hdf.create_dataset('features',data=act_features,chunks=True,maxshape=(None,num_features),compression='gzip')
+        #         hdf.create_dataset('pred_labels', data=y_pred, chunks=True, maxshape=(None,), compression='gzip')
+        #         hdf.create_dataset('true_labels', data=y_true, chunks=True, maxshape=(None,), compression='gzip')
+        #         print(hdf['features'].shape)
+        #
+        # else:
+        #     with h5.File(output_path, 'a') as hf:
+        #         hf["features"].resize((hf["features"].shape[0] + act_features.shape[0]), axis=0)
+        #         hf["features"][-act_features.shape[0]:] = act_features
+        #         hf["pred_labels"].resize((hf["pred_labels"].shape[0] + y_pred.shape[0]), axis=0)
+        #         hf["pred_labels"][-y_pred.shape[0]:] = y_pred
+        #         hf["true_labels"].resize((hf["true_labels"].shape[0] + y_true.shape[0]), axis=0)
+        #         hf["true_labels"][-y_true.shape[0]:] = y_true
+        #         print(hf['features'].shape)
 
 
 
@@ -472,46 +470,55 @@ def deep_dream(iq_sample):
 
 
 def plot_barchart():
-    sirs = ['5 dB','10 dB','15 dB','20 dB','25 dB']
+    sirs = ['5 dB','10 dB','15 dB','20 dB','5-20 dB']
     # acc = [0.82,0.86,0.87,0.88,0.89]
     # acc2 = [0.83,0.86,0.86,0.87,0.87]
     # acc3 = [0.71,0.80,0.86,0.87,0.87]
-    acc = [0.72,0.76,0.79,0.80,0.80]
-    acc2 = [0.75,0.80,0.80,0.81,0.81]
-    acc3 = [0.69,0.78,0.80,0.82,0.82]
+    # acc = [0.72,0.76,0.79,0.80,0.77]  # cnn intf
+    # acc2 = [0.75,0.80,0.80,0.81,0.79]
+    # acc3 = [0.69,0.78,0.80,0.82,0.77]
+    acc = [0.35,0.54,0.68,0.69,0.57]  # cnn intf generalize
+    acc2 = [0.37,0.61,0.75,0.77,0.63]
+    acc3 = [0.38,0.65,0.73,0.75,0.63]
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc,
-        name='SC_BPSK',
+        name="                             ",#'SC_BPSK',
         text=acc,
         textfont=dict(color='black', size=10),
         textposition='auto',
-        marker_color='#ff6555',
-        marker_line_color='#d62728'
+        # marker_color='#ff6555',
+        # marker_line_color='#d62728'
+        marker_color='rgb(128,125,186)',  # purple
+        marker_line_color='rgb(84,39,143)'
     ))
 
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc2,
-        name='SC_16QAM',
+        name="                                  ",#'SC_16QAM',
         text=acc2,
         textfont=dict(color='black', size=10),
         textposition='auto',
-        marker_color='#66c56c',
-        marker_line_color='#2ca02c'
+        # marker_color='#66c56c',
+        # marker_line_color='#2ca02c'
+        marker_color='#23aaff', # blue
+        marker_line_color='#1f77b4'
     ))
 
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc3,
-        name='OFDM_64QAM',
+        name="                             ",#'OFDM_64QAM',
         text=acc3,
         textfont=dict(color='black', size=10),
         textposition='auto',
-        marker_color='#f4b247',
-        marker_line_color='#ff7f0e'
+        # marker_color='#f4b247',
+        # marker_line_color='#ff7f0e'
+        marker_color='rgb(253,141,60)',  # orange
+        marker_line_color='rgb(241,105,19)'
     ))
 
     fig.update_yaxes(automargin=True,
@@ -524,39 +531,43 @@ def plot_barchart():
                      tick0=0,
                      dtick=0.1,
                      range=[0,1],
+                     tickfont=dict(family="times new roman", size=15, color='black'),
                      title=dict(
                          font=dict(
-                             # family="sans-serif",
-                             size=15,
+                             family="times new roman",
+                             size=14,
                              color="black"
                          ),
-                     text='Accuracy')
-                     )
+                     # text='Accuracy')
+                     ))
     fig.update_xaxes(automargin=True, side='bottom',
                      showline=True,
                      ticks='outside',
                      mirror=True,
                      linecolor='black',
                      linewidth=1,
+                     tickfont=dict(family="times new roman", size=15, color='black'),
                      title=dict(
                          font=dict(
-                             # family="sans-serif",
-                             size=15,
+                             family="times new roman",
+                             size=14,
                              color="black"
                          ),
-                     text='SIR'
+                     # text='SIR'
                      )
                      )
     # Customize aspect
     # marker_line_color = '#d62728'
 
     # blue #23aaff, red apple #ff6555, moss green #66c56c, mustard yellow #f4b247
-    fig.update_traces(marker_line_width=2, opacity=0.8)
+    fig.update_traces(marker_line_width=1, opacity=0.8)
 
     fig.update_layout(
-        title_text='<b>CNN Performance with Interfering Signals <br>at SNR 10 dB',
-        title_x=0.50,
-        title_y=0.95,
+        # title_text='<b>CNN Performance with Interfering Signals <br>at SNR 10 dB',
+        # title_x=0.50,
+        # title_y=0.95,
+        margin=dict(b=350, l=0, r=170, t=20),
+        yaxis={"mirror": "all"},
         paper_bgcolor='white',
         plot_bgcolor='rgba(0,0,0,0)',
         bargap=0.2,
@@ -568,8 +579,9 @@ def plot_barchart():
             bgcolor='rgba(0,0,0,0)',
             orientation='h',
             itemsizing='constant',
-            x=0,
-            y=1,
+            # x=0.25,
+            x=0.1,
+            y=1.2,
             font=dict(
                 # family="sans-serif",
                 size=10,
@@ -618,22 +630,27 @@ def plot_heatmap():
                                    outlinewidth=1,
                                    ticks='outside',
                                    tickmode='linear',
+                                    tickfont=dict(
+                                        family="times new roman",
+                                        size=14,
+                                        color="black"
+                                    ),
                                    tick0=0,
                                    dtick=0.1,
-                                   len=1.05
+                                   len=1.08
                                    )
-    fig.update_layout(title_text='<b>CNN Performance <br>with Transfer Learning Approach',
-                      # xaxis = dict(title='x'),
-                      # yaxis = dict(title='x')
-                      )
+    # fig.update_layout(title_text='<b>CNN Performance <br>with Transfer Learning Approach',
+    #                   # xaxis = dict(title='x'),
+    #                   # yaxis = dict(title='x')
+    #                   )
     # add custom colorbar title
-    fig.add_annotation(dict(font=dict(color="black"), #size=14),
-                            x=1.13,
-                            y=1.07,
-                            showarrow=False,
-                            text="Accuracy",
-                            xref="paper",
-                            yref="paper"))
+    # fig.add_annotation(dict(font=dict(color="black"), #size=14),
+    #                         x=1.13,
+    #                         y=1.07,
+    #                         showarrow=False,
+    #                         text="Accuracy",
+    #                         xref="paper",
+    #                         yref="paper"))
 
     fig.update_yaxes(automargin=True,
                      showline=True,
@@ -642,6 +659,11 @@ def plot_heatmap():
                      linecolor='black',
                      linewidth=0.5,
                      color='black',
+                     tickfont=dict(
+                         family="times new roman",
+                         size=14,
+                         color="black"
+                     ),
                      title=dict(
                          font=dict(
                              # family="sans-serif",
@@ -656,6 +678,11 @@ def plot_heatmap():
                      linecolor='black',
                      linewidth=0.5,
                      color='black',
+                     tickfont=dict(
+                         family="times new roman",
+                         size=14,
+                         color="black"
+                     ),
                      title=dict(
                          font=dict(
                              # family="sans-serif",
@@ -663,25 +690,25 @@ def plot_heatmap():
                              color="black",
                          )),
                      )
-    # add custom xaxis title
-    fig.add_annotation(dict(font=dict(color="black", size=14),
-                            x=0.5,
-                            y=1.15,
-                            showarrow=False,
-                            text="SNR (Test)",
-                            xref="paper",
-                            yref="paper"))
-    # add custom yaxis title
-    fig.add_annotation(dict(font=dict(color="black", size=14),
-                            x=-0.15,
-                            y=0.5,
-                            showarrow=False,
-                            textangle=-90,
-                            text="SNR (Train)",
-                            xref="paper",
-                            yref="paper"))
+    # # add custom xaxis title
+    # fig.add_annotation(dict(font=dict(color="black", size=14),
+    #                         x=0.5,
+    #                         y=1.15,
+    #                         showarrow=False,
+    #                         text="SNR (Test)",
+    #                         xref="paper",
+    #                         yref="paper"))
+    # # add custom yaxis title
+    # fig.add_annotation(dict(font=dict(color="black", size=14),
+    #                         x=-0.15,
+    #                         y=0.5,
+    #                         showarrow=False,
+    #                         textangle=-90,
+    #                         text="SNR (Train)",
+    #                         xref="paper",
+    #                         yref="paper"))
     fig.update_layout(
-        margin=dict(b=100, l=150, r=150),
+        margin=dict(b=300, l=150, r=350,t=20),
         title_x=0.50,
         title_y=0.1,
         paper_bgcolor="white",
@@ -711,35 +738,49 @@ def plot_heatmap():
 
 
 def draw_comparison_chart():
-    sirs = ['5 dB', '10 dB', '15 dB', '20 dB', '25 dB']
 
-    acc = [0.69,0.78,0.80,0.82,0.82]
-    acc2 = [0.78,0.86,0.87,0.87,0.87]
+    sirs = ['5dB', '10dB', '15dB', '20dB', '5-20dB']
+    acc = [0.75,0.80,0.80,0.81,0.79]
+    # acc2 = [0.57,0.79,0.91,0.98,0.99,0.85]  # usrp
+    acc2 = [0.81,0.85,0.86,0.86,0.85]
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc,
-        name='CNN (9-Layer)',
-        text=acc,
-        textfont=dict(color='black', size=10),
-        textposition='auto',
-        marker_color='#ff6555',
+        name="             ",
+        # name="                     ",  # 'CNN (9-Layer)',
+        # text=acc,
+        # textfont=dict(color='black', size=10),
+        # textposition='auto',
+        # marker_color='#66c56c',  # green
+        # marker_line_color='#2ca02c',
+        marker_color='#ff6555', # red
         marker_line_color='#d62728',
-        # width=0.25,
+        # marker_color='rgb(128,125,186)',  # purple
+        # marker_line_color='rgb(84,39,143)',
+        # marker_color='#23aaff', # blue
+        # marker_line_color='#1f77b4',
+        # width=0.35,
         # offset=-0.32
     ))
 
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc2,
-        name='ResNet-101',
-        text=acc2,
-        textfont=dict(color='black', size=10),
-        textposition='auto',
-        marker_color='#66c56c',
+        name="",  #'ResNet-101',
+        # text=acc2,
+        # textfont=dict(color='black', size=10),
+        # textposition='auto',
+        # marker_color='#f4b247',  # yellow
+        # marker_line_color='#ff7f0e',
+        marker_color='#66c56c',  # green
         marker_line_color='#2ca02c',
-        # width=0.25,
+        # marker_color='#23aaff', # blue
+        # marker_line_color='#1f77b4',
+        # marker_color='#ff6555', # red
+        # marker_line_color='#d62728',
+        # width=0.35,
         # offset=0.02
     ))
 
@@ -748,6 +789,7 @@ def draw_comparison_chart():
                      showline=True,
                      ticks='inside',
                      mirror=True,
+                     tickfont=dict(family="times new roman",size=16,color='black'),
                      linecolor='black',
                      linewidth=1,
                      tickmode='linear',
@@ -760,12 +802,13 @@ def draw_comparison_chart():
                              size=15,
                              color="black"
                          ),
-                         text='Accuracy')
-                     )
+                         # text='Accuracy')
+                     ))
     fig.update_xaxes(automargin=True, side='bottom',
                      showline=True,
                      ticks='outside',
                      mirror=True,
+                     tickfont=dict(family="times new roman",size=16,color='black'),
                      linecolor='black',
                      linewidth=1,
                      title=dict(
@@ -774,17 +817,18 @@ def draw_comparison_chart():
                              size=15,
                              color="black"
                          ),
-                         text='SIR'
+                         # text='SIR'
                      )
                      )
     # Customize aspect
     # marker_line_color = '#d62728'
 
     # blue #23aaff, red apple #ff6555, moss green #66c56c, mustard yellow #f4b247
-    fig.update_traces(marker_line_width=2, opacity=0.8)
+    fig.update_traces(marker_line_width=1, opacity=0.8)
 
     fig.update_layout(
-        title_text='<b>Model Comparison with Interfering OFDM Signals <br>at SNR 10 dB',
+        # title_text='<b>Model Comparison with Interfering OFDM Signals <br>at SNR 10 dB',
+        margin=dict(b=160, l=0, r=150, t=20),
         title_x=0.50,
         title_y=0.90,
         yaxis={"mirror": "all"},
@@ -793,16 +837,18 @@ def draw_comparison_chart():
         bargap=0.2,
         barmode='group',
         bargroupgap=0.1,
-        width=500,
-        height=500,
+        # width=500,
+        # height=500,
+        # showlegend=False
         legend=dict(
             # bordercolor='black',
             # borderwidth=1,
             bgcolor='rgba(0,0,0,0)',
             orientation='h',
             itemsizing='constant',
-            x=0,
-            y=1,
+            # x=0.4,  # for hw comp
+            x=-0.05, #for model comp
+            y=1.2,
             font=dict(
                 # family="sans-serif",
                 size=10,
@@ -812,25 +858,29 @@ def draw_comparison_chart():
         )
     )
 
-    plotly.offline.plot(figure_or_data=fig,image_width=600, image_height=500, filename='test_bar.html', image='svg')
+    plotly.offline.plot(figure_or_data=fig,image_width=400, image_height=400, filename='test_bar.html', image='svg')
 
 
 def plt_tl_chart():
-    sirs = ['5 dB', '10 dB', '15 dB', '20 dB', '25 dB']
+    sirs = ['5dB', '10dB', '15dB', '20dB', '0-20dB']
     # acc = [0.82,0.86,0.87,0.88,0.89]
     # acc2 = [0.83,0.86,0.86,0.87,0.87]
     # acc3 = [0.71,0.80,0.86,0.87,0.87]
-    acc = [0.78,0.86,0.87,0.87,0.87]
-    acc2 = [0.72,0.82,0.85,0.86,0.86]
+    # acc = [0.72,0.76,0.79,0.80,0.77]
+    # acc2 = [0.62,0.74,0.77,0.78,0.73]
+    acc = [0.75,0.80,0.80,0.81,0.79]
+    acc2 = [0.71,0.80,0.82,0.82,0.79]
+    # acc = [0.69,0.78,0.80,0.82,0.77]
+    # acc2 = [0.66,0.76,0.79,0.80,0.75]
 
     fig = go.Figure()
     # fig = plotly.subplots.make_subplots(specs=[[{"secondary_y": True}]], print_grid=True)
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc,
-        name='Traditional <br>Learning',
-        text=acc,
-        textfont=dict(color='black', size=10),
+        name="                  ",#'Traditional <br>Learning',
+        # text=acc,
+        # textfont=dict(color='black', size=10),
         textposition='auto',
         marker_color='#66c56c',
         marker_line_color='#2ca02c',
@@ -841,9 +891,9 @@ def plt_tl_chart():
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc2,
-        name='Transfer <br>Learning (TL)',
-        text=acc2,
-        textfont=dict(color='black', size=10),
+        name="                  ",#'Transfer <br>Learning (TL)',
+        # text=acc2,
+        # textfont=dict(color='black', size=10),
         textposition='auto',
         marker_color='#f4b247',
         marker_line_color='#ff7f0e'
@@ -851,72 +901,91 @@ def plt_tl_chart():
         # offset=0.02
     ))
 
-    fig.add_shape(type="line", x0=-0.5, y0=7.29, x1=4.5, y1=7.29,
+    fig.add_shape(type="line", x0=-0.5, y0=1.51, x1=4.5, y1=1.51,
                   line=dict(
                       color="#23aaff",
-                      width=2,
-                      dash="dashdot",
+                      width=4,
+                      dash="dash",
                   ),
                   yref='y2',
-                  name='Training time <br>with TL'
+                  # name='Training time <br>with TL'
+                  # name="                  ",
+
                   )
 
-    fig.add_shape(type="line", x0=-0.5, y0=9.57, x1=4.5, y1=9.57,
+    fig.add_shape(type="line", x0=-0.5, y0=1.85, x1=4.5, y1=1.85,
                   line=dict(
                       color="#ff6555",
-                      width=2,
-                      dash="dashdot",
+                      width=4,
+                      dash="dash",
                   ),
                   yref='y2',
-                  name='Training time <br>w/o TL'
+                  # name='Training time <br>w/o TL'
+                  # name="                  ",
+
                   )
 
-    fig.add_trace(go.Scatter(
-        x=sirs,
-        y=[100]*5,
-        name='Training time <br>with TL',
-        mode='lines',
-        line=dict(
-            color="#23aaff",
-            width=2,
-            dash="dashdot",
-        ),
-        marker_color='rgba(5, 112, 176, .8)',
-        yaxis='y2'
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=sirs,
-        y=[100] * 5,
-        name='Training time <br>w/o TL',
-        mode='lines',
-        line=dict(
-            color="#ff6555",
-            width=2,
-            dash="dashdot",
-        ),
-        marker_color='rgba(152, 0, 0, .8)',
-        yaxis='y2'
-    ))
+    # fig.add_trace(go.Scatter(
+    #     x=sirs,
+    #     y=[100]*5,
+    #     # name='Training time <br>with TL',
+    #     name="              ",
+    #     mode='lines',
+    #     line=dict(
+    #         color="#23aaff",
+    #         width=12,
+    #         dash="dash",
+    #     ),
+    #     marker_color='rgba(5, 112, 176, .8)',
+    #     marker_line_width=8,
+    #     yaxis='y2',
+    #
+    # ))
+    #
+    # fig.add_trace(go.Scatter(
+    #     x=sirs,
+    #     y=[100] * 5,
+    #     # name='Training time <br>w/o TL',
+    #     name="              ",
+    #     mode='lines',
+    #     line=dict(
+    #         color="#ff6555",
+    #         width=12,
+    #         dash="dash",
+    #     ),
+    #     marker_color='rgba(152, 0, 0, .8)',
+    #     marker_line_width=8,
+    #     yaxis='y2'
+    # ))
 
     fig.update_yaxes(automargin=True,showline=True,ticks='inside',mirror=True,
                      linecolor='black',linewidth=1,tickmode='linear',tick0=0,
-                     dtick=0.1,range=[0, 1],title=dict(font=dict(# family="sans-serif",
-                             # size=15,
+                     tickfont=dict(
+                         family="times new roman",
+                         size=22,
+                         color="black"
+                     ),
+                     dtick=0.1,range=[0, 1],title=dict(font=dict(family="times new roman",
+                             size=14,
                              color="black"
                          ),
-                         text='Accuracy')
-                     )
+                         # text='Accuracy')
+                     ))
 
     fig.update_xaxes(automargin=True, side='bottom',showline=True,ticks='outside',
                      mirror=True,linecolor='black',linewidth=1,
+                     tickfont=dict(
+                         family="times new roman",
+                         size=22,
+                         color="black"
+                     ),
                      title=dict(
                          font=dict(
-                             # family="sans-serif",
-                             # size=15,
+                             family="times new roman",
+                             size=14,
                              color="black"
                          ),
-                         text='SIR'
+                         # text='SIR'
                      ))
     # Customize aspect
     # marker_line_color = '#d62728'
@@ -925,10 +994,11 @@ def plt_tl_chart():
     fig.update_traces(marker_line_width=2, opacity=0.8)
 
     fig.update_layout(
-        title_text='<b>Comparison of Learning Approaches <br>with Interfering OFDM Signals at SNR 10 dB',
-        title_x=0.50,
-        title_y=0.90,
+        # title_text='<b>Comparison of Learning Approaches <br>with Interfering OFDM Signals at SNR 10 dB',
+        # title_x=0.50,
+        # title_y=0.90,
         # yaxis={"mirror": "all"},
+        margin=dict(b=220, l=0, r=260, t=20),
         paper_bgcolor='white',
         plot_bgcolor='rgba(0,0,0,0)',
         bargap=0.2,
@@ -936,30 +1006,32 @@ def plt_tl_chart():
         bargroupgap=0.1,
         width=500,
         height=500,
-        legend=dict(
-            bordercolor='black',
-            borderwidth=1,
-            bgcolor='rgba(0,0,0,0)',
-            orientation='h',
-            itemsizing='constant',
-            x=0,
-            y=-0.2,
-            font=dict(
-                # family="sans-serif",
-                size=10,
-                color="black"
-            ),
-            traceorder='normal'
-        ),
+        showlegend=False,
+        # legend=dict(
+        #     # bordercolor='black',
+        #     # borderwidth=1,
+        #     bgcolor='rgba(0,0,0,0)',
+        #     orientation='h',
+        #     itemsizing='constant',
+        #     x=0,
+        #     y=1.2,
+        #     font=dict(
+        #         # family="sans-serif",
+        #         size=10,
+        #         color="black"
+        #     ),
+        #     traceorder='normal'
+        # ),
         yaxis2=dict(
-        title='Training Time (Hours)',
-        title_font=dict(color='black'),
+        # title='Training Time (Hours)',
+        # title_font=dict(color='black'),
         side='right',
         tickmode='linear',
+        tickfont=dict(family='times new roman',size=22,color='black'),
         tick0=0,
         ticks='inside',
-        dtick=5,
-        range=[0,25],
+        dtick=1,
+        range=[0,10],
         overlaying= 'y'
     ),
     )
@@ -982,7 +1054,7 @@ def scalability_chart():
     colors = ['rgba(255, 101, 85, 1)','rgba(35, 170, 255, 1)','rgba(244, 178, 71, 1)','rgba(102, 197, 108, 1)']
 
     for i in range(len(names)):
-        fig.add_trace(go.Scatter(x=snrs,y=y_dict[names[i]],name=names[i],
+        fig.add_trace(go.Scatter(x=snrs,y=y_dict[names[i]],name="         ",#names[i],
             mode='lines+markers',marker_color=colors[i],
             # marker_color='#f4b247', marker_line_color='#ff7f0e',
             # width=0.25
@@ -1000,34 +1072,41 @@ def scalability_chart():
 
     fig.update_yaxes(automargin=True, showline=True, ticks="", mirror=True,
                      linecolor='black', linewidth=1,
-                     tickfont=dict(color="black"),
+                     tickfont=dict(color="black",family='times new roman',size=16),
                      title=dict(font=dict( color="black",# family="sans-serif",size=15,
                     ),
-                    text='Accuracy')
-                    )
+                    # text='Accuracy')
+                    ))
 
     fig.update_xaxes(automargin=True, side='bottom', showline=True, ticks='inside',
                      mirror=True, linecolor='black', linewidth=1,
-                     tickfont=dict(color="black"),
+                     tickfont=dict(color="black",family='times new roman',size=16),
                      title=dict(font=dict(
                              # family="sans-serif",
                              # size=15,
                              color="black"
                          ),
-                         text='SNR'
+                         # text='SNR'
                      ))
 
     fig.update_traces(marker_line_width=2)
-    fig.add_annotation(dict(font=dict(color="black", size=10),
-                            x=0.9,
-                            y=0.30,
-                            showarrow=False,
-                            text="Number of IQ samples per signal segment N:",
-                            xref="paper",
-                            yref="paper"))
+    # fig.add_annotation(dict(font=dict(color="black", size=16,family='times new roman'),
+    #                         x=0.95,
+    #                         y=0.30,
+    #                         showarrow=False,
+    #                         # text="Number of IQ samples per signal segment N:",
+    #                         xref="paper",
+    #                         yref="paper"))
     fig.update_layout(
-        title_text='<b>Model Scalability with Number of IQ Samples',
-        title_x=0.50, title_y=0.90,xaxis={"mirror": "all"},
+        margin=go.layout.Margin(
+            l=0,  # left margin
+            r=130,  # right margin
+            b=160,  # bottom margin
+            t=20,  # top margin
+        ),
+        # title_text='<b>Model Scalability with Number of IQ Samples',
+        # title_x=0.50, title_y=0.90,
+        xaxis={"mirror": "all"},
         paper_bgcolor='white',plot_bgcolor='rgba(0,0,0,0)',
         width=500,height=500,
         legend=dict(
@@ -1035,7 +1114,7 @@ def scalability_chart():
             borderwidth=1,
             bgcolor='rgba(0,0,0,0)',orientation='h',
             itemsizing='constant',x=0.35,y=0.25,
-            font=dict(size=10, color="black"),traceorder='normal'
+            font=dict(size=12, color="black",family='times new roman'),traceorder='normal'
         ),
     )
     plotly.offline.plot(figure_or_data=fig, image_width=610, image_height=500, filename='test_line.html', image='svg')
@@ -1048,10 +1127,10 @@ def plot_constellation():
         "type": "scatter",
         "x": [-1, 1],
         "y": [0,0],
-        "marker": {"size": [10, 10], "color": '#ff6555'},
-        "text": ["0", "1"],
-        "textfont": {"size": 14,"color":"black","family":'Times New Roman'},
-        "textposition": ["top center","top center"],
+        "marker": {"size": [10, 10], "color": '#d62728'},
+        # "text": ["0", "1"],
+        # "textfont": {"size": 14,"color":"black","family":'Times New Roman'},
+        # "textposition": ["top center","top center"],
         "line": {'color':'black','width':12},
     }
 
@@ -1061,11 +1140,11 @@ def plot_constellation():
         "type": "scatter",
         "x": [-0.71, -0.71, 0.71, 0.71],
         "y": [-0.71, 0.71, -0.71, 0.71],
-        "marker": {"size": [10, 10, 10, 10], "color": '#ff6555'},
-        "text": [" 00", " 01", "10 ", "11 "],
-        "textfont": {"size": 14,"color":"black","family":'Times New Roman'},
-        # "textposition": ["top center"]*4,
-        "textposition": ["middle right", "middle right", "middle left", "middle left"],
+        "marker": {"size": [10, 10, 10, 10], "color": '#d62728'},
+        # "text": [" 00", " 01", "10 ", "11 "],
+        # "textfont": {"size": 14,"color":"black","family":'Times New Roman'},
+        # # "textposition": ["top center"]*4,
+        # "textposition": ["middle right", "middle right", "middle left", "middle left"],
         "line": {'color': 'black', 'width': 12},
     }
 
@@ -1087,13 +1166,13 @@ def plot_constellation():
         "type": "scatter",
         "x": i1,
         "y": q1,
-        "marker": {"size": [10]*16, "color": '#ff6555'},
-        "text": ["1111", "1110", "1010", "1011",
-                 "1101","1100","1000","1001",
-                 "0101","0100","0000","0001",
-                 "0111","0110","0010","0011"],
-        "textfont": {"size": 14 , "color":"black", "family":'Times New Roman'},
-        "textposition": ["top center"]*16,
+        "marker": {"size": [10]*16, "color": '#d62728'},
+        # "text": ["1111", "1110", "1010", "1011",
+        #          "1101","1100","1000","1001",
+        #          "0101","0100","0000","0001",
+        #          "0111","0110","0010","0011"],
+        # "textfont": {"size": 14 , "color":"black", "family":'Times New Roman'},
+        # "textposition": ["top center"]*16,
         "line": {'color': 'black', 'width': 12},
     }
 
@@ -1103,7 +1182,7 @@ def plot_constellation():
         "type": "scatter",
         "x": i2,
         "y": q2,
-        "marker": {"size": [10] * 64, "color": '#ff6555'},
+        "marker": {"size": [10] * 64, "color": '#d62728'},
         # "text": ["000000"]*64,
         # "textfont": {"size": 8,"color":"black"},
         # "textposition": ["top center"]*64,
@@ -1130,9 +1209,9 @@ def plot_constellation():
 
     # data = [trace1]
     # fig = go.Figure(data)
-    fig = plotly.subplots.make_subplots(rows=2, cols=2, horizontal_spacing=0.2,vertical_spacing=0.2,
-                                        subplot_titles=("(a) BPSK, M=1","(b) QPSK, M=2","(c) 16-QAM, M=4",
-                                                        "(d) 64-QAM, M=6"))
+    fig = plotly.subplots.make_subplots(rows=2, cols=2, horizontal_spacing=0.2,vertical_spacing=0.25)
+                                        # subplot_titles=("(a) BPSK, M=1","(b) QPSK, M=2","(c) 16-QAM, M=4",
+                                        #                 "(d) 64-QAM, M=6"))
     fig.add_trace(trace1, row=1, col=1)
     fig.add_shape(shape1, row=1, col=1)
     fig.add_shape(shape2, row=1, col=1)
@@ -1157,11 +1236,11 @@ def plot_constellation():
                              ticklen=10,
                              tick0=-1.5,
                              dtick=0.5,
-                             range=[-1.62, 1.62],
-                             title=dict(font=dict(family='Times New Roman',color="black",  # family="sans-serif",size=15,
-                                                size=22),
-                                        text='Quadrature',
-                                        standoff=5),
+                             range=[-1.63, 1.63],
+                             # title=dict(font=dict(family='Times New Roman',color="black",  # family="sans-serif",size=15,
+                             #                    size=22),
+                             #            text='Quadrature',
+                             #            standoff=5),
                              row=i, col=j
                              )
 
@@ -1173,12 +1252,12 @@ def plot_constellation():
                              tick0=-1.5,
                              dtick=0.5,
                              range=[-1.62, 1.62],
-                             title=dict(font=dict(
-                                 family='Times New Roman',
-                                 size=22,
-                                 color="black"
-                             ),
-                                 text='In-phase'),
+                             # title=dict(font=dict(
+                             #     family='Times New Roman',
+                             #     size=22,
+                             #     color="black"
+                             # ),
+                             #     text='In-phase'),
                              row=i, col=j)
 
 
@@ -1196,14 +1275,217 @@ def plot_constellation():
     plotly.offline.plot(figure_or_data=fig,image_width=800, image_height=800,filename='const.html', image='svg')
 
 
-# def plot_rc_filter():
-#
+def rcos_freq_response(freq, alpha=0, T=1):
+    freq = np.fabs(freq)
+    if freq <= (1. - alpha) * 0.5 / T:
+        result = T
+    elif freq <= (1. + alpha) * 0.5 / T:
+        temp = freq - (1 - alpha) * 0.5 / T
+        result = 0.5 * T * (1 + np.cos(np.pi * temp * T / alpha))
+    else:
+        result = 0
+    return result
 
+
+
+def plot_rc_filter():
+    freq = np.linspace(-1.25,1.25,100)
+    h_f,h_f1,h_f2=[],[],[]
+    for f in freq:
+        h_f.append(rcos_freq_response(f,0,1))
+        h_f1.append(rcos_freq_response(f, 0.5, 1))
+        h_f2.append(rcos_freq_response(f, 1, 1))
+    # print(len(f),len(h))
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=freq, y=h_f, name=r'$ \alpha = 0$',
+                             line=dict(color='#1f77b4', width=1)))
+    fig.add_trace(go.Scatter(x=freq, y=h_f1, name=r'$ \alpha = 0$',
+                             line=dict(color='#2ca02c', width=1)))
+    fig.add_trace(go.Scatter(x=freq, y=h_f2, name=r'$ \alpha = 0$',
+                             line=dict(color='#ff7f0e', width=1)))
+    line_ax = [-1, -0.5, 0, 0.5, 1]
+    for i in line_ax:
+        fig.add_shape(type="line", x0=i, y0=-0.3, x1=i, y1=1.3,
+                      line=dict(
+                          color="grey",
+                          width=1,
+                          dash="dot",
+                      ),
+                      )
+    fig.add_shape(type="line", x0=-1.3, y0=0, x1=1.3, y1=0,
+                  line=dict(
+                      color="black",
+                      width=1,
+                  ),
+                  )
+
+    fig.update_yaxes(showline=True, mirror='all', ticks='inside',
+                    linecolor='black', linewidth=1,
+                    tickfont=dict(family='Times New Roman', color="black", size=18),
+                    tickmode='linear',
+                    ticklen=10,
+                    tick0=0,
+                    dtick=0.5,
+                    range=[-0.3, 1.3],
+                    title=dict(font=dict(family='Times New Roman', color="black",  # family="sans-serif",size=15,
+                                         size=18)))
+
+    fig.update_xaxes(side='bottom', showline=True, ticks='inside',
+                     mirror='all', linecolor='black', linewidth=1,
+                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     tickmode='linear',
+                     ticklen=10,
+                     tick0=-1,
+                     dtick=0.5,
+                     range=[-1.3, 1.3],
+                     title=dict(font=dict(
+                         family='Times New Roman',
+                         size=18,
+                         color="black"
+                     )))
+                         # text=r'$\text{Frequency} f$'))
+    fig.update_layout(
+        # title_text='<b>Model Scalability with Number of IQ Samples',
+        # title_x=0.50, title_y=0.90,
+        paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
+        width=600, height=500,
+        showlegend=False,
+    )
+    plotly.offline.plot(figure_or_data=fig, image_width=400, image_height=350, filename='rcos.html', image='svg')
+
+
+def plot_rc_impulse():
+
+    alpha = [0,0.5,1]
+    count = 0
+    marker_colors = ['#1f77b4','#2ca02c','#ff7f0e']
+    fig = go.Figure()
+    for val in alpha:
+        time_idx, h_rc = commpy.rcosfilter(N=1024,alpha=val,Ts=1,Fs=144)
+        fig.add_trace(go.Scatter(x=time_idx, y=h_rc,
+                                 line=dict(color=marker_colors[count], width=1)))
+        count += 1
+
+    line_ax = [-2, -1, 0, 1, 2]
+    for i in line_ax:
+        fig.add_shape(type="line", x0=i, y0=-0.3, x1=i, y1=1.3,
+                      line=dict(
+                          color="grey",
+                          width=1,
+                          dash="dot",
+                      ),
+                      )
+    fig.add_shape(type="line", x0=-2.3, y0=0, x1=2.3, y1=0,
+                  line=dict(
+                      color="black",
+                      width=1,
+                  ),
+                  )
+
+    fig.update_yaxes(showline=True, mirror='all', ticks='inside',
+                     linecolor='black', linewidth=1,
+                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     tickmode='linear',
+                     ticklen=10,
+                     tick0=0,
+                     dtick=0.5,
+                     range=[-0.3, 1.3],
+                     title=dict(font=dict(family='Times New Roman', color="black",  # family="sans-serif",size=15,
+                                          size=18)))
+
+    fig.update_xaxes(side='bottom', showline=True, ticks='inside',
+                     mirror='all', linecolor='black', linewidth=1,
+                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     tickmode='linear',
+                     ticklen=10,
+                     tick0=-2,
+                     dtick=1,
+                     range=[-2.3, 2.3],
+                     title=dict(font=dict(
+                         family='Times New Roman',
+                         size=18,
+                         color="black"
+                     )))
+    # text=r'$\text{Frequency} f$'))
+    fig.update_layout(
+        # title_text='<b>Model Scalability with Number of IQ Samples',
+        # title_x=0.50, title_y=0.90,
+        paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
+        width=600, height=500,
+        showlegend=False,
+    )
+    plotly.offline.plot(figure_or_data=fig, image_width=400, image_height=350, filename='rcos.html', image='svg')
+
+
+def norm(x):
+    norm = [float(i) / sum(x) for i in x]
+    return norm
+
+
+def sequential_chart():
+    path = "/home/rachneet/thesis_results/sequential_intf_bpsk_results.csv"
+    df = pd.read_csv(path, delimiter=",", quoting=csv.QUOTE_MINIMAL)
+    groups = df.groupby('True_label')
+    names= ["SC_BPSK", "SC_QPSK", "SC_16QAM", "SC_64QAM",
+        "OFDM_BPSK", "OFDM_QPSK", "OFDM_16QAM", "OFDM_64QAM"]
+
+    fig = go.Figure()
+    # blue #23aaff, red apple #ff6555, moss green #66c56c, mustard yellow #f4b247
+    colors = ['#23aaff',  #  blue
+            'rgb(253,141,60)',  # orange
+            '#66c56c',  # moss green
+            'rgb(159,130,206)',  # muted purple
+            '#f4b247',  # mustard yellow
+            '#ff6555',  # red apple
+            'rgb(247,104,161)',  # pink
+            'rgb(104,171,184)'   # teal
+              ]
+
+    line_colors = ['#1f77b4','#ff7f0e','#2ca02c','rgb(130,109,186)',
+                   '#ff7f0e','#d62728','rgb(221,52,151)','rgb(79,144,166)']
+    x = np.arange(1, 48)
+    for i in range(len(names)):
+        data = groups.get_group(names[i])
+        sum_preds = [0]*48
+        for row in data.iterrows():
+            preds = literal_eval(row[1][1])
+            # print(len(preds))
+            for j in range(len(preds)):
+                sum_preds[j] += preds[j]
+
+        fig.add_trace(go.Bar(x=x, y=norm(sum_preds), orientation='v', name=names[i], marker=dict(
+            color=colors[i],
+            line=dict(color=line_colors[i], width=1)
+        )))
+
+    fig.update_yaxes(showline=True, mirror=True, ticks='outside',
+                     linecolor='black', linewidth=1,
+                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     title=dict(font=dict(family='Times New Roman', color="black",  # family="sans-serif",size=15,
+                                          size=18), text="Normalized incorrect<br> predictions"))
+
+    fig.update_xaxes(side='bottom', showline=True, ticks='outside',
+                     mirror=True, linecolor='black', linewidth=1,
+                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     title=dict(font=dict(
+                         family='Times New Roman',
+                         size=18,
+                         color="black"
+                     ), text="Signal segments"))
+
+    fig.update_layout(barmode='relative', title_text='Incorrect Predictions for Signal Segments',
+                      paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
+                      showlegend=True, title_x=0.50, title_y=0.90,
+                      )
+
+    plotly.offline.plot(figure_or_data=fig, image_width=1000, image_height=500, filename='seq.html', image='svg')
 
 
 if __name__=="__main__":
-    plot_constellation()
+    # draw_comparison_chart()
     # n = 4
+    plot_heatmap()
+    # plt_tl_chart()
     # for i in range(16):
     #     b = bin(i)[2:].zfill(n)
     #     print(b)

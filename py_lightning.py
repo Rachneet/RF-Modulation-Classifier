@@ -76,8 +76,8 @@ class DatasetFromHDF5(Dataset):
             features = featurize(data)
             features = preprocessing.scale(features, with_mean=False).astype(np.float32)
         # -------------------------------------------------------------
-        # data = preprocessing.scale(data,with_mean=False).astype(np.float32)
-        data = data.astype(np.float32)
+        data = preprocessing.scale(data,with_mean=False).astype(np.float32)
+        # data = data.astype(np.float32)
         label = label.astype(np.float32)
         snr = snr.astype(np.int8)
 
@@ -99,102 +99,104 @@ class LightningCNN(pl.LightningModule):
         self.test_dataset = None
         self.all_true, self.all_pred, self.all_snr = [], [], []  # for final metrics calculation
         self.hparams = hparams
+        self.model = torch.load("/home/rachneet/thesis_results/trained_cnn_vsg_cfo5_all",map_location="cuda:0")
         # print(vars(hparams))
         # layer 1
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(hparams.in_dims, hparams.filters, hparams.kernel_size[0],padding=2),
-            nn.BatchNorm2d(hparams.filters),
-            nn.ReLU(),
-            nn.MaxPool2d(hparams.pool_size)
-        )
-
-        # layer 2
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[1],padding=2),
-            nn.BatchNorm2d(hparams.filters),
-            nn.ReLU(),
-            nn.MaxPool2d(hparams.pool_size)
-        )
-
-        # layer 3,4,5
-        self.conv3 = nn.Sequential(
-            nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[2],padding=2),
-            nn.BatchNorm2d(hparams.filters),
-            nn.ReLU(),
-            nn.MaxPool2d(hparams.pool_size)
-        )
-
-        self.conv4 = nn.Sequential(
-            nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[3],padding=2),
-            nn.BatchNorm2d(hparams.filters),
-            nn.ReLU(),
-            nn.MaxPool2d(hparams.pool_size)
-        )
-
-        self.conv5 = nn.Sequential(
-            nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[4],padding=2),
-            nn.BatchNorm2d(hparams.filters),
-            nn.ReLU(),
-            nn.MaxPool2d(hparams.pool_size)
-        )
-
-        # layer 6
-        self.conv6 = nn.Sequential(
-            nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[5],padding=2),
-            nn.BatchNorm2d(hparams.filters),
-            nn.ReLU(),
-            nn.MaxPool2d(hparams.pool_size)
-        )
-
-        if hparams.featurize:
-            in_dim = hparams.fc_neurons+hparams.n_features
-        else:
-            in_dim = hparams.fc_neurons
-
-        # layer 7
-        self.fc1 = nn.Sequential(
-            nn.Linear(hparams.fc_neurons,hparams.fc_neurons),
-            nn.ReLU(),
-            nn.Dropout(p=0.5)
-        )
-
-        # layer 8
-        self.fc2 = nn.Sequential(
-            nn.Linear(hparams.fc_neurons, hparams.fc_neurons),
-            nn.ReLU(),
-            nn.Dropout(p=0.5)
-        )
-
-        # layer 9
-        self.fc3 = nn.Linear(hparams.fc_neurons, hparams.n_classes)
-
-        if hparams.filters == 256 and hparams.fc_neurons == 1024:
-            self._create_weights(mean=0.0, std=0.05)
-        elif hparams.filters == 1024 and hparams.fc_neurons == 2048:
-            self._create_weights(mean=0.0, std=0.02)
-
-    def _create_weights(self, mean=0.0, std=0.05):
-        for module in self.modules():
-            if isinstance(module, nn.Conv1d) or isinstance(module, nn.Linear):
-                module.weight.data.normal_(mean, std)
+    #     self.conv1 = nn.Sequential(
+    #         nn.Conv2d(hparams.in_dims, hparams.filters, hparams.kernel_size[0],padding=2),
+    #         nn.BatchNorm2d(hparams.filters),
+    #         nn.ReLU(),
+    #         nn.MaxPool2d(hparams.pool_size)
+    #     )
+    #
+    #     # layer 2
+    #     self.conv2 = nn.Sequential(
+    #         nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[1],padding=2),
+    #         nn.BatchNorm2d(hparams.filters),
+    #         nn.ReLU(),
+    #         nn.MaxPool2d(hparams.pool_size)
+    #     )
+    #
+    #     # layer 3,4,5
+    #     self.conv3 = nn.Sequential(
+    #         nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[2],padding=2),
+    #         nn.BatchNorm2d(hparams.filters),
+    #         nn.ReLU(),
+    #         nn.MaxPool2d(hparams.pool_size)
+    #     )
+    #
+    #     self.conv4 = nn.Sequential(
+    #         nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[3],padding=2),
+    #         nn.BatchNorm2d(hparams.filters),
+    #         nn.ReLU(),
+    #         nn.MaxPool2d(hparams.pool_size)
+    #     )
+    #
+    #     self.conv5 = nn.Sequential(
+    #         nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[4],padding=2),
+    #         nn.BatchNorm2d(hparams.filters),
+    #         nn.ReLU(),
+    #         nn.MaxPool2d(hparams.pool_size)
+    #     )
+    #
+    #     # layer 6
+    #     self.conv6 = nn.Sequential(
+    #         nn.Conv2d(hparams.filters, hparams.filters, hparams.kernel_size[5],padding=2),
+    #         nn.BatchNorm2d(hparams.filters),
+    #         nn.ReLU(),
+    #         nn.MaxPool2d(hparams.pool_size)
+    #     )
+    #
+    #     if hparams.featurize:
+    #         in_dim = hparams.fc_neurons+hparams.n_features
+    #     else:
+    #         in_dim = hparams.fc_neurons
+    #
+    #     # layer 7
+    #     self.fc1 = nn.Sequential(
+    #         nn.Linear(hparams.fc_neurons,hparams.fc_neurons),
+    #         nn.ReLU(),
+    #         nn.Dropout(p=0.5)
+    #     )
+    #
+    #     # layer 8
+    #     self.fc2 = nn.Sequential(
+    #         nn.Linear(hparams.fc_neurons, hparams.fc_neurons),
+    #         nn.ReLU(),
+    #         nn.Dropout(p=0.5)
+    #     )
+    #
+    #     # layer 9
+    #     self.fc3 = nn.Linear(hparams.fc_neurons, hparams.n_classes)
+    #
+    #     if hparams.filters == 256 and hparams.fc_neurons == 1024:
+    #         self._create_weights(mean=0.0, std=0.05)
+    #     elif hparams.filters == 1024 and hparams.fc_neurons == 2048:
+    #         self._create_weights(mean=0.0, std=0.02)
+    #
+    # def _create_weights(self, mean=0.0, std=0.05):
+    #     for module in self.modules():
+    #         if isinstance(module, nn.Conv1d) or isinstance(module, nn.Linear):
+    #             module.weight.data.normal_(mean, std)
 
     def forward(self, input, features):
 
         input = input.permute(0,2,1)
         input = input.unsqueeze(dim=3)
-        output = self.conv1(input)
-        output = self.conv2(output)
-        output = self.conv3(output)
-        output = self.conv4(output)
-        output = self.conv5(output)
-        output = self.conv6(output)
-        output = output.view(output.size(0), -1)
-        if self.hparams.featurize:
-            # add hand crafted features to cnn features
-            output = torch.cat((output, features), 1)
-        output = self.fc1(output)
-        output = self.fc2(output)
-        output = self.fc3(output)
+        # output = self.conv1(input)
+        # output = self.conv2(output)
+        # output = self.conv3(output)
+        # output = self.conv4(output)
+        # output = self.conv5(output)
+        # output = self.conv6(output)
+        # output = output.view(output.size(0), -1)
+        # if self.hparams.featurize:
+        #     # add hand crafted features to cnn features
+        #     output = torch.cat((output, features), 1)
+        # output = self.fc1(output)
+        # output = self.fc2(output)
+        # output = self.fc3(output)
+        output = self.model(input)
 
         return output
 
@@ -371,7 +373,7 @@ class LightningCNN(pl.LightningModule):
 
 
     def prepare_data(self, valid_fraction=0.05, test_fraction=0.2):
-        dataset = DatasetFromHDF5(self.hparams.data_path, 'iq', 'labels', 'sirs', self.hparams.featurize)
+        dataset = DatasetFromHDF5(self.hparams.data_path, 'iq', 'labels', 'snrs', self.hparams.featurize)
         num_train = len(dataset)
         indices = list(range(num_train))
         val_split = int(math.floor(valid_fraction * num_train))
@@ -425,30 +427,62 @@ class LightningCNN(pl.LightningModule):
 # function to test the model separately
 def test_lightning(hparams):
 
-    model = LightningCNN.load_from_checkpoint(
-    checkpoint_path='/media/backup/Arsenal/thesis_results/intf_ofdm_snr10_all/epoch=29.ckpt',
-    hparams=hparams,
-    map_location=None
-    )
-    # exp = Experiment(name='test_vsg20',save_dir=os.getcwd())
+    # model = LightningCNN.load_from_checkpoint(
+    # checkpoint_path='/media/backup/Arsenal/thesis_results/intf_ofdm_snr10_all/epoch=29.ckpt',
+    # hparams=hparams,
+    # map_location=None
+    # )
+
+    #-----------------------------------------------------------------------------------------
+    dataset = DatasetFromHDF5(hparams.data_path, 'iq', 'labels', 'snrs', hparams.featurize)
+    num_train = len(dataset)
+    indices = list(range(num_train))
+    val_split = int(math.floor(0.05 * num_train))
+    test_split = val_split + int(math.floor(0.2 * num_train))
+    training_params = {"batch_size": hparams.batch_size,
+                       "num_workers": hparams.num_workers}
+
+    if not ('shuffle' in training_params and not training_params['shuffle']):
+        np.random.seed(4)
+        np.random.shuffle(indices)
+    if 'num_workers' not in training_params:
+        training_params['num_workers'] = 1
+
+    train_idx, valid_idx, test_idx = indices[test_split:], indices[:val_split], indices[val_split:test_split]
+    train_sampler = SubsetRandomSampler(train_idx)
+    valid_sampler = SubsetRandomSampler(valid_idx)
+    test_sampler = SubsetRandomSampler(test_idx)
+    train_dataset = DataLoader(dataset, batch_size=hparams.batch_size,
+                                    shuffle=hparams.shuffle, num_workers=hparams.num_workers,
+                                    sampler=train_sampler)
+    val_dataset = DataLoader(dataset, batch_size=hparams.batch_size,
+                                  shuffle=hparams.shuffle, num_workers=hparams.num_workers,
+                                  sampler=valid_sampler)
+    test_dataset = DataLoader(dataset, batch_size=hparams.batch_size,
+                                   shuffle=hparams.shuffle, num_workers=hparams.num_workers,
+                                   sampler=test_sampler)
+
+    #---------------------------------------------------------------------------------------
+    model = torch.load("/home/rachneet/thesis_results/trained_cnn_vsg_cfo5_all", map_location="cuda:0")
+    exp = Experiment(name='cnn_train_cfo5_test_cfo1',save_dir=CHECKPOINTS_DIR)
     # logger = TestTubeLogger('tb_logs', name='CNN')
     # callback = [test_callback()]
     # print(neptune_logger.experiment.name)
     model_checkpoint = pl.callbacks.ModelCheckpoint(filepath=CHECKPOINTS_DIR)
-    trainer = Trainer(logger=neptune_logger, gpus=hparams.gpus,checkpoint_callback=model_checkpoint)
-    trainer.test(model)
+    trainer = Trainer(gpus=hparams.gpus, checkpoint_callback=model_checkpoint, experiment=exp)
+    trainer.test(model, test_dataloaders=test_dataset)
     # Save checkpoints folder
     neptune_logger.experiment.log_artifact(CHECKPOINTS_DIR)
     # You can stop the experiment
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/home/rachneet/thesis_results/test/'
+CHECKPOINTS_DIR = '/home/rachneet/thesis_results/cnn_train_cfo5_test_cfo1/'
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="test",   # change this for new runs
+    experiment_name="cnn_train_cfo5_test_cfo1",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -491,15 +525,15 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/media/rachneet/arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20.h5"
+    path = "/media/rachneet/arsenal/rf_dataset_inets/dataset_intf_free_vsg_cfo1_all.h5"
     out_path = "/home/rachneet/thesis_results/"
 
     parser = ArgumentParser()
     parser.add_argument('--output_path', default=out_path)
     parser.add_argument('--data_path', default=path)
-    parser.add_argument('--gpus', default=1)
+    parser.add_argument('--gpus', default=[0])
     parser.add_argument('--max_epochs', default=1)
-    parser.add_argument('--batch_size', default=256)
+    parser.add_argument('--batch_size', default=512)
     parser.add_argument('--num_workers', default=10)
     parser.add_argument('--shuffle', default=False)
     parser.add_argument('--learning_rate', default=1e-2)
@@ -514,8 +548,8 @@ if __name__=="__main__":
     parser.add_argument('--featurize', default=False)
     args = parser.parse_args()
 
-    main(args)
-    # test_lightning(args)
+    # main(args)
+    test_lightning(args)
     # file = h5.File(path,'r')
     # iq, labels, snrs = file['iq'],file['labels'],file['sirs']
     # print(iq.shape)

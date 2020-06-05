@@ -1,7 +1,7 @@
 import cnn_model
 import cnn_unk
 import resnet
-from image_dataloader import image_dataloader
+# from image_dataloader import image_dataloader
 import resnet_simplified
 import dataloader as dl
 import read_h5 as reader

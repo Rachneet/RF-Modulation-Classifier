@@ -172,7 +172,9 @@ def load_batch(path,batch_size=256,mode="train"):
 
 def load_data(data_path, val_fraction, test_fraction, **training_params):
 
-    dataset = DatasetFromHDF5(data_path, 'iq', 'labels', 'sirs')
+    print("=============Loading Data==================")
+    dataset = DatasetFromHDF5(data_path, 'iq', 'labels', 'snrs')
+    print("=============Data Loaded====================")
     num_train = len(dataset)
     indices = list(range(num_train))
     val_split = int(math.floor(val_fraction * num_train))
@@ -197,6 +199,7 @@ def load_data(data_path, val_fraction, test_fraction, **training_params):
     test_dataset = DataLoader(dataset, batch_size=training_params['batch_size'],
                                    shuffle=False, num_workers=training_params['num_workers'],
                                    sampler=test_sampler)
+    print("==================Dataset created and batched==========================")
     return train_dataset, val_dataset, test_dataset
 
 
@@ -319,5 +322,8 @@ if __name__=="__main__":
     # label_data = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
     # print(label_data.shape)
     # load_batch("/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_usrp_snr20_sir25_1024.h5",mode='')
-    sequential_set()
+    # sequential_set()
+    path ="/media/rachneet/arsenal/rf_dataset_inets/dataset_intf_free_vsg_cfo5_all.h5"
+    iq, labels, snrs = reader.read_hdf5(path)
+    print(snrs[:10])
     pass

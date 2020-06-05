@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from torchvision.utils import save_image
 import numpy as np
 import dataloader as dl
 from pytorch_model_summary import summary
@@ -188,10 +187,11 @@ def save_plot(figure, plot_name):
 
 if __name__=="__main__":
 
-    data_path = "/media/backup/Arsenal/rf_dataset_inets/"
+    data_path = "/media/rachneet/arsenal/rf_dataset_inets/"
+
     # x_train_gen, y_train_gen, x_val_gen, y_val_gen,data_raw,labels_raw = dl.load_batch(
     #     data_path + "test_sample.npz",batch_size=256,mode='train')
-    f = h5.File(data_path+"feature_set_conv6_vsg20.h5", 'r')
+    f = h5.File(data_path+"feature_set_vsg20.h5", 'r')
     features, t_labels, pred_labels = f['features'], f['true_labels'], f['pred_labels']
 
     # x_train_gen = DataLoader(features[:61440],batch_size=256,shuffle=False)
@@ -221,7 +221,7 @@ if __name__=="__main__":
     num_epochs = 10000
     # epoch = 10000
     model = SOM(m,n,in_dim,num_epochs)
-    model.load_state_dict(torch.load("trained_som_conv6_features.pth"))
+    model.load_state_dict(torch.load("/home/rachneet/thesis_results/trained_som_cnn.pth"))
     model.cuda()
 
     # input = torch.randn(1,1024,2)
@@ -329,7 +329,7 @@ if __name__=="__main__":
     for i,m in enumerate(mapper):
         if mods[i] not in check_mod:
             check_mod.append(mods[i])
-            legend = True
+            legend = False
         else:
             legend = False
         trace = go.Scatter3d(
@@ -366,17 +366,20 @@ if __name__=="__main__":
     # fig['layout'].update(title='Modulation Clustering')
     cbar_text = [0,0.5,1,1.5,2,2.5,3]
     # cbar_vals = list(range(len(result)))
-    fig['data'][0].colorbar = dict(title='Distance',
+    fig['data'][0].colorbar = dict(#title='Distance',
                                    outlinecolor="black",
                                    outlinewidth=1,
                                    ticks='outside',
-                                   x=0.9,
+                                   x=0.95,
+                                    y=0.45,
+                                   len=0.95,
                                    tickvals=cbar_text,
-                                   ticktext=cbar_text
+                                   ticktext=cbar_text,
+                                    tickfont=dict(size=20,color='black')
                                    )
 
     fig['layout'].update(title=go.layout.Title(
-        text="Modulation Clustering",
+        #text="Modulation Clustering",
         xref="paper",
         font=dict(
             # family="sans-serif",
@@ -439,10 +442,11 @@ if __name__=="__main__":
                            borderwidth=1,
                            orientation='h',
                            itemsizing='constant',
-                           x=0.10,
+                           x=0.05,
+                           y=1.1,
                            font=dict(
                                # family="sans-serif",
-                               size=10,
+                               size=12,
                                color="black"
                            ),
                            traceorder='normal'
@@ -455,7 +459,7 @@ if __name__=="__main__":
     # fig.update_zaxes(automargin=True,showline=True,mirror=True)
 
     epoch = 9999
-    plotly.offline.plot(fig, filename="test_som"+str(epoch+1)+".html", image='svg')
+    plotly.offline.plot(fig,image_width=700, image_height=700, filename="test_som"+str(epoch+1)+".html", image='svg')
 
 
 

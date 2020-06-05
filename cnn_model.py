@@ -8,7 +8,7 @@ from pytorch_model_summary import summary
 
 class CNN(nn.Module):
     def __init__(self, n_classes, input_dim=2
-                 ,max_seq_length=128,filters=64,kernel_sizes=[3,3,3,3,3,3],pool_size=3,
+                 ,max_seq_length=1024,filters=64,kernel_sizes=[3,3,3,3,3,3],pool_size=3,
                 n_fc_neurons=128):
 
         super(CNN,self).__init__()
@@ -75,7 +75,7 @@ class CNN(nn.Module):
 
         # layer 7
         self.fc1 = nn.Sequential(
-            nn.Linear(192,n_fc_neurons),
+            nn.Linear(n_fc_neurons,n_fc_neurons),
             nn.ReLU(),
             nn.Dropout(p=0.5)
         )
@@ -148,4 +148,4 @@ class CNN(nn.Module):
 
 if __name__=="__main__":
     model = CNN(n_classes=8)
-    print(summary(model,torch.ones((1,2048,2)),show_input=False, show_hierarchical=False))
+    print(summary(model,torch.ones((1,1024,2)),show_input=False, show_hierarchical=False))
