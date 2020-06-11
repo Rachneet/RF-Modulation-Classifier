@@ -34,7 +34,7 @@ def evaluate(y_true, y_pred, list_metrics):
     return output
 
 
-def compute_results(csv_path, snrs=[5, 10, 15, 20, 25]):
+def compute_results(csv_path, snrs):
     """
     Input: path to the output csv file you get from the inference function
     Returns:
@@ -167,7 +167,7 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
     # print(temp2)
 
     x = ["SC <br>BPSK", "SC <br>QPSK", "SC 16-<br>QAM", "SC 64-<br>QAM",
-         "OFDM <br>BPSK", "OFDM <br>QPSK", "OFDM 16-<br>QAM", "OFDM 64-<br>QAM"]
+         "OFDM <br>BPSK", "OFDM <br>QPSK", "OFDM 16-<br>QAM", "OFDM 64-<br>QAM", "UNK"]
 
     y = list(reversed(x))
 
@@ -231,7 +231,7 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
                                    outlinecolor="black",
                                    outlinewidth=1,
                                    ticks='outside',
-                                   len=1.075,  #1.05 ow
+                                   len=1.045,                 #1.075,  #1.05 ow
                                     # y=0.47,
                                    tickfont=dict(color='black')
                                    )
@@ -242,7 +242,7 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
                      mirror=True,
                      linecolor='black',
                      linewidth=0.5,
-                     tickfont=dict(family="times new roman",color='black'),
+                     tickfont=dict(family="times new roman",color='black',size=14),
                      title=dict(
                          font=dict(
                              family="times new roman",
@@ -256,7 +256,7 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
                      mirror=True,
                      linecolor='black',
                      linewidth=0.5,
-                     tickfont=dict(family="times new roman",color='black'),
+                     tickfont=dict(family="times new roman",color='black',size=14),
                      title=dict(
                          font=dict(
                              family="times new roman",
@@ -266,7 +266,7 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
                      )
 
     # fig.show()
-    plotly.offline.plot(fig, filename=fig_name + ".html", image='svg',image_height=400, image_width=600,
+    plotly.offline.plot(fig, filename=fig_name + ".html", image='svg',image_height=600, image_width=800,
                         include_plotlyjs=True)
 
 
@@ -413,42 +413,43 @@ if __name__ == "__main__":
     # pass
 
     # -------------PLot overall conf maps------------------------------------------------------------
-    datapath = "/home/rachneet/thesis_results/"
-    file = datapath+'cnn_train_cfo5_test_cfo1/output.csv'
-    df = pd.read_csv(file)
-    # print(df.tail())
-    output = {}
-    y_true = df['True_label'].values
-    y_pred = df['Predicted_label'].values
-    print(metrics.accuracy_score(y_true, y_pred))
+    # datapath = "/home/rachneet/thesis_results/"
+    # file = datapath+'res_vsg_cfo5/output.csv'
+    # df = pd.read_csv(file)
+    # # print(df.tail())
+    # output = {}
+    # y_true = df['True_label'].values
+    # y_pred = df['Predicted_label'].values
+    # print(metrics.accuracy_score(y_true, y_pred))
     # cmap =  metrics.confusion_matrix(y_true, y_pred)
-    # # print(cmap)
-    # unique, counts = np.unique(df['True_label'].values, return_counts=True)
-    # # print(counts)
-    # # k=25
-    # plot_confusion_matrix(cmap, counts, "cmap_intf_bpsk_sir_" + "all", "all")
+    # # # print(cmap)
+    # unique, counts = np.unique(df['True label'].values, return_counts=True)
+    # # # print(counts)
+    # # # k=25
+    # plot_confusion_matrix(cmap, counts, "cmap_unk_" + "all", "all")
 
     # -------------PLot individual conf maps------------------------------------------------------------
-    # datapath = "/home/rachneet/thesis_results/"
-    # file = datapath + 'intf_bpsk_snr10_all/output.csv'
+    datapath = "/home/rachneet/thesis_results/"
+    # file = datapath + 'output_unk_vsg_snr20.csv'
     # df = pd.read_csv(file)
     # # print(df.tail())
     # count,output = compute_results(file,[20])
     # for k, v in output.items():
-    #     plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap"+str(k),k)
+    #     # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap"+str(k),k)
     #     # print(v['confusion_matrix'])
-    #     # print(v['accuracy'])
+    #     print(v['accuracy'])
 
     # -------------------Plot collective conf maps-----------------------------------------------------
 
-    # count,output = compute_results(datapath+"cnn_train_cfo5_test_cfo1/output.csv", [0,5,10,15,20])
-    # # print(count,output)
-    # # print(count)
-    # for k,v in output.items():
-    #     # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_bpsk_snr_"+str(k),k)
-    #     # print(v['confusion_matrix'])
-    #
-    #     print(v['accuracy'])
+    count,output = compute_results(datapath+"xg_boost_vsg_all/output.csv", ['0db', '5db', '10db', '15db', '20db'])
+    #[0,5,10,15,20])
+    # print(count,output)
+    # print(count)
+    for k,v in output.items():
+        # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_bpsk_snr_"+str(k),k)
+        # print(v['confusion_matrix'])
+
+        print(v['accuracy'])
 
     # --------------------------------CFO correction--------------------------------------------------
 

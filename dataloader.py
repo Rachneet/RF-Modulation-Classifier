@@ -227,50 +227,50 @@ def create_set(path, iq, label, sir):
 
 
 def sequential_set():
-    path = "/media/rachneet/arsenal/rf_dataset_inets/dataset_intf_bpsk_snr10_1024.h5"
-    train_path = "/media/rachneet/arsenal/rf_dataset_inets/sequential_sets/train90_sequential_intf_bpsk.h5"
-    test_path = "/media/rachneet/arsenal/rf_dataset_inets/sequential_sets/test10_sequential_intf_bpsk.h5"
-    data = h5.File(test_path, 'r')
+    path = "/media/rachneet/arsenal/rf_dataset_inets/dataset_intf_ofdm_snr10_1024.h5"
+    train_path = "/media/rachneet/arsenal/rf_dataset_inets/sequential_sets/train90_sequential_intf_ofdm.h5"
+    test_path = "/media/rachneet/arsenal/rf_dataset_inets/sequential_sets/test10_sequential_intf_ofdm.h5"
+    data = h5.File(path, 'r')
     iq, labels, sirs = data['iq'], data['labels'], data['sirs']
-    print(labels.shape)
-    # threshold1 = int(0.1*57600)
-    # threshold2 = int(0.1*48000)
-    # mods = [0,1,2,3,4,5,6,7]
-    # for mod in mods:
-    #     count5, count10, count15, count20, count25 = 0, 0, 0, 0, 0
-    #     for i in tqdm(range(iq.shape[0])):
-    #         if label_idx(labels[i]) == mod:
-    #             if sirs[i] == 5:
-    #                 if count5 < threshold1:
-    #                     create_set(test_path, iq[i], labels[i], sirs[i])
-    #                     count5 += 1
-    #                 else:
-    #                     create_set(train_path, iq[i], labels[i], sirs[i])
-    #             elif sirs[i] == 10:
-    #                 if count10 < threshold1:
-    #                     create_set(test_path, iq[i], labels[i], sirs[i])
-    #                     count10 += 1
-    #                 else:
-    #                     create_set(train_path, iq[i], labels[i], sirs[i])
-    #             elif sirs[i] == 15:
-    #                 if count15 < threshold1:
-    #                     create_set(test_path, iq[i], labels[i], sirs[i])
-    #                     count15 += 1
-    #                 else:
-    #                     create_set(train_path, iq[i], labels[i], sirs[i])
-    #             elif sirs[i] == 20:
-    #                 if count20 < threshold1:
-    #                     create_set(test_path, iq[i], labels[i], sirs[i])
-    #                     count20 += 1
-    #                 else:
-    #                     create_set(train_path, iq[i], labels[i], sirs[i])
-    #             elif sirs[i] == 25:
-    #                 if count25 < threshold2:
-    #                     create_set(test_path, iq[i], labels[i], sirs[i])
-    #                     count25 += 1
-    #                 else:
-    #                     create_set(train_path, iq[i], labels[i], sirs[i])
-    # print(count5, count10, count15, count20, count25)
+    # print(labels.shape)
+    threshold1 = int(0.1*57600)
+    threshold2 = int(0.1*48000)
+    mods = [0,1,2,3,4,5,6,7]
+    for mod in mods:
+        count5, count10, count15, count20, count25 = 0, 0, 0, 0, 0
+        for i in tqdm(range(iq.shape[0])):
+            if label_idx(labels[i]) == mod:
+                if sirs[i] == 5:
+                    if count5 < threshold1:
+                        create_set(test_path, iq[i], labels[i], sirs[i])
+                        count5 += 1
+                    else:
+                        create_set(train_path, iq[i], labels[i], sirs[i])
+                elif sirs[i] == 10:
+                    if count10 < threshold1:
+                        create_set(test_path, iq[i], labels[i], sirs[i])
+                        count10 += 1
+                    else:
+                        create_set(train_path, iq[i], labels[i], sirs[i])
+                elif sirs[i] == 15:
+                    if count15 < threshold1:
+                        create_set(test_path, iq[i], labels[i], sirs[i])
+                        count15 += 1
+                    else:
+                        create_set(train_path, iq[i], labels[i], sirs[i])
+                elif sirs[i] == 20:
+                    if count20 < threshold1:
+                        create_set(test_path, iq[i], labels[i], sirs[i])
+                        count20 += 1
+                    else:
+                        create_set(train_path, iq[i], labels[i], sirs[i])
+                elif sirs[i] == 25:
+                    if count25 < threshold2:
+                        create_set(test_path, iq[i], labels[i], sirs[i])
+                        count25 += 1
+                    else:
+                        create_set(train_path, iq[i], labels[i], sirs[i])
+    print(count5, count10, count15, count20, count25)
 
 
 if __name__=="__main__":
@@ -322,8 +322,8 @@ if __name__=="__main__":
     # label_data = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
     # print(label_data.shape)
     # load_batch("/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_usrp_snr20_sir25_1024.h5",mode='')
-    # sequential_set()
-    path ="/media/rachneet/arsenal/rf_dataset_inets/dataset_intf_free_vsg_cfo5_all.h5"
-    iq, labels, snrs = reader.read_hdf5(path)
-    print(snrs[:10])
+    sequential_set()
+    # path ="/media/rachneet/arsenal/rf_dataset_inets/dataset_intf_free_vsg_cfo5_all.h5"
+    # iq, labels, snrs = reader.read_hdf5(path)
+    # print(snrs[:10])
     pass

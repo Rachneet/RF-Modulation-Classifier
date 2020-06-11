@@ -470,25 +470,29 @@ def deep_dream(iq_sample):
 
 
 def plot_barchart():
-    sirs = ['5 dB','10 dB','15 dB','20 dB','5-20 dB']
+    sirs = ['0 dB','5 dB','10 dB','15 dB','20 dB','0-20 dB']
     # acc = [0.82,0.86,0.87,0.88,0.89]
     # acc2 = [0.83,0.86,0.86,0.87,0.87]
     # acc3 = [0.71,0.80,0.86,0.87,0.87]
     # acc = [0.72,0.76,0.79,0.80,0.77]  # cnn intf
     # acc2 = [0.75,0.80,0.80,0.81,0.79]
     # acc3 = [0.69,0.78,0.80,0.82,0.77]
-    acc = [0.35,0.54,0.68,0.69,0.57]  # cnn intf generalize
-    acc2 = [0.37,0.61,0.75,0.77,0.63]
-    acc3 = [0.38,0.65,0.73,0.75,0.63]
+    # acc = [0.35,0.54,0.68,0.69,0.57]  # cnn intf generalize
+    # acc2 = [0.37,0.61,0.75,0.77,0.63]
+    # acc3 = [0.38,0.65,0.73,0.75,0.63]
+    acc = [0.60,0.83,0.94,0.99,0.99,0.87]  # cnn cfo generalized
+    acc2 = [0.59,0.83,0.94,0.99,0.99,0.87]
+    acc3 = [0.57,0.80,0.93,0.98,0.99,0.85]
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc,
-        name="                             ",#'SC_BPSK',
+        name="                                ",#'SC_BPSK',
         text=acc,
         textfont=dict(color='black', size=10),
         textposition='auto',
+        textangle=90,
         # marker_color='#ff6555',
         # marker_line_color='#d62728'
         marker_color='rgb(128,125,186)',  # purple
@@ -502,6 +506,7 @@ def plot_barchart():
         text=acc2,
         textfont=dict(color='black', size=10),
         textposition='auto',
+        textangle=90,
         # marker_color='#66c56c',
         # marker_line_color='#2ca02c'
         marker_color='#23aaff', # blue
@@ -515,6 +520,7 @@ def plot_barchart():
         text=acc3,
         textfont=dict(color='black', size=10),
         textposition='auto',
+        textangle=90,
         # marker_color='#f4b247',
         # marker_line_color='#ff7f0e'
         marker_color='rgb(253,141,60)',  # orange
@@ -530,7 +536,7 @@ def plot_barchart():
                      tickmode='linear',
                      tick0=0,
                      dtick=0.1,
-                     range=[0,1],
+                     range=[0,1.09],
                      tickfont=dict(family="times new roman", size=15, color='black'),
                      title=dict(
                          font=dict(
@@ -739,28 +745,30 @@ def plot_heatmap():
 
 def draw_comparison_chart():
 
-    sirs = ['5dB', '10dB', '15dB', '20dB', '5-20dB']
-    acc = [0.75,0.80,0.80,0.81,0.79]
+    sirs = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB', '0-20 dB']
+    acc = [0.56, 0.74, 0.86, 0.93, 0.94, 0.81]
     # acc2 = [0.57,0.79,0.91,0.98,0.99,0.85]  # usrp
-    acc2 = [0.81,0.85,0.86,0.86,0.85]
+    acc2 = [0.55, 0.74, 0.85, 0.91, 0.93, 0.80]
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc,
-        name="             ",
-        # name="                     ",  # 'CNN (9-Layer)',
+        # name="             ",
+        name="                          ",  # 'CNN (9-Layer)',
         # text=acc,
         # textfont=dict(color='black', size=10),
         # textposition='auto',
         # marker_color='#66c56c',  # green
         # marker_line_color='#2ca02c',
-        marker_color='#ff6555', # red
-        marker_line_color='#d62728',
+        # marker_color='#ff6555', # red
+        # marker_line_color='#d62728',
         # marker_color='rgb(128,125,186)',  # purple
         # marker_line_color='rgb(84,39,143)',
         # marker_color='#23aaff', # blue
         # marker_line_color='#1f77b4',
+        marker_color='rgb(103,219,165)',  # mint
+        marker_line_color='rgb(76,200,163)',
         # width=0.35,
         # offset=-0.32
     ))
@@ -774,12 +782,14 @@ def draw_comparison_chart():
         # textposition='auto',
         # marker_color='#f4b247',  # yellow
         # marker_line_color='#ff7f0e',
-        marker_color='#66c56c',  # green
-        marker_line_color='#2ca02c',
+        # marker_color='#66c56c',  # green
+        # marker_line_color='#2ca02c',
         # marker_color='#23aaff', # blue
         # marker_line_color='#1f77b4',
         # marker_color='#ff6555', # red
         # marker_line_color='#d62728',
+        marker_color='rgb(193,118,111)',  # brown
+        marker_line_color='rgb(166,84,97)',
         # width=0.35,
         # offset=0.02
     ))
@@ -789,7 +799,7 @@ def draw_comparison_chart():
                      showline=True,
                      ticks='inside',
                      mirror=True,
-                     tickfont=dict(family="times new roman",size=16,color='black'),
+                     tickfont=dict(family="times new roman",size=15,color='black'),
                      linecolor='black',
                      linewidth=1,
                      tickmode='linear',
@@ -808,7 +818,7 @@ def draw_comparison_chart():
                      showline=True,
                      ticks='outside',
                      mirror=True,
-                     tickfont=dict(family="times new roman",size=16,color='black'),
+                     tickfont=dict(family="times new roman",size=15,color='black'),
                      linecolor='black',
                      linewidth=1,
                      title=dict(
@@ -828,7 +838,8 @@ def draw_comparison_chart():
 
     fig.update_layout(
         # title_text='<b>Model Comparison with Interfering OFDM Signals <br>at SNR 10 dB',
-        margin=dict(b=160, l=0, r=150, t=20),
+        margin=dict(b=160, l=0, r=150, t=20), # for small boxes
+        # margin=dict(b=350, l=0, r=200, t=20),  # normal
         title_x=0.50,
         title_y=0.90,
         yaxis={"mirror": "all"},
@@ -847,7 +858,7 @@ def draw_comparison_chart():
             orientation='h',
             itemsizing='constant',
             # x=0.4,  # for hw comp
-            x=-0.05, #for model comp
+            x=0.25, #for model comp
             y=1.2,
             font=dict(
                 # family="sans-serif",
@@ -857,21 +868,35 @@ def draw_comparison_chart():
             traceorder='normal'
         )
     )
-
-    plotly.offline.plot(figure_or_data=fig,image_width=400, image_height=400, filename='test_bar.html', image='svg')
+# image_width=400, image_height=400
+    plotly.offline.plot(figure_or_data=fig, filename='test_bar.html', image='svg')
 
 
 def plt_tl_chart():
-    sirs = ['5dB', '10dB', '15dB', '20dB', '0-20dB']
+    sirs = ['0 dB','5 dB', '10 dB', '15 dB', '20 dB', '0-20 dB']
     # acc = [0.82,0.86,0.87,0.88,0.89]
     # acc2 = [0.83,0.86,0.86,0.87,0.87]
     # acc3 = [0.71,0.80,0.86,0.87,0.87]
+    # intf tl cases in order
     # acc = [0.72,0.76,0.79,0.80,0.77]
     # acc2 = [0.62,0.74,0.77,0.78,0.73]
-    acc = [0.75,0.80,0.80,0.81,0.79]
-    acc2 = [0.71,0.80,0.82,0.82,0.79]
+    # acc = [0.75,0.80,0.80,0.81,0.79]
+    # acc2 = [0.71,0.80,0.82,0.82,0.79]
     # acc = [0.69,0.78,0.80,0.82,0.77]
     # acc2 = [0.66,0.76,0.79,0.80,0.75]
+    # vsg usrp tl
+    # acc = [0.61, 0.83, 0.94, 0.99, 0.99, 0.87]   # tl vsg
+    # acc2 = [0.55, 0.74, 0.85, 0.91, 0.93, 0.80]
+    # acc=[0.57,0.79,0.91,0.98,0.99,0.85]          # tl usrp
+    # acc2 = [0.56, 0.74, 0.86, 0.93, 0.94, 0.81]
+    # vsg cfo1
+    # acc = [0.58, 0.80, 0.93, 0.98, 0.99, 0.86]
+    # acc2 = [0.75, 0.98, 1.0, 1.0, 1.0, 0.95]
+    # vsg cfo5
+    acc = [0.59, 0.81, 0.94, 0.99, 1.0, 0.87]
+    acc2 = [0.71, 0.97, 1.0, 1.0, 1.0, 0.94]
+
+
 
     fig = go.Figure()
     # fig = plotly.subplots.make_subplots(specs=[[{"secondary_y": True}]], print_grid=True)
@@ -882,8 +907,12 @@ def plt_tl_chart():
         # text=acc,
         # textfont=dict(color='black', size=10),
         textposition='auto',
-        marker_color='#66c56c',
-        marker_line_color='#2ca02c',
+        # marker_color='#66c56c',  # green
+        # marker_line_color='#2ca02c',
+        # marker_color='rgb(103,219,165)',  # mint
+        # marker_line_color='rgb(76,200,163)',
+        marker_color='#ff6555', # red
+        marker_line_color='#d62728',
         # width=0.25,
         # offset=-0.32
     ))
@@ -894,36 +923,40 @@ def plt_tl_chart():
         name="                  ",#'Transfer <br>Learning (TL)',
         # text=acc2,
         # textfont=dict(color='black', size=10),
-        textposition='auto',
-        marker_color='#f4b247',
-        marker_line_color='#ff7f0e'
+        # textposition='auto',
+        # marker_color='#f4b247',
+        # marker_line_color='#ff7f0e'
+        # marker_color='rgb(193,118,111)',  # brown
+        # marker_line_color='rgb(166,84,97)',
+        marker_color='#66c56c',
+        marker_line_color='#2ca02c',
         # width=0.25,
         # offset=0.02
     ))
 
-    fig.add_shape(type="line", x0=-0.5, y0=1.51, x1=4.5, y1=1.51,
-                  line=dict(
-                      color="#23aaff",
-                      width=4,
-                      dash="dash",
-                  ),
-                  yref='y2',
-                  # name='Training time <br>with TL'
-                  # name="                  ",
-
-                  )
-
-    fig.add_shape(type="line", x0=-0.5, y0=1.85, x1=4.5, y1=1.85,
-                  line=dict(
-                      color="#ff6555",
-                      width=4,
-                      dash="dash",
-                  ),
-                  yref='y2',
-                  # name='Training time <br>w/o TL'
-                  # name="                  ",
-
-                  )
+    # fig.add_shape(type="line", x0=-0.5, y0=3.13, x1=5.5, y1=3.13,    # x1=4.5
+    #               line=dict(
+    #                   color="#23aaff",
+    #                   width=4,
+    #                   dash="dash",
+    #               ),
+    #               yref='y2',
+    #               # name='Training time <br>with TL'
+    #               # name="                  ",
+    #
+    #               )
+    #
+    # fig.add_shape(type="line", x0=-0.5, y0=25.3, x1=5.5, y1=25.3,
+    #               line=dict(
+    #                   color="#ff6555",
+    #                   width=4,
+    #                   dash="dash",
+    #               ),
+    #               yref='y2',
+    #               # name='Training time <br>w/o TL'
+    #               # name="                  ",
+    #
+    #               )
 
     # fig.add_trace(go.Scatter(
     #     x=sirs,
@@ -965,7 +998,7 @@ def plt_tl_chart():
                          size=22,
                          color="black"
                      ),
-                     dtick=0.1,range=[0, 1],title=dict(font=dict(family="times new roman",
+                     dtick=0.1,range=[0, 1.05],title=dict(font=dict(family="times new roman",
                              size=14,
                              color="black"
                          ),
@@ -997,13 +1030,13 @@ def plt_tl_chart():
         # title_text='<b>Comparison of Learning Approaches <br>with Interfering OFDM Signals at SNR 10 dB',
         # title_x=0.50,
         # title_y=0.90,
-        # yaxis={"mirror": "all"},
+        yaxis={"mirror": "all"},
         margin=dict(b=220, l=0, r=260, t=20),
         paper_bgcolor='white',
         plot_bgcolor='rgba(0,0,0,0)',
         bargap=0.2,
         barmode='group',
-        bargroupgap=0.1,
+        bargroupgap=0.15,
         width=500,
         height=500,
         showlegend=False,
@@ -1022,18 +1055,18 @@ def plt_tl_chart():
         #     ),
         #     traceorder='normal'
         # ),
-        yaxis2=dict(
-        # title='Training Time (Hours)',
-        # title_font=dict(color='black'),
-        side='right',
-        tickmode='linear',
-        tickfont=dict(family='times new roman',size=22,color='black'),
-        tick0=0,
-        ticks='inside',
-        dtick=1,
-        range=[0,10],
-        overlaying= 'y'
-    ),
+        # yaxis2=dict(
+        # # title='Training Time (Hours)',
+        # # title_font=dict(color='black'),
+        # side='right',
+        # tickmode='linear',
+        # tickfont=dict(family='times new roman',size=22,color='black'),
+        # tick0=0,
+        # ticks='inside',
+        # dtick=5,
+        # range=[0,52.5],
+        # overlaying= 'y'
+    # ),
     )
 
     plotly.offline.plot(figure_or_data=fig, image_width=610, image_height=500, filename='test_bar.html', image='svg')
@@ -1100,7 +1133,7 @@ def scalability_chart():
     fig.update_layout(
         margin=go.layout.Margin(
             l=0,  # left margin
-            r=130,  # right margin
+            r=110,  # right margin  130
             b=160,  # bottom margin
             t=20,  # top margin
         ),
@@ -1484,8 +1517,9 @@ def sequential_chart():
 if __name__=="__main__":
     # draw_comparison_chart()
     # n = 4
-    plot_heatmap()
-    # plt_tl_chart()
+    # draw_comparison_chart()
+    # plot_heatmap()
+    plt_tl_chart()
     # for i in range(16):
     #     b = bin(i)[2:].zfill(n)
     #     print(b)
