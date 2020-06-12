@@ -167,7 +167,7 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
     # print(temp2)
 
     x = ["SC <br>BPSK", "SC <br>QPSK", "SC 16-<br>QAM", "SC 64-<br>QAM",
-         "OFDM <br>BPSK", "OFDM <br>QPSK", "OFDM 16-<br>QAM", "OFDM 64-<br>QAM", "UNK"]
+         "OFDM <br>BPSK", "OFDM <br>QPSK", "OFDM 16-<br>QAM", "OFDM 64-<br>QAM"]
 
     y = list(reversed(x))
 
@@ -413,23 +413,23 @@ if __name__ == "__main__":
     # pass
 
     # -------------PLot overall conf maps------------------------------------------------------------
-    # datapath = "/home/rachneet/thesis_results/"
-    # file = datapath+'res_vsg_cfo5/output.csv'
-    # df = pd.read_csv(file)
-    # # print(df.tail())
-    # output = {}
-    # y_true = df['True_label'].values
-    # y_pred = df['Predicted_label'].values
-    # print(metrics.accuracy_score(y_true, y_pred))
-    # cmap =  metrics.confusion_matrix(y_true, y_pred)
-    # # # print(cmap)
-    # unique, counts = np.unique(df['True label'].values, return_counts=True)
-    # # # print(counts)
-    # # # k=25
-    # plot_confusion_matrix(cmap, counts, "cmap_unk_" + "all", "all")
+    datapath = "/home/rachneet/thesis_results/"
+    file = datapath+'xg_boost_vsg_all/output.csv'
+    df = pd.read_csv(file)
+    # print(df.tail())
+    output = {}
+    y_true = df['True_label'].values
+    y_pred = df['Predicted_label'].values
+    print(metrics.accuracy_score(y_true, y_pred))
+    cmap =  metrics.confusion_matrix(y_true, y_pred)
+    # # print(cmap)
+    unique, counts = np.unique(df['True_label'].values, return_counts=True)
+    # # print(counts)
+    # # k=25
+    plot_confusion_matrix(cmap, counts, "cmap_xg_" + "all", "all")
 
     # -------------PLot individual conf maps------------------------------------------------------------
-    datapath = "/home/rachneet/thesis_results/"
+    # datapath = "/home/rachneet/thesis_results/"
     # file = datapath + 'output_unk_vsg_snr20.csv'
     # df = pd.read_csv(file)
     # # print(df.tail())
@@ -441,15 +441,15 @@ if __name__ == "__main__":
 
     # -------------------Plot collective conf maps-----------------------------------------------------
 
-    count,output = compute_results(datapath+"xg_boost_vsg_all/output.csv", ['0db', '5db', '10db', '15db', '20db'])
-    #[0,5,10,15,20])
-    # print(count,output)
-    # print(count)
-    for k,v in output.items():
-        # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_bpsk_snr_"+str(k),k)
-        # print(v['confusion_matrix'])
-
-        print(v['accuracy'])
+    # count,output = compute_results(datapath+"xg_boost_vsg_all/output.csv", ['0db', '5db', '10db', '15db', '20db'])
+    # #[0,5,10,15,20])
+    # # print(count,output)
+    # # print(count)
+    # for k,v in output.items():
+    #     # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_bpsk_snr_"+str(k),k)
+    #     # print(v['confusion_matrix'])
+    #
+    #     print(v['accuracy'])
 
     # --------------------------------CFO correction--------------------------------------------------
 
