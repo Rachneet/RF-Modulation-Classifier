@@ -6,7 +6,7 @@ from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 import xgboost as xgb
 from sklearn.metrics import precision_score, recall_score, accuracy_score, classification_report
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, KFold, cross_val_score
 import glob
 import re
 import csv
@@ -14,6 +14,7 @@ import pickle
 import shap
 import matplotlib.pyplot as plt
 import warnings
+from xgboost import plot_tree
 
 
 class XgbModule(object):
@@ -26,6 +27,23 @@ class XgbModule(object):
                        "OFDM_BPSK", "OFDM_QPSK", "OFDM_16QAM", "OFDM_64QAM"]
         self.snr = [0, 5, 10, 15, 20]
         self.save_results = save_results
+
+
+    def create_deepsig_set(self):
+        df = pd.read_csv(self.data_path)
+        df_X = df.drop(['label'], axis=1)
+        df_y = df[['SNR','label']]
+
+        features = list(df_X.columns)
+        scale_features = list(set(features) - set(['SNR']))
+        df_X.loc[:, scale_features] = preprocessing.scale(df_X.loc[:, scale_features])
+        # shuffle datasets
+        np.random.seed(4)
+        idx = np.random.permutation(df_X.index)
+        df_X = df_X.reindex(idx)
+        df_y = df_y.reindex(idx)
+        print('-----------------dataset created---------------')
+        return df_X, df_y
 
 
     def create_dataset(self):
@@ -81,21 +99,28 @@ class XgbModule(object):
 
 
     def classifier(self, df_x, df_y):
-        X_train, X_test, y_train, y_test = train_test_split(df_x, df_y, train_size=0.8, shuffle=False)
+        X_tr, X_test, y_tr, y_test = train_test_split(df_x, df_y, test_size=0.2, shuffle=False)
+        X_train, X_val, y_train, y_val = train_test_split(X_tr, y_tr, test_size=0.0625, shuffle=False)
+
         D_train = xgb.DMatrix(X_train, label=y_train['label'])
+        D_val = xgb.DMatrix(X_val, label=y_val['label'])
         D_test = xgb.DMatrix(X_test, label=y_test['label'])
 
         params = {
-            'learning_rate': 0.3,   # learning rate, prevents overfitting
-            'max_depth': 8,  # depth of decision trees
-            'gamma': 0,
-            'colsample_bytree': 0.7,
-            'min_child_weight': 1,
+            'learning_rate': 0.2,   # learning rate, prevents overfitting
+            'max_depth': 18,  # depth of decision trees
+            'gamma': 0.4,
+            'colsample_bytree': 0.3,
+            'min_child_weight': 3,
             'objective': 'multi:softprob',   # loss function
-            'num_class': 8}
+            'num_class': 24,}
+            # 'gpu_id': 0,
+            # 'tree_method': 'gpu_hist'}
 
-        steps = 100  # The number of training iterations
-        model = xgb.train(params, D_train, steps)
+        steps = 200  # The number of training iterations
+        evals = [(D_val,"validation")]
+        model = xgb.train(params, D_train, num_boost_round=steps, evals=evals, early_stopping_rounds=10,
+                          verbose_eval=True)
 
         preds = model.predict(D_test)
         best_preds = np.asarray([np.argmax(pred) for pred in preds])
@@ -116,14 +141,56 @@ class XgbModule(object):
             with open(self.save_path + "output.csv", 'w', encoding='utf-8') as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=fieldnames, quoting=csv.QUOTE_NONNUMERIC)
                 writer.writeheader()
-                for i, j, k in zip(y_test['label'], best_preds, y_test['snr_class']):
+                for i, j, k in zip(y_test['label'], best_preds, y_test['SNR']):
                     writer.writerow(
                         {'True_label': i, 'Predicted_label': j, 'SNR': k})
+
+
+    def cross_validate_model(self, X, Y):
+        X_train, X_test, y_train, y_test = train_test_split(X, Y, train_size=0.8, shuffle=False)
+        D_train = xgb.DMatrix(X_train, label=y_train['label'])
+        D_test = xgb.DMatrix(X_test, label=y_test['label'])
+
+        params = {
+            'learning_rate': 0.2,  # learning rate, prevents overfitting
+            'max_depth': 18,  # depth of decision trees
+            'gamma': 0.4,
+            'colsample_bytree': 0.3,
+            'min_child_weight': 3,
+            'objective': 'multi:softprob',  # loss function
+            'num_class': 8}
+
+        # steps = 100  # The number of training iterations
+        # model = xgb.train(params, D_train, steps, evals=[(D_test, "Test")], early_stopping_rounds=10)
+        # preds = model.predict(D_test)
+        # best_preds = np.asarray([np.argmax(pred) for pred in preds])
+        #
+        # # evaluation metrics
+        # print("Precision = {}".format(precision_score(y_test['label'], best_preds, average='macro')))
+        # print("Recall = {}".format(recall_score(y_test['label'], best_preds, average='macro')))
+        # print("Accuracy = {}".format(accuracy_score(y_test['label'], best_preds)))
+        # Run CV
+        cv_results = xgb.cv(
+            params,
+            D_train,
+            num_boost_round=100,
+            seed=4,
+            nfold=5,
+            metrics=['merror'],
+            early_stopping_rounds=10
+        )
+        # Update best MAE
+        mean_merror = cv_results['test-merror-mean'].min()
+        std_merror = cv_results['test-merror-std'].min()
+        print(mean_merror, std_merror)
 
 
     def grid_cv(self, df_x, df_y):
 
         X_train, X_test, y_train, y_test = train_test_split(df_x, df_y, train_size=0.8)
+        y_train = y_train['label']
+        y_test = y_test['label']
+
         clf = xgb.XGBClassifier()
         parameters = {
             "learning_rate": [0.05, 0.10, 0.15, 0.20, 0.25, 0.30],  # shrinks feature values for better boosting
@@ -160,6 +227,9 @@ class XgbModule(object):
         y_true, y_pred = y_test, grid.predict(X_test)
         print(classification_report(y_true, y_pred))
         print()
+        print("Best parameters set found on development set:")
+        print()
+        print(grid.best_params_)
 
 
     def class_labels(self, y_test):
@@ -186,7 +256,7 @@ class XgbModule(object):
                                 class_names=self.mod_schemes)
 
         handles, labels = plt.gca().get_legend_handles_labels()
-        order = [7, 6, 3, 2, 4, 5, 1, 0]
+        order = [7, 6, 4, 2, 1, 5, 3, 0]
         plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order])
         plt.savefig(self.save_path + "shap_summary.svg")
 
@@ -195,20 +265,22 @@ class XgbModule(object):
 
         expected_values, shap_values, X_test, y_test = self.get_shape_values(model, df_x, df_y)
 
-        row_index = 45
+        row_index = 2
         y_pred = model.predict(xgb.DMatrix(X_test))
         # print(y_test['label'][:50])
         # print([np.argmax(pred) for pred in y_pred[:50]])
         # print(list(df_x.columns))
         # print(np.array(shap_values)[2][0])
+
         shap.multioutput_decision_plot(expected_values, shap_values,
                                        row_index=row_index,
                                        highlight=[y_test['label'][row_index]],
                                        feature_names=list(df_x.columns),
                                        legend_labels=self.class_labels(y_pred[row_index]),
                                        legend_location='lower right', show=False)
+
         # plt.show()
-        plt.savefig(self.save_path + "shap_decision_wrong_pred.svg")
+        plt.savefig(self.save_path + "shap_decision_qpsk.svg")
 
 
     def identify_outliers(self, model, df_x, df_y):
@@ -220,24 +292,42 @@ class XgbModule(object):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             sh = explainer.shap_values(T)
-
         r = shap.multioutput_decision_plot(expected_values, sh, T, feature_order='hclust',
                                            return_objects=True)
         plt.show()
 
 
+    def dependence_plot(self, model, df_x, df_y):
+        print(list(df_x.columns))
+        expected_values, shap_values, X_test, y_test = self.get_shape_values(model, df_x, df_y)
+        # np.seterr(divide='ignore', invalid='ignore')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            # s = np.array(shap_values)
+            # s[s==0] = 0.1
+            # s = list(s)
+            shap.dependence_plot('$\\mu^R_{42}$', shap_values[4], X_test,
+                                 show=False)# ,interaction_index='$\\sigma_{ap,CNL}$')
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig(self.save_path + "shap_dep_ofdm_bpsk.svg")
+
     def main(self):
-        x_data, y_data = self.create_dataset()
-        x_data, y_data = self.preprocess_data(x_data, y_data)
-        # print(x_data.head())
-        # print(y_data.head())
-        # self.classifier(x_data, y_data)
-        model = pickle.load(open(self.save_path+"model.dat",'rb'))
-        self.identify_outliers(model, x_data, y_data)
+        x_data, y_data = self.create_deepsig_set()
+        # x_data, y_data = self.preprocess_data(x_data, y_data)
+        # # print(x_data.head())
+        # # print(y_data.head())
+        # # self.grid_cv(x_data, y_data)
+        self.classifier(x_data, y_data)
+        # model = pickle.load(open(self.save_path+"model.dat",'rb'))
+        # # self.cross_validate_model(x_data, y_data)
+        # # self.dependence_plot(model, x_data, y_data)
+        # plot_tree(model)
+        # plt.show()
 
 
 if __name__ == "__main__":
-    datapath = "/home/rachneet/rf_featurized/vsg_no_cfo/"
-    save_path = "/home/rachneet/thesis_results/xg_boost_vsg_all/"
-    xgb_obj = XgbModule(datapath, save_path, save_results=False)
+    datapath = "/home/rachneet/rf_featurized/deepsig_featurized_set.csv"
+    save_path = "/home/rachneet/thesis_results/deepsig_results/"
+    xgb_obj = XgbModule(datapath, save_path, save_results=True)
     xgb_obj.main()

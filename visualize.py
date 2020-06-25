@@ -1514,12 +1514,97 @@ def sequential_chart():
     plotly.offline.plot(figure_or_data=fig, image_width=1000, image_height=500, filename='seq.html', image='svg')
 
 
+def draw_activation(x):
+    sigmoid, tanh, relu = [],[],[]
+    for item in x:
+        sigmoid.append(1 / (1 + math.exp(-item)))
+        tanh.append(math.tanh(item))
+
+    y = np.arange(-10.0, 10.0, 0.1)
+    for val in y:
+        relu.append(np.maximum(0,val))
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x, y=sigmoid, name=""))
+    fig.add_trace(go.Scatter(x=x, y=tanh, name=""))
+    fig.add_trace(go.Scatter(x=y, y=relu, name=""))
+
+    fig.add_shape(type="line", x0=0, y0=-1.2, x1=0, y1=1.2,
+                  line=dict(
+                      color="black",
+                      width=1
+                  ))
+    line_ax = [-8, -6, -4, -2, 2, 4, 6, 8]
+    for i in line_ax:
+        fig.add_shape(type="line", x0=i, y0=-1.2, x1=i, y1=1.2,
+                      line=dict(
+                          color="grey",
+                          width=1,
+                          dash="dot",
+                      ),
+                      )
+    fig.add_shape(type="line", x0=-10, y0=0, x1=10, y1=0,
+                  line=dict(
+                      color="black",
+                      width=1
+                  ))
+    fig.update_yaxes(showline=True, mirror=True, ticks='inside',
+                     linecolor='black', linewidth=1,
+                     tick0=-1,
+                     dtick=0.5,
+                     range=[-1.2, 1.2],
+                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     title=dict(font=dict(family='Times New Roman', color="black",  # family="sans-serif",size=15,
+                                          size=18)))
+
+    fig.update_xaxes(side='bottom', showline=True, ticks='inside',
+                     mirror=True, linecolor='black', linewidth=1,
+                     tick0=-10,
+                     dtick=2,
+                     range=[-10, 10],
+                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     title=dict(font=dict(
+                         family='Times New Roman',
+                         size=18,
+                         color="black"
+                     )))
+    fig.update_layout(
+        # title_text='<b>Model Scalability with Number of IQ Samples',
+        # title_x=0.50, title_y=0.90,
+        paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
+        margin=go.layout.Margin(
+            l=0,  # left margin
+            r=160,  # right margin  130
+            b=160,  # bottom margin
+            t=20,  # top margin
+        ),
+        showlegend=True,
+        legend=dict(
+            # bordercolor='black',
+            # borderwidth=1,
+            bgcolor='rgba(0,0,0,0)',
+            orientation='v',
+            itemsizing='constant',
+            # x=0.25,
+            x=0.65,
+            y=0.1,
+            font=dict(
+                # family="sans-serif",
+                size=10,
+                color="black"
+            )
+    ))
+    plotly.offline.plot(figure_or_data=fig, image_width=550, image_height=500, filename='act.html', image='svg')
+
+
 if __name__=="__main__":
+    x = np.arange(-10,10,0.2)
+    draw_activation(x)
     # draw_comparison_chart()
     # n = 4
     # draw_comparison_chart()
     # plot_heatmap()
-    plt_tl_chart()
+    # plt_tl_chart()
     # for i in range(16):
     #     b = bin(i)[2:].zfill(n)
     #     print(b)

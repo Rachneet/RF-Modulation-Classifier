@@ -168,16 +168,6 @@ class LightningCNN(pl.LightningModule):
     #
     #     # layer 9
     #     self.fc3 = nn.Linear(hparams.fc_neurons, hparams.n_classes)
-    #
-    #     if hparams.filters == 256 and hparams.fc_neurons == 1024:
-    #         self._create_weights(mean=0.0, std=0.05)
-    #     elif hparams.filters == 1024 and hparams.fc_neurons == 2048:
-    #         self._create_weights(mean=0.0, std=0.02)
-    #
-    # def _create_weights(self, mean=0.0, std=0.05):
-    #     for module in self.modules():
-    #         if isinstance(module, nn.Conv1d) or isinstance(module, nn.Linear):
-    #             module.weight.data.normal_(mean, std)
 
     def forward(self, input, features):
 

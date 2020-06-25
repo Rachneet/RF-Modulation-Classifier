@@ -195,6 +195,7 @@ def sample_from_h5(path, output_path):
 
 if __name__=="__main__":
     # merge_hdfset()
-    data_path = "/media/backup/Arsenal/rf_dataset_inets/usrp_no_intf_all_normed.h5"
-    output_path = "/media/backup/Arsenal/rf_dataset_inets/dataset_usrp_all_256.h5"
-    sample_from_h5(data_path, output_path)
+    pass
+    # data_path = "/media/rachneet/arsenal/rf_dataset_inets/vsg_no_intf_all_normed.h5"
+    # output_path = "/media/rachneet/arsenal/rf_dataset_inets/dataset_vsg_all_256.h5"
+    # sample_from_h5(data_path, output_path)

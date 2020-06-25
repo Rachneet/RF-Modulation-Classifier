@@ -414,19 +414,19 @@ if __name__ == "__main__":
 
     # -------------PLot overall conf maps------------------------------------------------------------
     datapath = "/home/rachneet/thesis_results/"
-    file = datapath+'xg_boost_vsg_all/output.csv'
+    file = datapath+'res_vsg_all/output.csv'
     df = pd.read_csv(file)
     # print(df.tail())
     output = {}
     y_true = df['True_label'].values
     y_pred = df['Predicted_label'].values
     print(metrics.accuracy_score(y_true, y_pred))
-    cmap =  metrics.confusion_matrix(y_true, y_pred)
-    # # print(cmap)
-    unique, counts = np.unique(df['True_label'].values, return_counts=True)
-    # # print(counts)
-    # # k=25
-    plot_confusion_matrix(cmap, counts, "cmap_xg_" + "all", "all")
+    # cmap =  metrics.confusion_matrix(y_true, y_pred)
+    # # # print(cmap)
+    # unique, counts = np.unique(df['True_label'].values, return_counts=True)
+    # # # print(counts)
+    # # # k=25
+    # plot_confusion_matrix(cmap, counts, "cmap_xg_" + "all", "all")
 
     # -------------PLot individual conf maps------------------------------------------------------------
     # datapath = "/home/rachneet/thesis_results/"
@@ -441,8 +441,8 @@ if __name__ == "__main__":
 
     # -------------------Plot collective conf maps-----------------------------------------------------
 
-    # count,output = compute_results(datapath+"xg_boost_vsg_all/output.csv", ['0db', '5db', '10db', '15db', '20db'])
-    # #[0,5,10,15,20])
+    # count,output = compute_results(datapath+"res_vsg_all/output.csv",# ['0db', '5db', '10db', '15db', '20db'])
+    # [0,5,10,15,20])
     # # print(count,output)
     # # print(count)
     # for k,v in output.items():

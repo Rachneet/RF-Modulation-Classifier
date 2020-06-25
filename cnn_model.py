@@ -17,6 +17,7 @@ class CNN(nn.Module):
         self.max_seq_length = max_seq_length
         self.n_classes = n_classes
         self.pool_size = pool_size
+        self.padding = 2
 
         # pooling in layer 1,2,6 ; pool =3
         # layers 7,8 and 9 are fully connected
@@ -26,7 +27,7 @@ class CNN(nn.Module):
 
         # layer 1
         self.conv1 = nn.Sequential(
-            nn.Conv2d(input_dim, filters, kernel_sizes[0],padding=2),
+            nn.Conv2d(input_dim, filters, kernel_sizes[0],padding=self.padding),
             nn.BatchNorm2d(filters),
             nn.ReLU(),
             nn.MaxPool2d(pool_size)
@@ -34,7 +35,7 @@ class CNN(nn.Module):
 
         # layer 2
         self.conv2 = nn.Sequential(
-            nn.Conv2d(filters, filters, kernel_sizes[1],padding=2),
+            nn.Conv2d(filters, filters, kernel_sizes[1],padding=self.padding),
             nn.BatchNorm2d(filters),
             nn.ReLU(),
             nn.MaxPool2d(pool_size)
@@ -42,21 +43,21 @@ class CNN(nn.Module):
 
         # layer 3,4,5
         self.conv3 = nn.Sequential(
-            nn.Conv2d(filters, filters, kernel_sizes[2],padding=2),
+            nn.Conv2d(filters, filters, kernel_sizes[2],padding=self.padding),
             nn.BatchNorm2d(filters),
             nn.ReLU(),
             nn.MaxPool2d(pool_size)
         )
 
         self.conv4 = nn.Sequential(
-            nn.Conv2d(filters, filters, kernel_sizes[3],padding=2),
+            nn.Conv2d(filters, filters, kernel_sizes[3],padding=self.padding),
             nn.BatchNorm2d(filters),
             nn.ReLU(),
             nn.MaxPool2d(pool_size)
         )
 
         self.conv5 = nn.Sequential(
-            nn.Conv2d(filters, filters, kernel_sizes[4],padding=2),
+            nn.Conv2d(filters, filters, kernel_sizes[4],padding=self.padding),
             nn.BatchNorm2d(filters),
             nn.ReLU(),
             nn.MaxPool2d(pool_size)
@@ -64,14 +65,14 @@ class CNN(nn.Module):
 
         # layer 6
         self.conv6 = nn.Sequential(
-            nn.Conv2d(filters, filters, kernel_sizes[5],padding=2),
+            nn.Conv2d(filters, filters, kernel_sizes[5],padding=self.padding),
             nn.BatchNorm2d(filters),
             nn.ReLU(),
             nn.MaxPool2d(pool_size)
         )
 
-        dimension = int(((max_seq_length - 96) / 27 * filters)-11)
-        print("Dimension before FC layer: ", dimension)
+        # dimension = int(((max_seq_length - 96) / 27 * filters)-11)
+        # print("Dimension before FC layer: ", dimension)
 
         # layer 7
         self.fc1 = nn.Sequential(
@@ -147,5 +148,24 @@ class CNN(nn.Module):
 
 
 if __name__=="__main__":
-    model = CNN(n_classes=8)
-    print(summary(model,torch.ones((1,1024,2)),show_input=False, show_hierarchical=False))
+    # model = CNN(n_classes=8)
+    # print(summary(model,torch.ones((1,1024,2)),show_input=False, show_hierarchical=False))
+    input = [[[5,3,6,2,1,1],[9,4,7,2,4,6],[2,8,7,3,2,1],
+             [4,3,6,9,0,1],[3,6,1,0,5,2],[6,1,1,4,7,3]],
+             [[5, 3, 6, 2, 1, 1], [9, 4, 7, 2, 4, 6], [2, 8, 7, 3, 2, 1],
+              [4, 3, 6, 9, 0, 1], [3, 6, 1, 0, 5, 2], [6, 1, 1, 4, 7, 3]]]
+    nb_channels = 1
+    h, w = 6, 6
+    x = torch.randn(1, nb_channels, h, w)
+    weights = torch.tensor([[1., 0., 0.],
+                            [0., 1., 0.],
+                            [0., 0., 1.]])
+    weights = weights.view(1, 1, 3, 3).repeat(1, 1, 1, 1)
+    # input = torch.rand(6,6)
+    input = torch.tensor(input).float()
+    # input = input.unsqueeze(dim=0)
+    input = input.unsqueeze(dim=1)
+    conv = F.conv2d(input, weights)
+    # print(conv.weight)
+    # out = conv(input)
+    print(conv)
