@@ -4,7 +4,7 @@ import os
 import numpy as np
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
-import xgboost as xgb
+import xgboost as xg
 from sklearn.metrics import precision_score, recall_score, accuracy_score, classification_report
 from sklearn.model_selection import GridSearchCV, KFold, cross_val_score
 import glob
@@ -15,6 +15,9 @@ import shap
 import matplotlib.pyplot as plt
 import warnings
 from xgboost import plot_tree
+from inference import compute_results
+import dataloader as dl
+from merge_filtered import *
 
 
 class XgbModule(object):
@@ -102,9 +105,9 @@ class XgbModule(object):
         X_tr, X_test, y_tr, y_test = train_test_split(df_x, df_y, test_size=0.2, shuffle=False)
         X_train, X_val, y_train, y_val = train_test_split(X_tr, y_tr, test_size=0.0625, shuffle=False)
 
-        D_train = xgb.DMatrix(X_train, label=y_train['label'])
-        D_val = xgb.DMatrix(X_val, label=y_val['label'])
-        D_test = xgb.DMatrix(X_test, label=y_test['label'])
+        D_train = xg.DMatrix(X_train, label=y_train['label'])
+        D_val = xg.DMatrix(X_val, label=y_val['label'])
+        D_test = xg.DMatrix(X_test, label=y_test['label'])
 
         params = {
             'learning_rate': 0.2,   # learning rate, prevents overfitting
@@ -113,13 +116,13 @@ class XgbModule(object):
             'colsample_bytree': 0.3,
             'min_child_weight': 3,
             'objective': 'multi:softprob',   # loss function
-            'num_class': 24,}
+            'num_class': 24}
             # 'gpu_id': 0,
             # 'tree_method': 'gpu_hist'}
 
         steps = 200  # The number of training iterations
         evals = [(D_val,"validation")]
-        model = xgb.train(params, D_train, num_boost_round=steps, evals=evals, early_stopping_rounds=10,
+        model = xg.train(params, D_train, num_boost_round=steps, evals=evals, early_stopping_rounds=10,
                           verbose_eval=True)
 
         preds = model.predict(D_test)
@@ -148,8 +151,8 @@ class XgbModule(object):
 
     def cross_validate_model(self, X, Y):
         X_train, X_test, y_train, y_test = train_test_split(X, Y, train_size=0.8, shuffle=False)
-        D_train = xgb.DMatrix(X_train, label=y_train['label'])
-        D_test = xgb.DMatrix(X_test, label=y_test['label'])
+        D_train = xg.DMatrix(X_train, label=y_train['label'])
+        D_test = xg.DMatrix(X_test, label=y_test['label'])
 
         params = {
             'learning_rate': 0.2,  # learning rate, prevents overfitting
@@ -158,7 +161,7 @@ class XgbModule(object):
             'colsample_bytree': 0.3,
             'min_child_weight': 3,
             'objective': 'multi:softprob',  # loss function
-            'num_class': 8}
+            'num_class': 24}
 
         # steps = 100  # The number of training iterations
         # model = xgb.train(params, D_train, steps, evals=[(D_test, "Test")], early_stopping_rounds=10)
@@ -170,7 +173,7 @@ class XgbModule(object):
         # print("Recall = {}".format(recall_score(y_test['label'], best_preds, average='macro')))
         # print("Accuracy = {}".format(accuracy_score(y_test['label'], best_preds)))
         # Run CV
-        cv_results = xgb.cv(
+        cv_results = xg.cv(
             params,
             D_train,
             num_boost_round=100,
@@ -187,11 +190,11 @@ class XgbModule(object):
 
     def grid_cv(self, df_x, df_y):
 
-        X_train, X_test, y_train, y_test = train_test_split(df_x, df_y, train_size=0.8)
+        X_train, X_test, y_train, y_test = train_test_split(df_x, df_y, train_size=0.2)
         y_train = y_train['label']
         y_test = y_test['label']
 
-        clf = xgb.XGBClassifier()
+        clf = xg.XGBClassifier()
         parameters = {
             "learning_rate": [0.05, 0.10, 0.15, 0.20, 0.25, 0.30],  # shrinks feature values for better boosting
             "max_depth": [3, 4, 5, 6, 8, 10, 12, 15],
@@ -317,7 +320,7 @@ class XgbModule(object):
         # x_data, y_data = self.preprocess_data(x_data, y_data)
         # # print(x_data.head())
         # # print(y_data.head())
-        # # self.grid_cv(x_data, y_data)
+        # self.grid_cv(x_data, y_data)
         self.classifier(x_data, y_data)
         # model = pickle.load(open(self.save_path+"model.dat",'rb'))
         # # self.cross_validate_model(x_data, y_data)
@@ -326,8 +329,52 @@ class XgbModule(object):
         # plt.show()
 
 
+def split_csv():
+    classes = ['32PSK', '16APSK', '32QAM', 'FM', 'GMSK', '32APSK', 'OQPSK', '8ASK', 'BPSK',
+               '8PSK', 'AM-SSB-SC', '4ASK', '16PSK', '64APSK', '128QAM', '128APSK', 'AM-DSB-SC',
+               'AM-SSB-WC', '64QAM', 'QPSK', '256QAM', 'AM-DSB-WC', 'OOK', '16QAM']
+    norm_classes = ['OOK', '4ASK', 'BPSK', 'QPSK', '8PSK', '16QAM', 'AM-SSB-SC', 'AM-DSB-SC', 'FM', 'GMSK', 'OQPSK']
+    label_list = []
+
+    for i in norm_classes:
+        for j in range(len(classes)):
+            if i == classes[j]:
+                label_list.append(j)
+    print(label_list)
+    path = "/home/rachneet/rf_featurized/"
+    df = pd.read_csv(path + "deepsig_featurized_set.csv")
+    df = df[df['label'].isin(label_list)]
+    df['label'] = df['label'].apply(lambda x:mod_fix(x, label_list))
+    # print(df.head())
+    df.to_csv(path+"deepsig_featurized_11mod.csv", index=False)
+    # t_label = sorted(list(pd.unique(df['True_label'].values)))
+    # print(t_label)
+    # print(df.head())
+
+
+def mod_fix(label, label_list):
+    for l in range(len(label_list)):
+        if label == label_list[l]:
+            return l
+
+
+def explore_results():
+    path = "/home/rachneet/thesis_results/deepsig_results_11mod/"
+    df = pd.read_csv(path+"output.csv")
+    snr = sorted(list(pd.unique(df['SNR'].values)))
+    t_label = sorted(list(pd.unique(df['True_label'].values)))
+    # print(t_label)
+    # print(snr)
+    # print(type(snr))
+    count, result = compute_results(path+"output.csv", snr)
+    for k, v in result.items():
+        print(k,":",v['accuracy'])
+
+
 if __name__ == "__main__":
     datapath = "/home/rachneet/rf_featurized/deepsig_featurized_set.csv"
-    save_path = "/home/rachneet/thesis_results/deepsig_results/"
+    save_path = "/home/rachneet/thesis_results/deepsig_complete_xgb/"
     xgb_obj = XgbModule(datapath, save_path, save_results=True)
     xgb_obj.main()
+    # split_csv()
+    # explore_results()

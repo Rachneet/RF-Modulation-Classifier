@@ -1467,7 +1467,7 @@ def sequential_chart():
     colors = ['#23aaff',  #  blue
             'rgb(253,141,60)',  # orange
             '#66c56c',  # moss green
-            'rgb(159,130,206)',  # muted purple
+           'rgb(159,130,206)',  # muted purple
             '#f4b247',  # mustard yellow
             '#ff6555',  # red apple
             'rgb(247,104,161)',  # pink
@@ -1488,27 +1488,33 @@ def sequential_chart():
 
         fig.add_trace(go.Bar(x=x, y=norm(sum_preds), orientation='v', name=names[i], marker=dict(
             color=colors[i],
-            line=dict(color=line_colors[i], width=1)
+            line=dict(color="black", width=0.2)
         )))
 
     fig.update_yaxes(showline=True, mirror=True, ticks='outside',
                      linecolor='black', linewidth=1,
                      tickfont=dict(family='Times New Roman', color="black", size=18),
                      title=dict(font=dict(family='Times New Roman', color="black",  # family="sans-serif",size=15,
-                                          size=18), text="Normalized incorrect<br> predictions"))
+                                          size=22), text="Normalized incorrect<br> predictions"))
 
     fig.update_xaxes(side='bottom', showline=True, ticks='outside',
                      mirror=True, linecolor='black', linewidth=1,
                      tickfont=dict(family='Times New Roman', color="black", size=18),
                      title=dict(font=dict(
                          family='Times New Roman',
-                         size=18,
+                         size=22,
                          color="black"
                      ), text="Signal segments"))
 
-    fig.update_layout(barmode='relative', title_text='Incorrect Predictions for Signal Segments',
+    fig.update_layout(barmode='relative', # title_text='Incorrect Predictions for Signal Segments',
                       paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
-                      showlegend=True, title_x=0.50, title_y=0.90,
+                      showlegend=False, title_x=0.50, title_y=0.90,
+                      # legend=dict(
+                      #     # bordercolor='black',
+                      #     # borderwidth=1,
+                      #     bgcolor='rgba(0,0,0,0)',
+                      #     orientation='h',
+                      #     itemsizing='constant')
                       )
 
     plotly.offline.plot(figure_or_data=fig, image_width=1000, image_height=500, filename='seq.html', image='svg')
@@ -1597,9 +1603,90 @@ def draw_activation(x):
     plotly.offline.plot(figure_or_data=fig, image_width=550, image_height=500, filename='act.html', image='svg')
 
 
+def deepsig_plots():
+
+    x = np.arange(-20,21,2)
+    y_xgb = [0.04, 0.04, 0.05, 0.05, 0.06, 0.07, 0.12, 0.19, 0.28, 0.33, 0.43, 0.55, 0.63, 0.67, 0.71,
+             0.72, 0.73, 0.73, 0.73, 0.73, 0.73]
+    y_cnn = [0.05, 0.05, 0.04, 0.05, 0.07, 0.11, 0.17, 0.23, 0.31, 0.4, 0.5, 0.59, 0.68, 0.76, 0.83,
+             0.85, 0.87, 0.87, 0.88, 0.88, 0.88]
+    y_res = [0.04, 0.04, 0.05, 0.05, 0.08, 0.13, 0.18, 0.22, 0.31, 0.4, 0.52, 0.61, 0.72, 0.85, 0.92,
+             0.93, 0.94, 0.95, 0.95, 0.95, 0.95]
+    colors = ['rgba(255, 101, 85, 1)', 'rgba(35, 170, 255, 1)', 'rgba(244, 178, 71, 1)']
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x, y=y_xgb, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
+                             name="XGBoost"))
+    fig.add_trace(go.Scatter(x=x, y=y_cnn, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
+                             name="CNN"))
+    fig.add_trace(go.Scatter(x=x, y=y_res, mode="lines+markers", marker_symbol='diamond', marker_color=colors[2],
+                             name="ResNet-101"))
+
+    line_ax = [0.2, 0.4, 0.6, 0.8]
+    for i in line_ax:
+        fig.add_shape(type="line", x0=-20, y0=i, x1=20, y1=i,
+                      line=dict(
+                          color="grey",
+                          width=1,
+                          dash="dashdot",
+                      ),
+                      )
+
+    line_ax_2 = [-10, 0, 10]
+    for i in line_ax_2:
+        fig.add_shape(type="line", x0=i, y0=0, x1=i, y1=1,
+                      line=dict(
+                          color="grey",
+                          width=1,
+                          dash="dashdot",
+                      ),
+                      )
+
+    fig.update_yaxes(showline=True, mirror=True, ticks='outside',
+                     linecolor='black', linewidth=1,
+                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     tick0=0,
+                     dtick=0.2,
+                     range=[0, 1],
+                     title=dict(font=dict(family='Times New Roman', color="black",  # family="sans-serif",size=15,
+                                          size=18), text="Classification accuracy"))
+
+    fig.update_xaxes(side='bottom', showline=True, ticks='outside',
+                     mirror=True, linecolor='black', linewidth=1,
+                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     tick0=-20,
+                     dtick=10,
+                     range=[-20, 20],
+                     title=dict(font=dict(
+                         family='Times New Roman',
+                         size=18,
+                         color="black"
+                     ), text="SNR(dB)"))
+
+    fig.update_traces(marker_line_width=1)
+
+    fig.update_layout(
+        title_text='Comparison of models for 24 modulation dataset',
+        title_x=0.50, title_y=0.90,
+        paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
+        # width=600, height=500,
+        showlegend=True,
+        legend=dict(
+            bordercolor='black',
+            borderwidth=1,
+            bgcolor='rgba(0,0,0,0)', orientation='v',
+            itemsizing='constant',
+            x=0.01, y=0.99,
+            font=dict(size=12, color="black", family='times new roman'), traceorder='normal'
+        )
+    )
+
+    plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=550, filename='deepsig_acc.html', image='svg')
+    # pass
+
 if __name__=="__main__":
-    x = np.arange(-10,10,0.2)
-    draw_activation(x)
+    deepsig_plots()
+    # x = np.arange(-10,10,0.2)
+    # draw_activation(x)
     # draw_comparison_chart()
     # n = 4
     # draw_comparison_chart()
@@ -1639,4 +1726,5 @@ if __name__=="__main__":
     # generate_image_dset(df['normalized_iq'].values,df['labels'].values,output_dir,"test ")
 
     # plot_melspectrogram(iq[13],'test.png')
+    # sequential_chart()
     # pass

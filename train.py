@@ -1,9 +1,12 @@
 import cnn_model
+import dnn
+import char_cnn
 import cnn_unk
 import resnet
 # from image_dataloader import image_dataloader
 import resnet_simplified
 import dataloader as dl
+import h5py as h5
 import read_h5 as reader
 import inference as inf
 import visualize
@@ -36,11 +39,11 @@ def Convert(tup, di):
     return di
 
 
-def train(data_path,model,num_epochs):
+def train(data_path,num_epochs):
 
     # x_test,y_test,raw_lables,snr_gen
     x_train,y_train,x_val,y_val = \
-        dl.load_batch("/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5"
+        dl.load_batch("/media/rachneet/arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5"
                       ,512,mode='train')  #GOLD_XYZ_OSC.0001_1024.hdf5
     # y_train = torch.from_numpy(y_train).view(-1, 1)
     # y_val = torch.from_numpy(y_val).view(-1, 1)
@@ -50,7 +53,8 @@ def train(data_path,model,num_epochs):
     # y_train = DataLoader(labels,batch_size=2)
 
     print("Data loaded and batched...")
-    # model = cnn_model.CNN(n_classes=8)
+    # model = cnn_model.CNN(n_classes=24)
+    model = dnn.DNN(2048, n_classes=8)
     # model = resnet.resnet50(2,24)
     # model = resnet_simplified.ResNet50(n_classes=8)
     model.cuda()
@@ -69,7 +73,7 @@ def train(data_path,model,num_epochs):
     best_accuracy = 0
     # reg_lambda = 0.1
 
-    output_file = open(data_path+"tl_vsg_15_20_logs.txt", "w")
+    output_file = open(data_path+"dnn_baseline_logs.txt", "w")
     # ica = FastICA(n_components=256,tol=1e-5,max_iter=1000)
     # print(zip(x_train_gen, y_train_gen))
     # activations = visualize.SaveFeatures(list(model.children())[5])
@@ -172,7 +176,7 @@ def train(data_path,model,num_epochs):
         # saving the model with best accuracy
         if test_metrics["accuracy"] > best_accuracy:
             best_accuracy = test_metrics["accuracy"]
-            torch.save(model, data_path+"tl_vsg_15_20_model")
+            torch.save(model, data_path+"dnn_baseline_model")
 
     print("Training complete")
     print("-------------------------------------------")
@@ -204,8 +208,14 @@ def get_evaluation(y_true, y_prob, list_metrics):
 
 if __name__=="__main__":
     # path = "/media/backup/Arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/"
-    path = "/media/backup/Arsenal/rf_dataset_inets/"
-    train(path,30)
+    path = "/home/rachneet/thesis_results/"
+    train(path,200)
+    # path = "/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/GOLD_XYZ_OSC.0001_1024.hdf5"
+    # file = h5.File(path,'r')
+    # iq = file['X']
+    # label = file['Y']
+    # print(iq[0])
+    # print(label[0])
     # x = torch.tensor([[[1.6946e-01, -4.8737e-01],
     #                    [-1.7219e-02, -9.9859e-01],
     #                    [-1.8434e-01, -1.2288e+00],

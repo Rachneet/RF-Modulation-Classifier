@@ -10,7 +10,8 @@ import csv
 import pandas as pd
 from copy import deepcopy
 from tqdm import tqdm
-torch.cuda.set_device(0)
+from ast import literal_eval
+# torch.cuda.set_device(0)
 
 
 # plotting libraries
@@ -43,16 +44,18 @@ def compute_results(csv_path, snrs):
     """
 
     df = pd.read_csv(csv_path, delimiter=",", quoting=csv.QUOTE_MINIMAL)
+    df['SNR'] = df['SNR'].apply(lambda x : literal_eval(x)[0])
     # print(df.head())
     groups = df.groupby('SNR')
     snrs = snrs
     total_count,result = {},{}
 
     for snr in snrs:
+
         data = groups.get_group(snr).reset_index(drop=True)
-        output = evaluate(data['True_label'].values, data['Predicted_label'].values,
+        output = evaluate(data['True label'].values, data['Predicted label'].values,
                           ['accuracy', 'confusion_matrix'])
-        unique, counts = np.unique(data['True_label'].values, return_counts=True)
+        unique, counts = np.unique(data['True label'].values, return_counts=True)
         result[snr] = output
         total_count[snr] = counts
 
@@ -63,7 +66,7 @@ def compute_results(csv_path, snrs):
 
 def inference(datapath, test_set, model_name, save_path):
 
-    # x_test,y_test,labels_raw = load_batch(datapath+"vsg_no_intf_sc_normed.h5",batch_size=batch_size,mode='test')
+    # x_test,y_test,labels_raw = load_batch(datapath+"vsg_no_intf_sc_normed.h5",batch_size=512,mode='test')
     # iq, labels, snrs = reader.read_hdf5(path)
     # test_bound = int(0.80 * labels.shape[0])
     # training_params = {"batch_size": batch_size,
@@ -227,7 +230,7 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
                       plot_bgcolor='rgba(0,0,0,0)'
                       )
 
-    fig['data'][0].colorbar = dict(#title='Number of Samples',
+    fig['data'][0].colorbar = dict(title='Number of <br>Samples',
                                    outlinecolor="black",
                                    outlinewidth=1,
                                    ticks='outside',
@@ -243,10 +246,10 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
                      linecolor='black',
                      linewidth=0.5,
                      tickfont=dict(family="times new roman",color='black',size=14),
-                     title=dict(
+                     title=dict(text = "True label",
                          font=dict(
-                             family="times new roman",
-                             size=20,
+                             # family="times new roman",
+                             size=18,
                              color="black"
                          ))
                      )
@@ -257,16 +260,16 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
                      linecolor='black',
                      linewidth=0.5,
                      tickfont=dict(family="times new roman",color='black',size=14),
-                     title=dict(
+                     title=dict(text = "Predicted label",
                          font=dict(
-                             family="times new roman",
-                             size=20,
+                             # family="times new roman",
+                             size=18,
                              color="black"
                          ))
                      )
 
     # fig.show()
-    plotly.offline.plot(fig, filename=fig_name + ".html", image='svg',image_height=600, image_width=800,
+    plotly.offline.plot(fig, filename=fig_name + ".html", image='svg',image_height=500, image_width=700,
                         include_plotlyjs=True)
 
 
@@ -332,7 +335,7 @@ def test_sequential(path):
     sirs = [5,10,15,20,25]
     # labels = [0,1,2,3,4,5,6,7]
     groups = output.groupby(['True_label','sir'])
-    out_file = open("/home/rachneet/thesis_results/sequential_intf_bpsk_results.csv","w")
+    out_file = open("/home/rachneet/thesis_results/sequential_intf_ofdm_results.csv","w")
     fieldnames = ["True_label", "Incorrect_preds", "SIR"]
     writer = csv.DictWriter(out_file, fieldnames=fieldnames, quoting=csv.QUOTE_NONNUMERIC)
     writer.writeheader()
@@ -373,8 +376,8 @@ def test_sequential(path):
 
 
 if __name__ == "__main__":
-    pass
-    # path = "/home/rachneet/thesis_results/res_sequential_test_intf_bpsk/"
+    # pass
+    # path = "/home/rachneet/thesis_results/res_sequential_test_intf_ofdm/"
     # test_sequential(path)
     # path = "/home/rachneet/thesis_results/sequential_intf_bpsk_results.csv"
     # df = pd.read_csv(path, delimiter=",", quoting=csv.QUOTE_MINIMAL)
@@ -414,19 +417,19 @@ if __name__ == "__main__":
 
     # -------------PLot overall conf maps------------------------------------------------------------
     datapath = "/home/rachneet/thesis_results/"
-    file = datapath+'res_vsg_all/output.csv'
+    file = datapath+'dnn_vsg20/output.csv'
     df = pd.read_csv(file)
     # print(df.tail())
     output = {}
-    y_true = df['True_label'].values
-    y_pred = df['Predicted_label'].values
+    y_true = df['True label'].values
+    y_pred = df['Predicted label'].values
     print(metrics.accuracy_score(y_true, y_pred))
-    # cmap =  metrics.confusion_matrix(y_true, y_pred)
-    # # # print(cmap)
-    # unique, counts = np.unique(df['True_label'].values, return_counts=True)
-    # # # print(counts)
-    # # # k=25
-    # plot_confusion_matrix(cmap, counts, "cmap_xg_" + "all", "all")
+    cmap = metrics.confusion_matrix(y_true, y_pred)
+    # # print(cmap)
+    unique, counts = np.unique(df['True label'].values, return_counts=True)
+    # # print(counts)
+    # # k=25
+    plot_confusion_matrix(cmap, counts, "cmap_" + "dnn", "dnn")
 
     # -------------PLot individual conf maps------------------------------------------------------------
     # datapath = "/home/rachneet/thesis_results/"
@@ -440,16 +443,19 @@ if __name__ == "__main__":
     #     print(v['accuracy'])
 
     # -------------------Plot collective conf maps-----------------------------------------------------
-
-    # count,output = compute_results(datapath+"res_vsg_all/output.csv",# ['0db', '5db', '10db', '15db', '20db'])
-    # [0,5,10,15,20])
+    # y = np.arange(-20,21,2)
+    # print(y)
+    # count, output = compute_results(datapath+"deepsig_res_nosc/output.csv",y)# ['0db', '5db', '10db', '15db', '20db'])
+    # # [0,5,10,15,20])
     # # print(count,output)
     # # print(count)
+    # acc = []
     # for k,v in output.items():
     #     # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_bpsk_snr_"+str(k),k)
     #     # print(v['confusion_matrix'])
     #
-    #     print(v['accuracy'])
+    #     acc.append(round(v['accuracy'],2))
+    # print(acc)
 
     # --------------------------------CFO correction--------------------------------------------------
 

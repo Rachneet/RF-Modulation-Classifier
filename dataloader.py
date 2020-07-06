@@ -10,6 +10,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from py_lightning import *
 import math
 from tqdm import tqdm
+from multiprocessing import Pool
 
 
 def label_idx(labels):
@@ -18,7 +19,16 @@ def label_idx(labels):
             return val
 
 
-def load_batch(path,batch_size=256,mode="train"):
+def parallelize_dataframe(df, func, n_cores=10):
+    df_split = np.array_split(df, n_cores)
+    pool = Pool(n_cores)
+    df = pd.concat(pool.map(func, df_split))
+    pool.close()
+    pool.join()
+    return df
+
+
+def load_batch(path,batch_size=512,mode="train"):
     print("Loading Data...")
 
     training_params = {"batch_size": batch_size,
@@ -87,15 +97,16 @@ def load_batch(path,batch_size=256,mode="train"):
 
         # analyze data
         df = pd.DataFrame()
-        # df['iq'] = list(map(lambda x:np.array(x,dtype=np.float32),iq))
-        # df['normalized_iq'] = df.iq.apply(lambda x: preprocessing.scale(x, with_mean=False))
-        # df.drop('iq', axis=1, inplace=True)
+        df['iq'] = list(map(lambda x:np.array(x,dtype=np.float32),iq))
+        df['normalized_iq'] = df.iq.apply(lambda x: preprocessing.scale(x, with_mean=False))
+        df.drop('iq', axis=1, inplace=True)
         df['labels'] = list(map(lambda x: np.array(x,dtype=np.float32), labels))
+        # print(df.head(10))
         # df['snr'] = list(map(lambda x: x, snrs))
 
         # df['labels'] = df.labels.apply(lambda x: np.append(x,np.array([0], dtype=np.float32)))
         # print("second df done")
-        # df = df.sample(frac=1, random_state=4)
+        df = df.sample(frac=1, random_state=4)
         # print("====start merge====")
         # combined_df = pd.concat([df,df2[:n]],ignore_index=True)
         # combined_df['normalized_iq'] = combined_df.iq.apply(lambda x: preprocessing.scale(np.array(x), with_mean=False))
@@ -105,14 +116,14 @@ def load_batch(path,batch_size=256,mode="train"):
 
         train_bound = int(0.75 * df.labels.shape[0])
         val_bound = int(0.80 * df.labels.shape[0])
-        test_bound = int(0.85 * df.labels.shape[0])
+        # test_bound = int(0.85 * df.labels.shape[0])
 
 
-        df['label_id'] = df['labels'].apply(lambda x: label_idx(x))
+        # df['label_id'] = df['labels'].apply(lambda x: label_idx(x))
 
         # df = df.groupby('label_id').apply(lambda s: s.sample(5000)).reset_index(drop=True)
         # df.drop('label_id', axis=1, inplace=True)
-        print(df.label_id.value_counts())
+        # print(df.label_id.value_counts())
 
         # combined_df = combined_df.sample(frac=1,random_state=4)
         # print("sampling done")
@@ -322,8 +333,10 @@ if __name__=="__main__":
     # label_data = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
     # print(label_data.shape)
     # load_batch("/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_usrp_snr20_sir25_1024.h5",mode='')
-    sequential_set()
+    # sequential_set()
     # path ="/media/rachneet/arsenal/rf_dataset_inets/dataset_intf_free_vsg_cfo5_all.h5"
     # iq, labels, snrs = reader.read_hdf5(path)
-    # print(snrs[:10])
-    pass
+    # print(snrs.shape)
+    # pass
+    load_batch("/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/GOLD_XYZ_OSC.0001_1024.hdf5"
+                      , 512, mode='train')
