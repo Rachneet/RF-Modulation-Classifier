@@ -84,16 +84,16 @@ def save_cnn_features():
     # data = np.load("/media/backup/Arsenal/rf_dataset_inets/dataset_interpretation.npz", allow_pickle=True)
     # iq = data['matrix']
     # labels = data['labels']
-    path_h5 = "/media/rachneet/arsenal/rf_dataset_inets/vsg_no_intf_all_normed.h5"
+    path_h5 = "/home/rachneet/rf_dataset_inets/vsg_no_intf_all_normed.h5"
     training_params = {'batch_size': 512, 'num_workers': 10}
     train_set, val_set, test_set = load_data(path_h5,0.05,0.2,**training_params)
 
     model = torch.load("/home/rachneet/thesis_results/trained_cnn_no_intf_vsg_all",map_location='cuda:0')
     model.eval()
     # print(list(model.children())[5])
-    activations = SaveFeatures(list(model.children())[5])   # using last conv layer
+    activations = SaveFeatures(list(model.children())[7])   # using last conv layer
     # print(list(model.children())[5])
-    output_path = "/media/rachneet/arsenal/rf_dataset_inets/feature_set_training_conv6_vsg_all.h5"
+    output_path = "/home/rachneet/rf_dataset_inets/feature_set_training_fc8_vsg_all.h5"
     # num_features=8
 
     for batch in tqdm(train_set):
@@ -1072,6 +1072,91 @@ def plt_tl_chart():
     plotly.offline.plot(figure_or_data=fig, image_width=610, image_height=500, filename='test_bar.html', image='svg')
 
 
+def train_fraction_effect():
+    snrs = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB']
+    frac15 = [0.55, 0.74, 0.85, 0.91, 0.93]
+    frac30 = [0.59, 0.8, 0.91, 0.97, 0.99]
+    frac45 = [0.59, 0.81, 0.92, 0.98, 0.99]
+    frac60 = [0.6, 0.82, 0.93, 0.98, 0.99]
+    frac75 = [0.61, 0.83, 0.94, 0.99, 0.99]
+    y_dict = {'15': frac15, '30': frac30, '45': frac45, '60': frac60, '75': frac75}
+
+    fig = go.Figure()
+    # fig = plotly.subplots.make_subplots(specs=[[{"secondary_y": True}]], print_grid=True)
+    # blue #23aaff, red apple #ff6555, moss green #66c56c, mustard yellow #f4b247
+    names = ['15','30','45','60', '75']
+    fracs = ['15%','30%','45%','60%', '75%']
+    colors = ['rgba(255, 101, 85, 1)','rgba(35, 170, 255, 1)','rgba(244, 178, 71, 1)','rgba(102, 197, 108, 1)',
+              'rgb(159,130,206)']
+
+    for i in range(len(names)):
+        fig.add_trace(go.Scatter(x=snrs,y=y_dict[names[i]],# name="         ",
+            name=fracs[i],
+            mode='lines+markers',marker_color=colors[i],
+            # marker_color='#f4b247', marker_line_color='#ff7f0e',
+            # width=0.25
+        ))
+
+    line_ax = [0.5,0.6,0.7,0.8,0.9,1]
+    for i in line_ax:
+        fig.add_shape(type="line",x0=-0.3,y0=i,x1=4.3,y1=i,
+            line=dict(
+                color="grey",
+                width=1,
+                dash="dashdot",
+            ),
+        )
+
+    fig.update_yaxes(automargin=True, showline=True, ticks="", mirror=True,
+                     linecolor='black', linewidth=1,
+                     tickfont=dict(color="black",family='times new roman',size=16),
+                     title=dict(font=dict( color="black",# family="sans-serif",size=15,
+                    ),
+                    text='Classification accuracy'
+                    ))
+
+    fig.update_xaxes(automargin=True, side='bottom', showline=True, ticks='inside',
+                     mirror=True, linecolor='black', linewidth=1,
+                     tickfont=dict(color="black",family='times new roman',size=16),
+                     title=dict(font=dict(
+                             # family="sans-serif",
+                             # size=15,
+                             color="black"
+                         ),
+                         text='SNR(dB)'
+                     ))
+
+    fig.update_traces(marker_line_width=2)
+    # fig.add_annotation(dict(font=dict(color="black", size=16,family='times new roman'),
+    #                         x=0.95,
+    #                         y=0.30,
+    #                         showarrow=False,
+    #                         # text="Number of IQ samples per signal segment N:",
+    #                         xref="paper",
+    #                         yref="paper"))
+    fig.update_layout(
+        margin=go.layout.Margin(
+            l=0,  # left margin
+            r=110,  # right margin  130
+            b=160,  # bottom margin
+            t=20,  # top margin
+        ),
+        # title_text='<b>Model Scalability with Number of IQ Samples',
+        # title_x=0.50, title_y=0.90,
+        xaxis={"mirror": "all"},
+        paper_bgcolor='white',plot_bgcolor='rgba(0,0,0,0)',
+        width=500,height=500,
+        legend=dict(
+            bordercolor='black',
+            borderwidth=1,
+            bgcolor='rgba(0,0,0,0)',orientation='h',
+            itemsizing='constant',x=0.22,y=0.3,
+            font=dict(size=12, color="black",family='times new roman'),traceorder='normal'
+        ),
+    )
+    plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=500, filename='train_chart.html', image='svg')
+
+
 def scalability_chart():
     snrs = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB']
     acc_256 = [0.463,0.635,0.778,0.882,0.913]
@@ -1151,6 +1236,7 @@ def scalability_chart():
         ),
     )
     plotly.offline.plot(figure_or_data=fig, image_width=610, image_height=500, filename='test_line.html', image='svg')
+
 
 def plot_constellation():
 
@@ -1606,12 +1692,19 @@ def draw_activation(x):
 def deepsig_plots():
 
     x = np.arange(-20,21,2)
-    y_xgb = [0.04, 0.04, 0.05, 0.05, 0.06, 0.07, 0.12, 0.19, 0.28, 0.33, 0.43, 0.55, 0.63, 0.67, 0.71,
-             0.72, 0.73, 0.73, 0.73, 0.73, 0.73]
-    y_cnn = [0.05, 0.05, 0.04, 0.05, 0.07, 0.11, 0.17, 0.23, 0.31, 0.4, 0.5, 0.59, 0.68, 0.76, 0.83,
-             0.85, 0.87, 0.87, 0.88, 0.88, 0.88]
-    y_res = [0.04, 0.04, 0.05, 0.05, 0.08, 0.13, 0.18, 0.22, 0.31, 0.4, 0.52, 0.61, 0.72, 0.85, 0.92,
-             0.93, 0.94, 0.95, 0.95, 0.95, 0.95]
+    # y_xgb = [0.04, 0.04, 0.05, 0.05, 0.06, 0.07, 0.12, 0.19, 0.28, 0.33, 0.43, 0.55, 0.63, 0.67, 0.71,
+    #          0.72, 0.73, 0.73, 0.73, 0.73, 0.73]
+    # y_cnn = [0.05, 0.05, 0.04, 0.05, 0.07, 0.11, 0.17, 0.23, 0.31, 0.4, 0.5, 0.59, 0.68, 0.76, 0.83,
+    #          0.85, 0.87, 0.87, 0.88, 0.88, 0.88]
+    # y_res = [0.04, 0.04, 0.05, 0.05, 0.08, 0.13, 0.18, 0.22, 0.31, 0.4, 0.52, 0.61, 0.72, 0.85, 0.92,
+    #          0.93, 0.94, 0.95, 0.95, 0.95, 0.95]
+    # digital mods
+    y_xgb = [0.14, 0.15, 0.15, 0.17, 0.19, 0.26, 0.38, 0.46, 0.53, 0.62, 0.69, 0.81, 0.91, 0.94, 0.96, 0.97, 0.97, 0.98,
+             0.98, 0.98, 0.98]
+    y_cnn = [0.15, 0.14, 0.15, 0.17, 0.23, 0.33, 0.43, 0.52, 0.58, 0.71, 0.82, 0.91, 0.96, 0.97, 0.98, 0.98, 0.98, 0.98,
+             0.98, 0.98, 0.98]
+    y_res = [0.14, 0.14, 0.16, 0.2, 0.26, 0.37, 0.45, 0.51, 0.58, 0.73, 0.84, 0.91, 0.95, 0.96, 0.96, 0.96, 0.96, 0.96,
+             0.96, 0.97, 0.96]
     colors = ['rgba(255, 101, 85, 1)', 'rgba(35, 170, 255, 1)', 'rgba(244, 178, 71, 1)']
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=x, y=y_xgb, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
@@ -1665,7 +1758,7 @@ def deepsig_plots():
     fig.update_traces(marker_line_width=1)
 
     fig.update_layout(
-        title_text='Comparison of models for 24 modulation dataset',
+        title_text='Comparison of models for digital modulation dataset',
         title_x=0.50, title_y=0.90,
         paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
         # width=600, height=500,
@@ -1684,7 +1777,8 @@ def deepsig_plots():
     # pass
 
 if __name__=="__main__":
-    deepsig_plots()
+    # deepsig_plots()
+    train_fraction_effect()
     # x = np.arange(-10,10,0.2)
     # draw_activation(x)
     # draw_comparison_chart()

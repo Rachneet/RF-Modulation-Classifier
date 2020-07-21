@@ -167,7 +167,7 @@ def featurize(df, i, row):
 
 
 def main():
-    dataset = "/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/GOLD_XYZ_OSC.0001_1024.hdf5"
+    dataset = "/home/rachneet/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr0_1024.h5"
     h5fr = h5.File(dataset, 'r')
     dset1 = list(h5fr.keys())[0]
     dset2 = list(h5fr.keys())[1]
@@ -176,18 +176,18 @@ def main():
     label = h5fr[dset2][:]
     snr = h5fr[dset3][:]
     df = pd.DataFrame()
-    df['SNR'] = [item for sublist in snr for item in sublist]
+    # df['SNR'] = [item for sublist in snr for item in sublist]
+    df['SNR'] = [val for val in snr]
     df['label'] = [label_idx(sublist) for sublist in label]
 
     for i,row in enumerate(tqdm(iq)):
         featurize(df, i, iq_to_complex(row))
         # print(row)
 
-    df.to_csv("/home/rachneet/rf_featurized/deepsig_featurized_set.csv", encoding='utf-8', index=False)
+    df.to_csv("/home/rachneet/rf_featurized/dataset_vsg0_featurized_set.csv", encoding='utf-8', index=False)
 
     # df2 = pd.read_csv("/home/rachneet/rf_featurized/deepsig_featurized_set.csv", encoding='utf-8')
     # print(df2.head())
-
 
 
 

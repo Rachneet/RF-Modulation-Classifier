@@ -5,7 +5,7 @@ import numpy as np
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 import xgboost as xg
-from sklearn.metrics import precision_score, recall_score, accuracy_score, classification_report
+from sklearn.metrics import precision_score, recall_score, accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import GridSearchCV, KFold, cross_val_score
 import glob
 import re
@@ -33,6 +33,7 @@ class XgbModule(object):
 
 
     def create_deepsig_set(self):
+        # if self.data_path[-3:] == "csv":
         df = pd.read_csv(self.data_path)
         df_X = df.drop(['label'], axis=1)
         df_y = df[['SNR','label']]
@@ -116,7 +117,7 @@ class XgbModule(object):
             'colsample_bytree': 0.3,
             'min_child_weight': 3,
             'objective': 'multi:softprob',   # loss function
-            'num_class': 24}
+            'num_class': 8}
             # 'gpu_id': 0,
             # 'tree_method': 'gpu_hist'}
 
@@ -132,6 +133,7 @@ class XgbModule(object):
         print("Precision = {}".format(precision_score(y_test['label'], best_preds, average='macro')))
         print("Recall = {}".format(recall_score(y_test['label'], best_preds, average='macro')))
         print("Accuracy = {}".format(accuracy_score(y_test['label'], best_preds)))
+        print("Confusion matrix = {}".format(confusion_matrix(y_test['label'], best_preds)))
 
         # write results
         if self.save_results:
@@ -149,6 +151,47 @@ class XgbModule(object):
                         {'True_label': i, 'Predicted_label': j, 'SNR': k})
 
 
+    def read_feature_file(self, path):
+        file = h5.File(path, 'r')
+        features, labels = file['features'], file['true_labels']
+        return features, labels
+
+    def train_xgb_cnn(self):
+        path = "/home/rachneet/rf_dataset_inets/"
+        # X_train, y_train = self.read_feature_file(path + "feature_set_training_fc8_vsg_all.h5")
+        X_val, y_val = self.read_feature_file(path + "feature_set_training_fc8_vsg_all_val.h5")
+        print(y_val[0])
+        # X_test, y_test = self.read_feature_file(path + "feature_set_training_fc8_vsg_all_test.h5")
+
+        # D_train = xg.DMatrix(X_train, label=y_train)
+        # D_val = xg.DMatrix(X_val, label=y_val)
+        # D_test = xg.DMatrix(X_test, label=y_test)
+        #
+        # params = {
+        #     'learning_rate': 0.2,  # learning rate, prevents overfitting
+        #     'max_depth': 18,  # depth of decision trees
+        #     'gamma': 0.4,
+        #     'colsample_bytree': 0.3,
+        #     'min_child_weight': 3,
+        #     'objective': 'multi:softprob',  # loss function
+        #     'num_class': 8}
+        # # 'gpu_id': 0,
+        # # 'tree_method': 'gpu_hist'}
+        #
+        # steps = 200  # The number of training iterations
+        # evals = [(D_val, "validation")]
+        # model = xg.train(params, D_train, num_boost_round=steps, evals=evals, early_stopping_rounds=10,
+        #                  verbose_eval=True)
+        #
+        # preds = model.predict(D_test)
+        # best_preds = np.asarray([np.argmax(pred) for pred in preds])
+        #
+        # # evaluation metrics
+        # print("Precision = {}".format(precision_score(y_test['label'], best_preds, average='macro')))
+        # print("Recall = {}".format(recall_score(y_test['label'], best_preds, average='macro')))
+        # print("Accuracy = {}".format(accuracy_score(y_test['label'], best_preds)))
+
+
     def cross_validate_model(self, X, Y):
         X_train, X_test, y_train, y_test = train_test_split(X, Y, train_size=0.8, shuffle=False)
         D_train = xg.DMatrix(X_train, label=y_train['label'])
@@ -161,7 +204,7 @@ class XgbModule(object):
             'colsample_bytree': 0.3,
             'min_child_weight': 3,
             'objective': 'multi:softprob',  # loss function
-            'num_class': 24}
+            'num_class': 8}
 
         # steps = 100  # The number of training iterations
         # model = xgb.train(params, D_train, steps, evals=[(D_test, "Test")], early_stopping_rounds=10)
@@ -315,8 +358,10 @@ class XgbModule(object):
         # plt.show()
         plt.savefig(self.save_path + "shap_dep_ofdm_bpsk.svg")
 
+    # main file
     def main(self):
-        x_data, y_data = self.create_deepsig_set()
+        # self.train_xgb_cnn()
+        x_data, y_data = self.create_deepsig_set()  # note: pre-processing done in-situ
         # x_data, y_data = self.preprocess_data(x_data, y_data)
         # # print(x_data.head())
         # # print(y_data.head())
@@ -334,19 +379,20 @@ def split_csv():
                '8PSK', 'AM-SSB-SC', '4ASK', '16PSK', '64APSK', '128QAM', '128APSK', 'AM-DSB-SC',
                'AM-SSB-WC', '64QAM', 'QPSK', '256QAM', 'AM-DSB-WC', 'OOK', '16QAM']
     norm_classes = ['OOK', '4ASK', 'BPSK', 'QPSK', '8PSK', '16QAM', 'AM-SSB-SC', 'AM-DSB-SC', 'FM', 'GMSK', 'OQPSK']
+    digital_mods = ['BPSK', 'QPSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM']
     label_list = []
 
-    for i in norm_classes:
+    for i in digital_mods:
         for j in range(len(classes)):
             if i == classes[j]:
                 label_list.append(j)
-    print(label_list)
+    # print(label_list)
     path = "/home/rachneet/rf_featurized/"
     df = pd.read_csv(path + "deepsig_featurized_set.csv")
     df = df[df['label'].isin(label_list)]
     df['label'] = df['label'].apply(lambda x:mod_fix(x, label_list))
     # print(df.head())
-    df.to_csv(path+"deepsig_featurized_11mod.csv", index=False)
+    df.to_csv(path+"deepsig_featurized_dig_mod.csv", index=False)
     # t_label = sorted(list(pd.unique(df['True_label'].values)))
     # print(t_label)
     # print(df.head())
@@ -372,8 +418,8 @@ def explore_results():
 
 
 if __name__ == "__main__":
-    datapath = "/home/rachneet/rf_featurized/deepsig_featurized_set.csv"
-    save_path = "/home/rachneet/thesis_results/deepsig_complete_xgb/"
+    datapath = "/home/rachneet/rf_featurized/dataset_vsg0_featurized_set.csv"
+    save_path = "/home/rachneet/thesis_results/vsg0_xgb/"
     xgb_obj = XgbModule(datapath, save_path, save_results=True)
     xgb_obj.main()
     # split_csv()

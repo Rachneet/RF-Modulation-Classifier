@@ -42,7 +42,43 @@ warnings.simplefilter('always',ConvergenceWarning)
 #     # experiment_name="default" # Optional
 # )
 
-# ====================================================================================================================
+# ===========================================================================================================
+
+# custom dataloader
+class MyDataset(Dataset):
+    def __init__(self, data_path, class_path=None):
+        self.data_path = data_path
+        iqs, labels, snrs = [], [], []
+        with open(data_path, encoding='utf-8') as csv_file:
+            reader = csv.reader(csv_file, quotechar='"')
+            for idx, line in enumerate(reader):
+                iq = np.array(line[0])
+                label = int(line[-2])
+                snr = int(line[-1])
+                iqs.append(iq)
+                labels.append(label)
+                snrs.append(snr)
+
+        self.iqs = iqs
+        self.labels = labels
+        self.snrs = snrs
+        self.length = len(self.labels)
+        if class_path:
+            self.num_classes = sum(1 for _ in open(class_path))
+
+    # gets the length
+    def __len__(self):
+        return self.length
+
+    # gets data based on given index
+    # done the encoding here itself
+    def __getitem__(self, index):
+        iq = self.iqs[index]
+        label = self.labels[index]
+        snr = self.snrs[index]
+        return iq, label, snr
+
+# -----------------------------------------------------------------------------------------------------------
 
 
 class DatasetFromHDF5(Dataset):
@@ -78,8 +114,8 @@ class DatasetFromHDF5(Dataset):
         # -------------------------------------------------------------
         # scaler = preprocessing.StandardScaler()
         # data = scaler.fit_transform(data).astype(np.float32)
-        data = preprocessing.scale(data,with_mean=False).astype(np.float32)
-        # data = data.astype(np.float32)
+        # data = preprocessing.scale(data,with_mean=False).astype(np.float32)
+        data = data.astype(np.float32)
         label = label.astype(np.float32)
         snr = snr.astype(np.int8)
 
@@ -469,12 +505,12 @@ def test_lightning(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/home/rachneet/thesis_results/deepsig_11mod/'
+CHECKPOINTS_DIR = '/home/rachneet/thesis_results/deepsig_dig_mod/'
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="deepsig_11mod",   # change this for new runs
+    experiment_name="deepsig_dig_mod",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -517,33 +553,34 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/media/rachneet/arsenal/rf_dataset_inets/dataset_deepsig_11mod.h5"
-    out_path = "/home/rachneet/thesis_results/"
+    path = "/home/rachneet/rf_dataset_inets/dataset_deepsig_dig_mod.hdf5"
+    # out_path = "/home/rachneet/thesis_results/"
+    #
+    # parser = ArgumentParser()
+    # parser.add_argument('--output_path', default=out_path)
+    # parser.add_argument('--data_path', default=path)
+    # parser.add_argument('--gpus', default=[0])
+    # parser.add_argument('--max_epochs', default=30)
+    # parser.add_argument('--batch_size', default=512)
+    # parser.add_argument('--num_workers', default=10)
+    # parser.add_argument('--shuffle', default=False)
+    # parser.add_argument('--learning_rate', default=1e-2)
+    # parser.add_argument('--momentum', default=0.9)
+    # parser.add_argument('--in_dims', default=2)
+    # parser.add_argument('--filters', default=64)
+    # parser.add_argument('--kernel_size', type=list, nargs='+', default=[3,3,3,3,3,3])
+    # parser.add_argument('--pool_size', default=3)
+    # parser.add_argument('--fc_neurons', type=int, default=128)
+    # parser.add_argument('--n_classes', default=7)
+    # parser.add_argument('--n_features', default=10)
+    # parser.add_argument('--featurize', default=False)
+    # args = parser.parse_args()
+    #
+    # main(args)
 
-    parser = ArgumentParser()
-    parser.add_argument('--output_path', default=out_path)
-    parser.add_argument('--data_path', default=path)
-    parser.add_argument('--gpus', default=[0])
-    parser.add_argument('--max_epochs', default=30)
-    parser.add_argument('--batch_size', default=512)
-    parser.add_argument('--num_workers', default=10)
-    parser.add_argument('--shuffle', default=False)
-    parser.add_argument('--learning_rate', default=1e-2)
-    parser.add_argument('--momentum', default=0.9)
-    parser.add_argument('--in_dims', default=2)
-    parser.add_argument('--filters', default=64)
-    parser.add_argument('--kernel_size', type=list, nargs='+', default=[3,3,3,3,3,3])
-    parser.add_argument('--pool_size', default=3)
-    parser.add_argument('--fc_neurons', type=int, default=128)
-    parser.add_argument('--n_classes', default=11)
-    parser.add_argument('--n_features', default=10)
-    parser.add_argument('--featurize', default=False)
-    args = parser.parse_args()
-
-    main(args)
-    # test_lightning(args)
+    # # test_lightning(args)
     # file = h5.File(path,'r')
-    # iq, labels, snrs = file['iq'],file['labels'],file['sirs']
+    # iq, labels, snrs = file['iq'],file['labels'],file['snrs']
     # print(iq.shape)
     # x = len(np.unique(iq,axis=0))
     # print(x)
@@ -551,5 +588,13 @@ if __name__=="__main__":
     #     print('No duplicates')
     # else:
     #     print('Duplicates exist')
+
+    # data = MyDataset("/home/rachneet/rf_dataset_inets/deepsig_digital_mod.csv")
+    # training_generator = DataLoader(data, batch_size=512)
+    # for iter, batch in enumerate(training_generator):
+    #     # get the inputs
+    #     print(batch)
+    #     break
+
 
 

@@ -44,7 +44,7 @@ def compute_results(csv_path, snrs):
     """
 
     df = pd.read_csv(csv_path, delimiter=",", quoting=csv.QUOTE_MINIMAL)
-    df['SNR'] = df['SNR'].apply(lambda x : literal_eval(x)[0])
+    # df['SNR'] = df['SNR'].apply(lambda x : literal_eval(x)[0])
     # print(df.head())
     groups = df.groupby('SNR')
     snrs = snrs
@@ -89,7 +89,7 @@ def inference(datapath, test_set, model_name, save_path):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
-    output_file = open(save_path+"logs.txt", "w")
+    output_file = open(save_path+"test_logs.txt", "w")
     # torch.nn.Module.dump_patches=True
     model = torch.load(datapath+model_name, map_location='cuda:0')
     model.eval()
@@ -416,23 +416,23 @@ if __name__ == "__main__":
     # pass
 
     # -------------PLot overall conf maps------------------------------------------------------------
-    datapath = "/home/rachneet/thesis_results/"
-    file = datapath+'dnn_vsg20/output.csv'
-    df = pd.read_csv(file)
-    # print(df.tail())
-    output = {}
-    y_true = df['True label'].values
-    y_pred = df['Predicted label'].values
-    print(metrics.accuracy_score(y_true, y_pred))
-    cmap = metrics.confusion_matrix(y_true, y_pred)
-    # # print(cmap)
-    unique, counts = np.unique(df['True label'].values, return_counts=True)
-    # # print(counts)
-    # # k=25
-    plot_confusion_matrix(cmap, counts, "cmap_" + "dnn", "dnn")
+    # datapath = "/home/rachneet/thesis_results/"
+    # file = datapath+'dnn_vsg20/output.csv'
+    # df = pd.read_csv(file)
+    # # print(df.tail())
+    # output = {}
+    # y_true = df['True label'].values
+    # y_pred = df['Predicted label'].values
+    # print(metrics.accuracy_score(y_true, y_pred))
+    # cmap = metrics.confusion_matrix(y_true, y_pred)
+    # # # print(cmap)
+    # unique, counts = np.unique(df['True label'].values, return_counts=True)
+    # # # print(counts)
+    # # # k=25
+    # plot_confusion_matrix(cmap, counts, "cmap_" + "dnn", "dnn")
 
     # -------------PLot individual conf maps------------------------------------------------------------
-    # datapath = "/home/rachneet/thesis_results/"
+    datapath = "/home/rachneet/thesis_results/"
     # file = datapath + 'output_unk_vsg_snr20.csv'
     # df = pd.read_csv(file)
     # # print(df.tail())
@@ -444,18 +444,19 @@ if __name__ == "__main__":
 
     # -------------------Plot collective conf maps-----------------------------------------------------
     # y = np.arange(-20,21,2)
-    # print(y)
-    # count, output = compute_results(datapath+"deepsig_res_nosc/output.csv",y)# ['0db', '5db', '10db', '15db', '20db'])
-    # # [0,5,10,15,20])
-    # # print(count,output)
-    # # print(count)
-    # acc = []
-    # for k,v in output.items():
-    #     # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_bpsk_snr_"+str(k),k)
-    #     # print(v['confusion_matrix'])
-    #
-    #     acc.append(round(v['accuracy'],2))
-    # print(acc)
+    y = np.arange(0,21,5)
+    print(y)
+    count, output = compute_results(datapath+"output_vsg_all_test.csv",y)# ['0db', '5db', '10db', '15db', '20db'])
+    # [0,5,10,15,20])
+    # print(count,output)
+    # print(count)
+    acc = []
+    for k,v in output.items():
+        # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_bpsk_snr_"+str(k),k)
+        # print(v['confusion_matrix'])
+
+        acc.append(round(v['accuracy'],2))
+    print(acc)
 
     # --------------------------------CFO correction--------------------------------------------------
 

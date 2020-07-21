@@ -76,13 +76,13 @@ def inference(datapath, save_path, batch_size):
         # test_true = np.array(test_true)
         # test_pred = np.argmax(test_prob, -1)
 
-    fieldnames = ['True label', 'Predicted label']
+    fieldnames = ['True_label', 'Predicted_label']
     with open(save_path + "output.csv", 'w',encoding='utf-8') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames, quoting=csv.QUOTE_NONNUMERIC)
         writer.writeheader()
         for i, j in zip(np.argmax(test_true, -1), np.argmax(test_prob, -1)):
             writer.writerow(
-                {'True label': i, 'Predicted label': j})
+                {'True_label': i, 'Predicted_label': j})
 
     test_metrics = get_evaluation(test_true, test_prob,
                                   list_metrics=["accuracy", "loss", "confusion_matrix"])

@@ -98,11 +98,11 @@ def load_batch(path,batch_size=512,mode="train"):
         # analyze data
         df = pd.DataFrame()
         df['iq'] = list(map(lambda x:np.array(x,dtype=np.float32),iq))
-        df['normalized_iq'] = df.iq.apply(lambda x: preprocessing.scale(x, with_mean=False))
-        df.drop('iq', axis=1, inplace=True)
+        # df['normalized_iq'] = df.iq.apply(lambda x: preprocessing.scale(x, with_mean=False))
+        # df.drop('iq', axis=1, inplace=True)
         df['labels'] = list(map(lambda x: np.array(x,dtype=np.float32), labels))
         # print(df.head(10))
-        # df['snr'] = list(map(lambda x: x, snrs))
+        df['snr'] = list(map(lambda x: x, snrs))
 
         # df['labels'] = df.labels.apply(lambda x: np.append(x,np.array([0], dtype=np.float32)))
         # print("second df done")
@@ -152,9 +152,9 @@ def load_batch(path,batch_size=512,mode="train"):
 
         # using dataframe values
         if mode=='train':
-            x_train_gen = DataLoader(df.normalized_iq[:train_bound].values, **training_params)
+            x_train_gen = DataLoader(df.iq[:train_bound].values, **training_params)
             y_train_gen = DataLoader(df.labels[:train_bound].values, **training_params)
-            x_val_gen = DataLoader(df.normalized_iq[train_bound:val_bound].values, **training_params)
+            x_val_gen = DataLoader(df.iq[train_bound:val_bound].values, **training_params)
             y_val_gen = DataLoader(df.labels[train_bound:val_bound].values, **training_params)
 
             return x_train_gen, y_train_gen, x_val_gen, y_val_gen
@@ -167,11 +167,11 @@ def load_batch(path,batch_size=512,mode="train"):
             return x_test_gen, y_test_gen,y_test_raw
 
         elif mode=="both":
-            x_train_gen = DataLoader(df.normalized_iq[:train_bound].values, **training_params)
+            x_train_gen = DataLoader(df.iq[:train_bound].values, **training_params)
             y_train_gen = DataLoader(df.labels[:train_bound].values, **training_params)
-            x_val_gen = DataLoader(df.normalized_iq[train_bound:val_bound].values, **training_params)
+            x_val_gen = DataLoader(df.iq[train_bound:val_bound].values, **training_params)
             y_val_gen = DataLoader(df.labels[train_bound:val_bound].values, **training_params)
-            x_test_gen = DataLoader(df.normalized_iq[val_bound:].values, **training_params)
+            x_test_gen = DataLoader(df.iq[val_bound:].values, **training_params)
             y_test_gen = DataLoader(df.labels[val_bound:].values, **training_params)
             y_test_raw = df.labels[val_bound:].values
             snr_test_gen = DataLoader(df.snr[val_bound:].values, **training_params)

@@ -8,7 +8,7 @@ import resnet_simplified
 import dataloader as dl
 import h5py as h5
 import read_h5 as reader
-import inference as inf
+import inference_new as inf
 import visualize
 import scipy.spatial.distance as spd
 from read_filtered import sort_matrix_entries
@@ -42,9 +42,9 @@ def Convert(tup, di):
 def train(data_path,num_epochs):
 
     # x_test,y_test,raw_lables,snr_gen
-    x_train,y_train,x_val,y_val = \
-        dl.load_batch("/media/rachneet/arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5"
-                      ,512,mode='train')  #GOLD_XYZ_OSC.0001_1024.hdf5
+    x_train,y_train,x_val,y_val, x_test,y_test,raw_lables,snr_gen = \
+        dl.load_batch("/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_mod.hdf5"
+                      ,512,mode='both')  #GOLD_XYZ_OSC.0001_1024.hdf5
     # y_train = torch.from_numpy(y_train).view(-1, 1)
     # y_val = torch.from_numpy(y_val).view(-1, 1)
     # path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5"
@@ -53,8 +53,8 @@ def train(data_path,num_epochs):
     # y_train = DataLoader(labels,batch_size=2)
 
     print("Data loaded and batched...")
-    # model = cnn_model.CNN(n_classes=24)
-    model = dnn.DNN(2048, n_classes=8)
+    model = cnn_model.CNN(n_classes=4)
+    # model = dnn.DNN(2048, n_classes=8)
     # model = resnet.resnet50(2,24)
     # model = resnet_simplified.ResNet50(n_classes=8)
     model.cuda()
@@ -73,7 +73,7 @@ def train(data_path,num_epochs):
     best_accuracy = 0
     # reg_lambda = 0.1
 
-    output_file = open(data_path+"dnn_baseline_logs.txt", "w")
+    output_file = open(data_path+"train_logs.txt", "w")
     # ica = FastICA(n_components=256,tol=1e-5,max_iter=1000)
     # print(zip(x_train_gen, y_train_gen))
     # activations = visualize.SaveFeatures(list(model.children())[5])
@@ -176,12 +176,12 @@ def train(data_path,num_epochs):
         # saving the model with best accuracy
         if test_metrics["accuracy"] > best_accuracy:
             best_accuracy = test_metrics["accuracy"]
-            torch.save(model, data_path+"dnn_baseline_model")
+            torch.save(model, data_path+"model")
 
     print("Training complete")
     print("-------------------------------------------")
-    # print("Starting inference module")
-    # inf.inference(data_path,x_test,y_test,raw_lables,snr_gen,"trained_cnn_intf_bpsk_snr20_sir25")
+    print("Starting inference module")
+    inf.inference(data_path, x_test, y_test, raw_lables, snr_gen, "model")
 
 
 def get_evaluation(y_true, y_prob, list_metrics):
@@ -208,8 +208,8 @@ def get_evaluation(y_true, y_prob, list_metrics):
 
 if __name__=="__main__":
     # path = "/media/backup/Arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/"
-    path = "/home/rachneet/thesis_results/"
-    train(path,200)
+    path = "/home/rachneet/thesis_results/deepsig_vier_mod/"
+    train(path,30)
     # path = "/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/GOLD_XYZ_OSC.0001_1024.hdf5"
     # file = h5.File(path,'r')
     # iq = file['X']

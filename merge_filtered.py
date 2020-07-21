@@ -78,17 +78,17 @@ def merge_files():
 
 
 def merge_hdfset():
-    path = "/media/rachneet/arsenal/rf_dataset_inets/"
+    path = "/home/rachneet/rf_dataset_inets/"
     path_deepsig = "/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/"
     # files = [path+"dataset_intf_free_no_cfo_vsg_snr0_1024.h5",
     #          path+"dataset_intf_free_no_cfo_vsg_snr5_1024.h5",
     #          path+"dataset_intf_free_no_cfo_vsg_snr10_1024.h5",
     #          path+"dataset_intf_free_no_cfo_vsg_snr15_1024.h5",
     #          path+"dataset_intf_free_no_cfo_vsg_snr20_1024.h5"]
-    files = [path + "dataset_intf_free_no_cfo_vsg_snr20_1024.h5",
-             path_deepsig + "GOLD_XYZ_OSC.0001_1024.hdf5"]
+    files = [path + "dataset_mixed_recordings_1024.h5",
+             path + "usrp_no_intf_all_normed.h5"]
     mods_skip = [8,9,18,19,23]
-    with h5.File(path+'dataset_un_vsg_snr20.h5', mode='w') as file:
+    with h5.File(path+'dataset_mixed.h5', mode='w') as file:
         row1 = 0
         i = 0
         for dataset in files:
@@ -96,34 +96,37 @@ def merge_hdfset():
             dset1 = list(h5fr.keys())[0]
             dset2= list(h5fr.keys())[1]
             dset3 = list(h5fr.keys())[2]
-            iq_data = h5fr[dset1][:]
-            label_data = h5fr[dset2][:]
-            snr_data = h5fr[dset3][:]
+            iq_data = h5fr[dset1][:2]
+            label_data = h5fr[dset2][:2]
+            snr_data = h5fr[dset3][:2]
 
-            if dataset[-4:] == "hdf5":
-                print("in hdf5")
-                label_idx = [dl.label_idx(label) for label in label_data]
-                idx_class = [i for i in range(len(label_idx)) if label_idx[i] not in mods_skip]
-
-                iq_data = iq_data[idx_class]
-                # label_data[idx_class] = np.array([0,0,0,0,0,0,0,0,1])
-                label_data = np.array([np.array([0,0,0,0,0,0,0,0,1]) for _ in label_data[idx_class]])
-                snr_data = snr_data[idx_class]
-                snr_data = snr_data.astype('int8')
-            else:
-                label_data = np.array([np.append(label,np.array([0])) for label in label_data])
-                # df = pd.DataFrame()
-                # df['iq'] = list(map(lambda x: np.array(x), iq_data))
-                # df['normalized_iq'] = df.iq.apply(lambda x: preprocessing.scale(x, with_mean=False))
-                # df.drop('iq', axis=1, inplace=True)
-                # df['labels'] = list(map(lambda x: np.array(x), label_data))
-                # df['snr'] = list(map(lambda x: x, snr_data))
-                # df = df.sample(frac=1, random_state=4)
-
+            # if dataset[-4:] == "hdf5":
+            #     print("in hdf5")
+            #     label_idx = [dl.label_idx(label) for label in label_data]
+            #     idx_class = [i for i in range(len(label_idx)) if label_idx[i] not in mods_skip]
+            #
+            #     iq_data = iq_data[idx_class]
+            #     # label_data[idx_class] = np.array([0,0,0,0,0,0,0,0,1])
+            #     label_data = np.array([np.array([0,0,0,0,0,0,0,0,1]) for _ in label_data[idx_class]])
+            #     snr_data = snr_data[idx_class]
+            #     snr_data = snr_data.astype('int8')
+            # else:
+            #     label_data = np.array([np.append(label,np.array([0])) for label in label_data])
+            #     # df = pd.DataFrame()
+            #     # df['iq'] = list(map(lambda x: np.array(x), iq_data))
+            #     # df['normalized_iq'] = df.iq.apply(lambda x: preprocessing.scale(x, with_mean=False))
+            #     # df.drop('iq', axis=1, inplace=True)
+            #     # df['labels'] = list(map(lambda x: np.array(x), label_data))
+            #     # df['snr'] = list(map(lambda x: x, snr_data))
+            #     # df = df.sample(frac=1, random_state=4)
+            print(dataset)
             # normalize data
-            norm_iq = [preprocessing.scale(sample, with_mean=False) for sample in iq_data]
-            norm_iq = np.array(norm_iq)
-            print("norm done")
+            if "dataset_mixed_recordings_1024.h5" in dataset:
+                norm_iq = [preprocessing.scale(sample, with_mean=False) for sample in iq_data]
+                norm_iq = np.array(norm_iq)
+                print("norm done")
+            else:
+                norm_iq = iq_data
 
             dslen = iq_data.shape[0]
             cols_iq = iq_data.shape[1]
@@ -158,12 +161,15 @@ def sample_from_h5(path, output_path):
     num_iq = 1024          # iq per sample
     batch = 512
     samples_per_segment = int(num_iq / batch)
+    cut_off = int(batch*samples_per_segment)
+    # print(cut_off)
+    # print(samples_per_segment)
     batch_labels = np.zeros((samples_per_segment,8), dtype=np.float32)
     batch_snrs = np.zeros(samples_per_segment, dtype=np.int8)
 
     for row in range(len(iq)):
         # print(iq[row].shape)
-        batch_iq = np.array(np.split(iq[row], samples_per_segment), dtype=np.float32)
+        batch_iq = np.array(np.split(iq[row][:cut_off], samples_per_segment), dtype=np.float32)
         batch_labels[:] = np.array(labels[row])
         batch_snrs[:] = np.array(snrs[row])
         # print(batch_iq.shape)
@@ -195,22 +201,24 @@ def sample_from_h5(path, output_path):
 
 
 def sample_deepsig():
-    path = "/media/rachneet/arsenal/rf_dataset_inets/"
-    path_deepsig = "/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/"
-    files = [path_deepsig + "GOLD_XYZ_OSC.0001_1024.hdf5"]
+    path = "/home/rachneet/rf_dataset_inets/"
+    # path_deepsig = "/home/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/"
+    files = [path + "GOLD_XYZ_OSC.0001_1024.hdf5"]
 
     classes = ['32PSK', '16APSK', '32QAM', 'FM', 'GMSK', '32APSK', 'OQPSK', '8ASK', 'BPSK',
                '8PSK', 'AM-SSB-SC', '4ASK', '16PSK', '64APSK', '128QAM', '128APSK', 'AM-DSB-SC',
                'AM-SSB-WC', '64QAM', 'QPSK', '256QAM', 'AM-DSB-WC', 'OOK', '16QAM']
     norm_classes = ['OOK', '4ASK', 'BPSK', 'QPSK', '8PSK', '16QAM', 'AM-SSB-SC', 'AM-DSB-SC', 'FM', 'GMSK', 'OQPSK']
+    # digital_mods = ['BPSK', 'QPSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM']
+    vier_mods = ['BPSK', 'QPSK', '16QAM', '64QAM']
     label_list = []
 
-    for i in range(len(norm_classes)):
+    for i in range(len(vier_mods)):
         for j in range(len(classes)):
-            if norm_classes[i] == classes[j]:
+            if vier_mods[i] == classes[j]:
                 label_list.append(j)
-    print(label_list)
-    with h5.File(path + 'dataset_deepsig_11mod_new.h5', mode='w') as file:
+    # print(label_list)
+    with h5.File(path + 'dataset_deepsig_vier_mod.hdf5', mode='w') as file:
         row1, i = 0, 0
         for dataset in files:
             h5fr = h5.File(dataset, 'r')
@@ -241,24 +249,7 @@ def sample_deepsig():
             snr_data = snr_data.astype('int8')
             print(iq_data.shape)
             print(snr_data.shape)
-            # shape = iq_data.shape[0]
-            # for item in range(shape):
-            #     if not os.path.exists(output_path):
-            #         with h5.File(output_path, 'w') as hdf:
-            #             hdf.create_dataset('iq', data=iq_data[item], chunks=True, maxshape=(None, 1024, 2),
-            #                                compression='gzip')
-            #             hdf.create_dataset('labels', data=labels[item], chunks=True, maxshape=(None, 11),
-            #                                compression='gzip')
-            #             hdf.create_dataset('snrs', data=snr_data[item], chunks=True, maxshape=(None,1), compression='gzip')
-            #     else:
-            #         with h5.File(output_path, 'a') as hf:
-            #             hf["iq"].resize((hf["iq"].shape[0] + iq_data[item].shape[0]), axis=0)
-            #             hf["iq"][-iq_data[item].shape[0]:] = iq_data[item]
-            #             hf["labels"].resize((hf["labels"].shape[0] + labels[item].shape[0]), axis=0)
-            #             hf["labels"][-labels[item].shape[0]:] = labels[item]
-            #             hf["snrs"].resize((hf["snrs"].shape[0] + snr_data[item].shape[0]), axis=0)
-            #             hf["snrs"][-snr_data[item].shape[0]:] = snr_data[item]
-            #             print(hf['iq'].shape)
+
             dslen = iq_data.shape[0]
             cols_iq = iq_data.shape[1]
             rows_iq = iq_data.shape[2]
@@ -278,13 +269,13 @@ def sample_deepsig():
 
 
 def one_hot(id):
-    x = np.zeros(11)
+    x = np.zeros(4)
     x[id] = 1
     return x
 
 
-def sift_mods():
-    path = "/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/GOLD_XYZ_OSC.0001_1024.hdf5"
+def hdf_to_csv():
+    path = "/home/rachneet/rf_dataset_inets/GOLD_XYZ_OSC.0001_1024.hdf5"
     h5fr = h5.File(path, 'r')
     dset1 = list(h5fr.keys())[0]
     dset2 = list(h5fr.keys())[1]
@@ -296,6 +287,7 @@ def sift_mods():
     df['iq'] = list(map(lambda x: np.array(x, dtype=np.float32), iq_data))
     df['labels'] = list(map(lambda x: np.array(x, dtype=np.float32), label_data))
     df['snrs'] = list(map(lambda x: np.array(x, dtype=np.int8), snr_data))
+    df['snrs'] = df['snrs'].apply(lambda x: x[0])
     df['label_id'] = df['labels'].apply(lambda x: dl.label_idx(x))
     print("==========dataframe created==========")
 
@@ -303,30 +295,33 @@ def sift_mods():
                '8PSK', 'AM-SSB-SC', '4ASK', '16PSK', '64APSK', '128QAM', '128APSK', 'AM-DSB-SC',
                'AM-SSB-WC', '64QAM', 'QPSK', '256QAM', 'AM-DSB-WC', 'OOK', '16QAM']
     norm_classes = ['OOK', '4ASK', 'BPSK', 'QPSK', '8PSK', '16QAM', 'AM-SSB-SC', 'AM-DSB-SC', 'FM', 'GMSK', 'OQPSK']
+    digital_mods = ['BPSK', 'QPSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM']
     label_list = []
 
-    for i in range(len(norm_classes)):
+    for i in range(len(digital_mods)):
         for j in range(len(classes)):
             if norm_classes[i] == classes[j]:
                 label_list.append(j)
-    print(label_list)
+    # print(label_list)
 
     df = df[df['label_id'].isin(label_list)]
     df['labels'] = df['label_id'].apply(lambda x: xgb.mod_fix(x, label_list))
+    df.drop('label_id', axis=1, inplace=True)
     print(df.head(50))
+    df.to_csv("/home/rachneet/rf_dataset_inets/deepsig_digital_mod.csv", encoding='utf-8', index=False)
 
 
 if __name__=="__main__":
     # merge_hdfset()
     # pass
-    # data_path = "/media/rachneet/arsenal/rf_dataset_inets/dataset_deepsig_11mod.h5"
-    # output_path = "/media/rachneet/arsenal/rf_dataset_inets/dataset_deepsig_11mod.h5"
+    # data_path = "/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_mod.hdf5"
+    # output_path = "/home/rachneet/rf_dataset_inets/vsg_all_512.h5"
     # sample_from_h5(data_path, output_path)
-    # sample_deepsig()
+    sample_deepsig()
     # file = h5.File(data_path,'r')
     # iq = file['iq']
     # label = file['labels']
     # snr = file['snrs']
-    # print(iq[0],label[1000000],snr[0])
+    # print(iq[0],label[400000],snr[0])
     # print(iq.shape)
-    sift_mods()
+    # hdf_to_csv()
