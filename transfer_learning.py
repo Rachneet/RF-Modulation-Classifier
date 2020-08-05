@@ -1,10 +1,15 @@
 import torch
 from train import *
 from cnn_model import *
+from py_lightning import LightningCNN
 
 
 def transfer_learning(path):
-    model = torch.load(path+"tl_vsg_10_15_model",map_location='cuda:0')
+    model = LightningCNN.load_from_checkpoint(
+        checkpoint_path='/home/rachneet/thesis_results/vsg_vier_mod/epoch=15.ckpt',
+        map_location=None
+    )
+    # model = torch.load(path+"vsg_vier_mod/epoch=15.ckpt",map_location='cuda:0')
 
     # check params of model
     # for i,param in model.named_parameters():
@@ -35,9 +40,9 @@ def transfer_learning(path):
     #         print(name_2, params.requires_grad)
 
     # train the modified model
-    train(path,model,num_epochs=10)
+    train(path+"tl_vsg_deepsig/",model,num_epochs=10)
 
 
 if __name__=="__main__":
-    path = "/media/backup/Arsenal/thesis_results/"
+    path = "/home/rachneet/thesis_results/"
     transfer_learning(path)

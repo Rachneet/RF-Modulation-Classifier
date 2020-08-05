@@ -97,7 +97,7 @@ class ResnetBottleneckBlock(ResnetResidualBlock):
         self.blocks = nn.Sequential(
             conv_bn(self.in_channels, self.out_channels, conv=self.conv, kernel_size=1),
             activation_func(activation),
-            conv_bn(self.out_channels, self.expanded_channels, conv=self.conv, kernel_size=3, stride= self.downsampling),
+            conv_bn(self.out_channels, self.expanded_channels, conv=self.conv, kernel_size=3, stride=self.downsampling),
             activation_func(activation),
             conv_bn(self.out_channels, self.expanded_channels, conv=self.conv, kernel_size=1)
         )
@@ -118,9 +118,6 @@ class ResnetLayer(nn.Module):
         x = self.blocks(x)
         return x
 
-# dummy = torch.ones((1,64,48,48))
-# layer = ResnetLayer(64,128,block=ResnetBasicBlock,n=3)
-# print(layer(dummy).shape)
 
 # encoder: conv layers basically
 class ResnetEncoder(nn.Module):

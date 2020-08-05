@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from cnn_model import *
 from dataloader import *
-from train import *
+# from train import *
 import csv
 import pandas as pd
 from copy import deepcopy
@@ -24,6 +24,28 @@ plotly.io.orca.config.save()
 pio.renderers.default = 'svg'
 
 from lightning_resnet import *
+
+def get_evaluation(y_true, y_prob, list_metrics):
+    # print(y_true)
+    # print(y_prob)
+    # print(type(y_true))
+    # print(type(y_prob))
+    y_pred = np.argmax(y_prob, -1)
+    # print(y_pred)
+    y_true = np.argmax(y_true,-1)
+    # print(y_true)
+    output = {}
+    if 'accuracy' in list_metrics:
+        output['accuracy'] = metrics.accuracy_score(y_true, y_pred)
+    if 'loss' in list_metrics:
+        try:
+            output['loss'] = metrics.log_loss(y_true, y_prob)
+        except ValueError:
+            output['loss'] = -1
+    if 'confusion_matrix' in list_metrics:
+        output['confusion_matrix'] = str(metrics.confusion_matrix(y_true, y_pred))
+    return output
+
 
 def evaluate(y_true, y_pred, list_metrics):
 
@@ -53,9 +75,9 @@ def compute_results(csv_path, snrs):
     for snr in snrs:
 
         data = groups.get_group(snr).reset_index(drop=True)
-        output = evaluate(data['True label'].values, data['Predicted label'].values,
+        output = evaluate(data['True_label'].values, data['Predicted_label'].values,
                           ['accuracy', 'confusion_matrix'])
-        unique, counts = np.unique(data['True label'].values, return_counts=True)
+        unique, counts = np.unique(data['True_label'].values, return_counts=True)
         result[snr] = output
         total_count[snr] = counts
 
@@ -444,9 +466,10 @@ if __name__ == "__main__":
 
     # -------------------Plot collective conf maps-----------------------------------------------------
     # y = np.arange(-20,21,2)
-    y = np.arange(0,21,5)
-    print(y)
-    count, output = compute_results(datapath+"output_vsg_all_test.csv",y)# ['0db', '5db', '10db', '15db', '20db'])
+    y = np.arange(-20,21,2)
+    path = datapath + "tl_vsg_deepsig/output.csv"
+    df = pd.read_csv(path)
+    count, output = compute_results(path,y)# ['0db', '5db', '10db', '15db', '20db'])
     # [0,5,10,15,20])
     # print(count,output)
     # print(count)
@@ -456,6 +479,11 @@ if __name__ == "__main__":
         # print(v['confusion_matrix'])
 
         acc.append(round(v['accuracy'],2))
+
+    y_true = df['True_label'].values
+    y_pred = df['Predicted_label'].values
+    total = metrics.accuracy_score(y_true, y_pred)
+    acc.append(round(total,2))
     print(acc)
 
     # --------------------------------CFO correction--------------------------------------------------

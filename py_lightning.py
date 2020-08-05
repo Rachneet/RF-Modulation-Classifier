@@ -455,11 +455,11 @@ class LightningCNN(pl.LightningModule):
 # function to test the model separately
 def test_lightning(hparams):
 
-    # model = LightningCNN.load_from_checkpoint(
-    # checkpoint_path='/media/backup/Arsenal/thesis_results/intf_ofdm_snr10_all/epoch=29.ckpt',
+    model = LightningCNN.load_from_checkpoint(
+    checkpoint_path='/home/rachneet/thesis_results/vsg_vier_mod/epoch=15.ckpt',
     # hparams=hparams,
-    # map_location=None
-    # )
+    map_location=None
+    )
 
     #-----------------------------------------------------------------------------------------
     dataset = DatasetFromHDF5(hparams.data_path, 'iq', 'labels', 'snrs', hparams.featurize)
@@ -491,13 +491,13 @@ def test_lightning(hparams):
                                    sampler=test_sampler)
 
     #---------------------------------------------------------------------------------------
-    model = torch.load("/home/rachneet/thesis_results/trained_cnn_vsg_cfo5_all", map_location="cuda:0")
-    exp = Experiment(name='cnn_train_cfo5_test_cfo1',save_dir=CHECKPOINTS_DIR)
+    # model = torch.load("/home/rachneet/thesis_results/vsg_vier_mod", map_location="cuda:0")
+    # exp = Experiment(name='cnn_train_cfo5_test_cfo1',save_dir=CHECKPOINTS_DIR)
     # logger = TestTubeLogger('tb_logs', name='CNN')
     # callback = [test_callback()]
     # print(neptune_logger.experiment.name)
     model_checkpoint = pl.callbacks.ModelCheckpoint(filepath=CHECKPOINTS_DIR)
-    trainer = Trainer(gpus=hparams.gpus, checkpoint_callback=model_checkpoint, experiment=exp)
+    trainer = Trainer(gpus=hparams.gpus, checkpoint_callback=model_checkpoint)
     trainer.test(model, test_dataloaders=test_dataset)
     # Save checkpoints folder
     neptune_logger.experiment.log_artifact(CHECKPOINTS_DIR)
@@ -505,12 +505,12 @@ def test_lightning(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/home/rachneet/thesis_results/deepsig_dig_mod/'
+CHECKPOINTS_DIR = '/home/rachneet/thesis_results/vsg_deepsig_mod/'
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="deepsig_dig_mod",   # change this for new runs
+    experiment_name="vsg_deepsig_mod",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -553,32 +553,32 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/home/rachneet/rf_dataset_inets/dataset_deepsig_dig_mod.hdf5"
-    # out_path = "/home/rachneet/thesis_results/"
-    #
-    # parser = ArgumentParser()
-    # parser.add_argument('--output_path', default=out_path)
-    # parser.add_argument('--data_path', default=path)
-    # parser.add_argument('--gpus', default=[0])
-    # parser.add_argument('--max_epochs', default=30)
-    # parser.add_argument('--batch_size', default=512)
-    # parser.add_argument('--num_workers', default=10)
-    # parser.add_argument('--shuffle', default=False)
-    # parser.add_argument('--learning_rate', default=1e-2)
-    # parser.add_argument('--momentum', default=0.9)
-    # parser.add_argument('--in_dims', default=2)
-    # parser.add_argument('--filters', default=64)
-    # parser.add_argument('--kernel_size', type=list, nargs='+', default=[3,3,3,3,3,3])
-    # parser.add_argument('--pool_size', default=3)
-    # parser.add_argument('--fc_neurons', type=int, default=128)
-    # parser.add_argument('--n_classes', default=7)
-    # parser.add_argument('--n_features', default=10)
-    # parser.add_argument('--featurize', default=False)
-    # args = parser.parse_args()
+    path = "/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_mod.hdf5"
+    out_path = "/home/rachneet/thesis_results/"
+
+    parser = ArgumentParser()
+    parser.add_argument('--output_path', default=out_path)
+    parser.add_argument('--data_path', default=path)
+    parser.add_argument('--gpus', default=[0])
+    parser.add_argument('--max_epochs', default=30)
+    parser.add_argument('--batch_size', default=512)
+    parser.add_argument('--num_workers', default=10)
+    parser.add_argument('--shuffle', default=False)
+    parser.add_argument('--learning_rate', default=1e-2)
+    parser.add_argument('--momentum', default=0.9)
+    parser.add_argument('--in_dims', default=2)
+    parser.add_argument('--filters', default=64)
+    parser.add_argument('--kernel_size', type=list, nargs='+', default=[3,3,3,3,3,3])
+    parser.add_argument('--pool_size', default=3)
+    parser.add_argument('--fc_neurons', type=int, default=128)
+    parser.add_argument('--n_classes', default=4)
+    parser.add_argument('--n_features', default=10)
+    parser.add_argument('--featurize', default=False)
+    args = parser.parse_args()
     #
     # main(args)
 
-    # # test_lightning(args)
+    test_lightning(args)
     # file = h5.File(path,'r')
     # iq, labels, snrs = file['iq'],file['labels'],file['snrs']
     # print(iq.shape)

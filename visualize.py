@@ -893,8 +893,11 @@ def plt_tl_chart():
     # acc = [0.58, 0.80, 0.93, 0.98, 0.99, 0.86]
     # acc2 = [0.75, 0.98, 1.0, 1.0, 1.0, 0.95]
     # vsg cfo5
-    acc = [0.59, 0.81, 0.94, 0.99, 1.0, 0.87]
-    acc2 = [0.71, 0.97, 1.0, 1.0, 1.0, 0.94]
+    # acc = [0.59, 0.81, 0.94, 0.99, 1.0, 0.87]
+    # acc2 = [0.71, 0.97, 1.0, 1.0, 1.0, 0.94]
+    acc = [0.69, 0.82, 0.92, 1.0, 1.0, 0.88]
+    acc2 = [0.62, 0.79, 0.83, 0.84, 0.85, 0.79]
+
 
 
 
@@ -903,7 +906,8 @@ def plt_tl_chart():
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc,
-        name="                  ",#'Traditional <br>Learning',
+        # name="                  ",#'Traditional <br>Learning',
+        name = 'Traditional <br>Learning',
         # text=acc,
         # textfont=dict(color='black', size=10),
         textposition='auto',
@@ -920,7 +924,8 @@ def plt_tl_chart():
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc2,
-        name="                  ",#'Transfer <br>Learning (TL)',
+        # name="                  ",#'Transfer <br>Learning (TL)',
+        name = 'Transfer <br>Learning (TL)',
         # text=acc2,
         # textfont=dict(color='black', size=10),
         # textposition='auto',
@@ -995,21 +1000,21 @@ def plt_tl_chart():
                      linecolor='black',linewidth=1,tickmode='linear',tick0=0,
                      tickfont=dict(
                          family="times new roman",
-                         size=22,
+                         size=14,
                          color="black"
                      ),
                      dtick=0.1,range=[0, 1.05],title=dict(font=dict(family="times new roman",
                              size=14,
                              color="black"
                          ),
-                         # text='Accuracy')
+                         text='Accuracy'
                      ))
 
     fig.update_xaxes(automargin=True, side='bottom',showline=True,ticks='outside',
                      mirror=True,linecolor='black',linewidth=1,
                      tickfont=dict(
                          family="times new roman",
-                         size=22,
+                         size=14,
                          color="black"
                      ),
                      title=dict(
@@ -1018,7 +1023,7 @@ def plt_tl_chart():
                              size=14,
                              color="black"
                          ),
-                         # text='SIR'
+                         text='SNR'
                      ))
     # Customize aspect
     # marker_line_color = '#d62728'
@@ -1039,34 +1044,34 @@ def plt_tl_chart():
         bargroupgap=0.15,
         width=500,
         height=500,
-        showlegend=False,
-        # legend=dict(
-        #     # bordercolor='black',
-        #     # borderwidth=1,
-        #     bgcolor='rgba(0,0,0,0)',
-        #     orientation='h',
-        #     itemsizing='constant',
-        #     x=0,
-        #     y=1.2,
-        #     font=dict(
-        #         # family="sans-serif",
-        #         size=10,
-        #         color="black"
-        #     ),
-        #     traceorder='normal'
-        # ),
-        # yaxis2=dict(
-        # # title='Training Time (Hours)',
-        # # title_font=dict(color='black'),
-        # side='right',
-        # tickmode='linear',
-        # tickfont=dict(family='times new roman',size=22,color='black'),
-        # tick0=0,
-        # ticks='inside',
-        # dtick=5,
-        # range=[0,52.5],
-        # overlaying= 'y'
-    # ),
+        # showlegend=False,
+        legend=dict(
+            # bordercolor='black',
+            # borderwidth=1,
+            bgcolor='rgba(0,0,0,0)',
+            orientation='h',
+            itemsizing='constant',
+            x=0,
+            y=1.2,
+            font=dict(
+                # family="sans-serif",
+                size=10,
+                color="black"
+            ),
+            traceorder='normal'
+        ),
+        yaxis2=dict(
+        # title='Training Time (Hours)',
+        # title_font=dict(color='black'),
+        side='right',
+        tickmode='linear',
+        tickfont=dict(family='times new roman',size=22,color='black'),
+        tick0=0,
+        ticks='inside',
+        dtick=5,
+        range=[0,52.5],
+        overlaying= 'y'
+    ),
     )
 
     plotly.offline.plot(figure_or_data=fig, image_width=610, image_height=500, filename='test_bar.html', image='svg')
@@ -1699,20 +1704,24 @@ def deepsig_plots():
     # y_res = [0.04, 0.04, 0.05, 0.05, 0.08, 0.13, 0.18, 0.22, 0.31, 0.4, 0.52, 0.61, 0.72, 0.85, 0.92,
     #          0.93, 0.94, 0.95, 0.95, 0.95, 0.95]
     # digital mods
-    y_xgb = [0.14, 0.15, 0.15, 0.17, 0.19, 0.26, 0.38, 0.46, 0.53, 0.62, 0.69, 0.81, 0.91, 0.94, 0.96, 0.97, 0.97, 0.98,
-             0.98, 0.98, 0.98]
-    y_cnn = [0.15, 0.14, 0.15, 0.17, 0.23, 0.33, 0.43, 0.52, 0.58, 0.71, 0.82, 0.91, 0.96, 0.97, 0.98, 0.98, 0.98, 0.98,
-             0.98, 0.98, 0.98]
-    y_res = [0.14, 0.14, 0.16, 0.2, 0.26, 0.37, 0.45, 0.51, 0.58, 0.73, 0.84, 0.91, 0.95, 0.96, 0.96, 0.96, 0.96, 0.96,
-             0.96, 0.97, 0.96]
+    # y_xgb = [0.14, 0.15, 0.15, 0.17, 0.19, 0.26, 0.38, 0.46, 0.53, 0.62, 0.69, 0.81, 0.91, 0.94, 0.96, 0.97, 0.97, 0.98,
+    #          0.98, 0.98, 0.98]
+    # y_cnn = [0.15, 0.14, 0.15, 0.17, 0.23, 0.33, 0.43, 0.52, 0.58, 0.71, 0.82, 0.91, 0.96, 0.97, 0.98, 0.98, 0.98, 0.98,
+    #          0.98, 0.98, 0.98]
+    # y_res = [0.14, 0.14, 0.16, 0.2, 0.26, 0.37, 0.45, 0.51, 0.58, 0.73, 0.84, 0.91, 0.95, 0.96, 0.96, 0.96, 0.96, 0.96,
+    #          0.96, 0.97, 0.96]
+    y_tr = [0.25, 0.28, 0.29, 0.34, 0.45, 0.61, 0.68, 0.72, 0.79, 0.86, 0.96, 0.99, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 0.82]
+    y_tl = [0.25, 0.25, 0.25, 0.26, 0.25, 0.28, 0.33, 0.45, 0.53, 0.7, 0.83, 0.88, 0.92, 0.94, 0.97, 0.97, 0.97, 0.97,
+            0.97, 0.97, 0.97, 0.72]
     colors = ['rgba(255, 101, 85, 1)', 'rgba(35, 170, 255, 1)', 'rgba(244, 178, 71, 1)']
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=x, y=y_xgb, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
-                             name="XGBoost"))
-    fig.add_trace(go.Scatter(x=x, y=y_cnn, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
-                             name="CNN"))
-    fig.add_trace(go.Scatter(x=x, y=y_res, mode="lines+markers", marker_symbol='diamond', marker_color=colors[2],
-                             name="ResNet-101"))
+    fig.add_trace(go.Scatter(x=x, y=y_tr, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
+                             name='Traditional <br>Learning'))
+    fig.add_trace(go.Scatter(x=x, y=y_tl, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
+                             name='Transfer <br>Learning'))
+    # fig.add_trace(go.Scatter(x=x, y=y_res, mode="lines+markers", marker_symbol='diamond', marker_color=colors[2],
+    #                          name="ResNet-101"))
 
     line_ax = [0.2, 0.4, 0.6, 0.8]
     for i in line_ax:
@@ -1726,7 +1735,7 @@ def deepsig_plots():
 
     line_ax_2 = [-10, 0, 10]
     for i in line_ax_2:
-        fig.add_shape(type="line", x0=i, y0=0, x1=i, y1=1,
+        fig.add_shape(type="line", x0=i, y0=0, x1=i, y1=1.05,
                       line=dict(
                           color="grey",
                           width=1,
@@ -1739,7 +1748,7 @@ def deepsig_plots():
                      tickfont=dict(family='Times New Roman', color="black", size=18),
                      tick0=0,
                      dtick=0.2,
-                     range=[0, 1],
+                     range=[0, 1.05],
                      title=dict(font=dict(family='Times New Roman', color="black",  # family="sans-serif",size=15,
                                           size=18), text="Classification accuracy"))
 
@@ -1758,7 +1767,7 @@ def deepsig_plots():
     fig.update_traces(marker_line_width=1)
 
     fig.update_layout(
-        title_text='Comparison of models for digital modulation dataset',
+        # title_text='Comparison of models for digital modulation dataset',
         title_x=0.50, title_y=0.90,
         paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
         # width=600, height=500,
@@ -1776,9 +1785,153 @@ def deepsig_plots():
     plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=550, filename='deepsig_acc.html', image='svg')
     # pass
 
+
+def plot_lpf():
+    # filter configuration
+    srate = 50000000.0
+    bw_signal = 20000000.0
+    freq_noise = np.array([5.73e9, 5.77e9])
+    bw_noise = 5000000.0
+    freq =  5750000000.0
+    numtaps = 100
+    b = scipy.signal.firwin(numtaps=numtaps,
+                            cutoff=bw_signal / 2,
+                            pass_zero=True,
+                            fs=srate,
+                            )
+
+    # show frequency response of the filter
+
+    w, h = scipy.signal.freqz(b, worN=1500)
+    w *= srate / (2 * np.pi) / 1e6  # w in MHz
+    # print(w)
+    y = 20 * np.log10(abs(h))
+    y_ph = np.unwrap(np.angle(h)) / np.pi
+    #3 dB point
+    x1, y1 = w[np.argmin(abs(abs(h) - np.sqrt(0.5)))], 20 * np.log10(np.sqrt(0.5))
+    # attenuation f_c
+    x2, y2 = bw_signal / 2e6, 20 * np.log10(abs(h[np.argmin(abs(w - bw_signal / 2e6))]))
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=w, y=y_ph, line=dict(
+                color='#23aaff',
+             )))
+    fig.add_trace(go.Scatter(x=[0, 10], y=[5, 5], mode='none', fillcolor='rgba(102, 197, 108, 0.4)', fill='tozeroy'))
+    fig.add_trace(go.Scatter(x=[0, 10], y=[-25, -25], mode='none', fillcolor='rgba(102, 197, 108, 0.4)', fill='tozeroy'))
+    # fig.add_trace(go.Scatter(x=[x1, x2], y=[y1, y2], mode='markers',marker=dict(
+    #         color='#f4b247',
+    #         size=6,
+    #         line=dict(
+    #             color='#ff7f0e',
+    #          )
+    #     )))# marker_color='#f4b247', marker_line_color='#ff7f0e'))
+    fig.update_yaxes(showline=True, mirror=True, ticks='outside',
+                     linecolor='black', linewidth=1,
+                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     tick0=-20,
+                     dtick=10,
+                     range=[-25, 5],
+                     title=dict(font=dict(family='Times New Roman', color="black",  # family="sans-serif",size=15,
+                                          size=18)))
+
+    fig.update_xaxes(side='bottom', showline=True, ticks='outside',
+                     mirror=True, linecolor='black', linewidth=1,
+                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     tick0=0,
+                     dtick=2,
+                     range=[0, 25],
+                     title=dict(font=dict(
+                         family='Times New Roman',
+                         size=18,
+                         color="black"
+                     )))
+
+    fig.update_layout(
+        # title_text='Comparison of models for digital modulation dataset',
+        # title_x=0.50, title_y=0.90,
+        paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
+        # width=600, height=500,
+        showlegend=False,
+        legend=dict(
+            bordercolor='black',
+            borderwidth=1,
+            bgcolor='rgba(0,0,0,0)', orientation='v',
+            itemsizing='constant',
+            x=0.01, y=0.99,
+            font=dict(size=12, color="black", family='times new roman'), traceorder='normal'
+        )
+    )
+
+    fig.update_traces(marker_line_width=0.8)
+    plotly.offline.plot(figure_or_data=fig, image_width=700, image_height=380, filename='lpf.html', image='svg')
+    # pass
+
+    # fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8, 7))
+    #
+    # for ax, y, label in zip([ax1, ax2],
+    #                  [20 * np.log10(abs(h)), np.unwrap(np.angle(h)) / np.pi],
+    #                  ["Magnitude [dB]", "Phase [$\\pi^{-1}$]"]):
+    #
+    #     ax.plot(w, y)
+    #     ax.set_xlim([0, min(srate / 2e6, (freq_noise[1] + 2 * bw_noise) / 1e6)])
+    #     ax.fill_between([0, bw_signal / 1e6 / 2], -200, 200,
+    #                     facecolor=color_bw_signal, label='Signal band')
+    #     noise_offset = freq_noise[1] - freq
+    #     noise_freq_idx = np.array([(noise_offset - bw_noise / 2) / 1e6,
+    #                                (noise_offset + bw_noise / 2) / 1e6])
+    #     ax.fill_between(noise_freq_idx, -200, 200,
+    #                     facecolor=color_bw_noise, label='Noise band')
+    #     ax.set_ylim([min(y), max(y) + 0.1 * abs(min(y))])
+    #     ax.set_ylabel(label)
+    #     ax.set_title("Frequency response of the low-pass filter")
+    #     ax.set_xlabel("Frequency [MHz]")
+    #     ax.legend(loc=1)
+    #
+    # ax1.set_ylim([-80, 5])
+    #
+    # # -3dB point
+    # x, y = w[np.argmin(abs(abs(h) - np.sqrt(0.5)))], 20 * np.log10(np.sqrt(0.5))
+    # ax1.plot(x, y, 'ob', markersize=4, color='red')
+    # ax1.annotate('%5.2fdB @\n%5.2f MHz' % (y, x),
+    #     xy=(x, y),
+    #     xytext=(10, 0),
+    #     textcoords='offset points',
+    #     ha='left',
+    #     va='center')
+    #
+    # # attenuation @ f_c
+    # x, y = bw_signal / 2e6, 20 * np.log10(abs(h[np.argmin(abs(w - bw_signal / 2e6))]))
+    # ax1.plot(x, y, 'og', markersize=4, color='red')
+    # ax1.annotate('%5.2fdB @\n%5.2f MHz' % (y, x),
+    #     xy=(x, y),
+    #     xytext=(-10, -5),
+    #     textcoords='offset points',
+    #     ha='right',
+    #     va='center')
+    #
+    # # average noise attenuation
+    # noise_idx = np.array(np.arange(noise_freq_idx[0] * (w.size / (srate / 2e6)),
+    #                                noise_freq_idx[1] * (w.size / (srate / 2e6)), 1), dtype=int)
+    # avg_mag_noise = 10 * np.log10(np.mean(abs(h[noise_idx])**2))
+    # ax1.plot(noise_freq_idx, [avg_mag_noise] * 2, 'r')
+    #
+    # x, y = np.mean(noise_freq_idx), avg_mag_noise
+    # ax1.annotate('average noise\nattenuation: %5.2fdB' % avg_mag_noise,
+    #     xy=(x, y),
+    #     xytext=(25, 30),
+    #     arrowprops=dict(facecolor='black', shrink=0.05, width=1, headwidth=8, headlength=8),
+    #     textcoords='offset points',
+    #     ha='center',
+    #     va='bottom')
+    #
+    # plt.tight_layout()
+    # # plt.show()
+    # plt.savefig("test.svg")
+
+
 if __name__=="__main__":
-    # deepsig_plots()
-    train_fraction_effect()
+    deepsig_plots()
+    # plot_lpf()
     # x = np.arange(-10,10,0.2)
     # draw_activation(x)
     # draw_comparison_chart()

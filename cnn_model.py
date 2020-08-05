@@ -148,24 +148,24 @@ class CNN(nn.Module):
 
 
 if __name__=="__main__":
-    # model = CNN(n_classes=8)
-    # print(summary(model,torch.ones((1,1024,2)),show_input=False, show_hierarchical=False))
-    input = [[[5,3,6,2,1,1],[9,4,7,2,4,6],[2,8,7,3,2,1],
-             [4,3,6,9,0,1],[3,6,1,0,5,2],[6,1,1,4,7,3]],
-             [[5, 3, 6, 2, 1, 1], [9, 4, 7, 2, 4, 6], [2, 8, 7, 3, 2, 1],
-              [4, 3, 6, 9, 0, 1], [3, 6, 1, 0, 5, 2], [6, 1, 1, 4, 7, 3]]]
-    nb_channels = 1
-    h, w = 6, 6
-    x = torch.randn(1, nb_channels, h, w)
-    weights = torch.tensor([[1., 0., 0.],
-                            [0., 1., 0.],
-                            [0., 0., 1.]])
-    weights = weights.view(1, 1, 3, 3).repeat(1, 1, 1, 1)
-    # input = torch.rand(6,6)
-    input = torch.tensor(input).float()
-    # input = input.unsqueeze(dim=0)
-    input = input.unsqueeze(dim=1)
-    conv = F.conv2d(input, weights)
-    # print(conv.weight)
-    # out = conv(input)
-    print(conv)
+    model = CNN(n_classes=8)
+    print(summary(model,torch.ones((1,1024,2)),show_input=False, show_hierarchical=False))
+    # input = [[[5,3,6,2,1,1],[9,4,7,2,4,6],[2,8,7,3,2,1],
+    #          [4,3,6,9,0,1],[3,6,1,0,5,2],[6,1,1,4,7,3]],
+    #          [[5, 3, 6, 2, 1, 1], [9, 4, 7, 2, 4, 6], [2, 8, 7, 3, 2, 1],
+    #           [4, 3, 6, 9, 0, 1], [3, 6, 1, 0, 5, 2], [6, 1, 1, 4, 7, 3]]]
+    # nb_channels = 1
+    # h, w = 6, 6
+    # x = torch.randn(1, nb_channels, h, w)
+    # weights = torch.tensor([[1., 0., 0.],
+    #                         [0., 1., 0.],
+    #                         [0., 0., 1.]])
+    # weights = weights.view(1, 1, 3, 3).repeat(1, 1, 1, 1)
+    # # input = torch.rand(6,6)
+    # input = torch.tensor(input).float()
+    # # input = input.unsqueeze(dim=0)
+    # input = input.unsqueeze(dim=1)
+    # conv = F.conv2d(input, weights)
+    # # print(conv.weight)
+    # # out = conv(input)
+    # print(conv)

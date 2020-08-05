@@ -131,6 +131,7 @@ class TransferLearningModel(pl.LightningModule):
         self.test_dataset = None
         self.all_true = []
         self.all_pred = []
+        self.all_snr = []
         self.data_path = hparams.data_path
         self.__build_model()
 
@@ -139,14 +140,14 @@ class TransferLearningModel(pl.LightningModule):
         # 1. Load pre-trained model
         backbone = self.hparams.backbone
 
-        _layers = list(backbone.children())[:-6]  # all except fc layers  # maybe modify later
+        _layers = list(backbone.children())[:-3]  # all except fc layers  # maybe modify later
         self.feature_extractor = nn.Sequential(*_layers)
         freeze(module=self.feature_extractor,train_bn=self.hparams.train_bn)  # freeze all layers
 
         # 2. Classifier
         _fc_layers = [nn.Linear(128, 64),
                       nn.Linear(64, 32),
-                      nn.Linear(32, 8)]
+                      nn.Linear(32, self.hparams.n_classes)]
         self.fc = nn.Sequential(*_fc_layers)
 
         # 3. Loss function
@@ -158,7 +159,8 @@ class TransferLearningModel(pl.LightningModule):
         x = x.unsqueeze(dim=3)
         # 1. Feature extraction
         x = self.feature_extractor(x)
-        x = x.squeeze()
+        # print(x.shape)
+        x = x.squeeze(2)
         x = x.reshape(*x.shape[:1], -1)
 
         # modify later
@@ -254,7 +256,7 @@ class TransferLearningModel(pl.LightningModule):
     def test_step(self, batch, batch_idx):
 
         # 1. Forward pass:
-        x, y, _ = batch
+        x, y, z = batch
         y_logits = self.forward(x)
         y_true = torch.max(y, 1)[1]
         y_hat = torch.max(y_logits, 1)[1]
@@ -265,7 +267,8 @@ class TransferLearningModel(pl.LightningModule):
         return {'test_loss': test_loss,
                 'num_correct': num_correct,
                 'true_label': y_true,
-                'pred_label': y_hat}
+                'pred_label': y_hat,
+                'snrs' : z}
 
     def test_epoch_end(self, outputs):
         """Compute and log validation loss and accuracy at the epoch level."""
@@ -278,18 +281,19 @@ class TransferLearningModel(pl.LightningModule):
         for output in outputs:
             self.all_true.extend(output['true_label'].detach().cpu().data.numpy())
             self.all_pred.extend(output['pred_label'].detach().cpu().data.numpy())
+            self.all_snr.extend(output['snrs'].detach().cpu().data.numpy())
 
         accuracy = metrics.accuracy_score(self.all_true, self.all_pred)
         # save results in csv
-        fieldnames = ['True_label', 'Predicted_label']
+        fieldnames = ['True_label', 'Predicted_label', 'SNR']
         if not os.path.exists(CHECKPOINTS_DIR):
             os.makedirs(CHECKPOINTS_DIR)
         with open(CHECKPOINTS_DIR + "output.csv", 'w', encoding='utf-8') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames, quoting=csv.QUOTE_NONNUMERIC)
             writer.writeheader()
-            for i, j in zip(self.all_true, self.all_pred):
+            for i, j, k in zip(self.all_true, self.all_pred, self.all_snr):
                 writer.writerow(
-                    {'True_label': i.item(), 'Predicted_label': j.item()})
+                    {'True_label': i.item(), 'Predicted_label': j.item(), 'SNR': k})
         neptune_logger.experiment.log_metric('test_accuracy(true)', accuracy)
         neptune_logger.experiment.log_artifact(CHECKPOINTS_DIR + "output.csv")
         return {'log': {'test_loss': test_loss_mean,
@@ -353,13 +357,12 @@ class TransferLearningModel(pl.LightningModule):
     def add_model_specific_args(parent_parser):
 
         parser = argparse.ArgumentParser(parents=[parent_parser])
-        model = torch.load("/media/backup/Arsenal/thesis_results/trained_cnn_intf_free_vsg20",map_location='cuda:0')
+        # model = torch.load("/home/rachneet/thesis_results/vsg_vier_mod/epoch=15.ckpt",map_location='cuda:0')
 
-        # model = LightningCNN.load_from_checkpoint(
-        #     checkpoint_path='/media/backup/Arsenal/thesis_results/lightning_vsg_snr_20/'
-        #                     '/epoch=24.ckpt',
-        #     map_location=None
-        # )
+        model = LightningCNN.load_from_checkpoint(
+            checkpoint_path='/home/rachneet/thesis_results/vsg_vier_mod/epoch=15.ckpt',
+            map_location=None
+        )
         parser.add_argument('--backbone', default=model)
         parser.add_argument('--epochs',default=15,type=int)
         parser.add_argument('--batch-size',default=512,type=int)
@@ -378,22 +381,59 @@ class TransferLearningModel(pl.LightningModule):
         parser.add_argument('--kernel_size', type=list, nargs='+', default=[3, 3, 3, 3, 3, 3])
         parser.add_argument('--pool_size', default=3)
         parser.add_argument('--fc_neurons', default=128)
-        parser.add_argument('--n_classes', default=8)
+        parser.add_argument('--n_classes', default=4)
 
         return parser
 
 # =========================================NEPTUNE AI===============================================================
 
 
-CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/lightning_tl_intf/'           # change this
+CHECKPOINTS_DIR = '/home/rachneet/thesis_results/tl_vsg_deepsig/'           # change this
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="lightning_tl_intf",   # change this  for new runs
+    experiment_name="tl_vsg_deepsig",   # change this  for new runs
 )
 
 # ===================================================================================================================
+
+def test_lightning(hparams: argparse.Namespace):
+    model = TransferLearningModel.load_from_checkpoint(
+        CHECKPOINTS_DIR + 'epoch=6.ckpt'
+    )
+
+    # exp = Experiment(name='test_vsg20',save_dir=os.getcwd())
+    # logger = TestTubeLogger('tb_logs', name='CNN')
+    # callback = [test_callback()]
+    # print(neptune_logger.experiment.name)
+    model_checkpoint = pl.callbacks.ModelCheckpoint(filepath=CHECKPOINTS_DIR)
+    trainer = pl.Trainer(logger=neptune_logger, gpus=hparams.gpus, checkpoint_callback=model_checkpoint)
+    dataset = DatasetFromHDF5(hparams.data_path, 'iq', 'labels', 'snrs')
+    num_train = len(dataset)
+    indices = list(range(num_train))
+    val_split = int(math.floor(0.05 * num_train))
+    test_split = val_split + int(math.floor(0.2 * num_train))
+    training_params = {"batch_size": hparams.batch_size, "num_workers": hparams.num_workers}
+
+    if not ('shuffle' in training_params and not training_params['shuffle']):
+        np.random.seed(4)
+        np.random.shuffle(indices)
+    if 'num_workers' not in training_params:
+        training_params['num_workers'] = 1
+
+    train_idx, valid_idx, test_idx = indices[test_split:], indices[:val_split], indices[val_split:test_split]
+    train_sampler = SubsetRandomSampler(train_idx)
+    valid_sampler = SubsetRandomSampler(valid_idx)
+    test_sampler = SubsetRandomSampler(test_idx)
+    test_dataset = DataLoader(dataset, batch_size=hparams.batch_size,
+                              shuffle=hparams.shuffle, num_workers=hparams.num_workers, sampler=test_sampler)
+    trainer.test(model, test_dataloaders=test_dataset)
+    # Save checkpoints folder
+    neptune_logger.experiment.log_artifact(CHECKPOINTS_DIR)
+    # You can stop the experiment
+    neptune_logger.experiment.stop()
+
 
 def main(hparams: argparse.Namespace) -> None:
     """Train the model.
@@ -420,18 +460,18 @@ def main(hparams: argparse.Namespace) -> None:
         max_nb_epochs=hparams.max_epochs,
         checkpoint_callback=model_checkpoint)
 
-    trainer.fit(model)
-    # load best model for testing
-    file_name = ''
-    for subdir, dirs, files in os.walk(CHECKPOINTS_DIR):
-        for file in files:
-            if file[-4:] == 'ckpt':
-                file_name = file
+    # trainer.fit(model)
+    # # load best model for testing
+    # file_name = ''
+    # for subdir, dirs, files in os.walk(CHECKPOINTS_DIR):
+    #     for file in files:
+    #         if file[-4:] == 'ckpt':
+    #             file_name = file
 
     model = TransferLearningModel.load_from_checkpoint(
-        checkpoint_path=CHECKPOINTS_DIR+file_name,
-        hparams=hparams,
-        map_location=None
+        checkpoint_path=CHECKPOINTS_DIR+"epoch=6.ckpt",
+        # hparams=hparams,
+        map_location="cuda:0"
     )
 
     trainer.test(model)
@@ -440,7 +480,7 @@ def main(hparams: argparse.Namespace) -> None:
 
 
 def get_args() -> argparse.Namespace:
-    root_path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_usrp_snr20_sir25_1024.h5"
+    root_path = "/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_mod.hdf5"
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument('--data_path',default=root_path, help='path to dataset')
     parser = TransferLearningModel.add_model_specific_args(parent_parser)
@@ -461,10 +501,15 @@ if __name__ == "__main__":
     # x = [1,2,3,4,5,6]
     # print(x[-2:])
     # print(x[:-2])
-    # pred = torch.tensor([1,2,3,1])
+    # x = torch.tensor([[1,2,3,1],[1,2,3,4]])
+    # print(x.shape)
+    # x = x.flatten()
+    # print(x.shape)
     # true = torch.tensor([1,2,3,0])
     # print(torch.eq(pred,true).sum().detach().cpu().data.numpy())
     # correct = (torch.eq(pred,true).sum().detach().cpu().data.numpy()/list(pred.size())[0])
     # print(torch.tensor(correct))
     main(get_args())
+    # test_lightning(get_args())
+    # obj = TransferLearningModel()
     # pass
