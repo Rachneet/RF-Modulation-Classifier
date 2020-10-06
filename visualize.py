@@ -480,9 +480,12 @@ def plot_barchart():
     # acc = [0.35,0.54,0.68,0.69,0.57]  # cnn intf generalize
     # acc2 = [0.37,0.61,0.75,0.77,0.63]
     # acc3 = [0.38,0.65,0.73,0.75,0.63]
-    acc = [0.60,0.83,0.94,0.99,0.99,0.87]  # cnn cfo generalized
-    acc2 = [0.59,0.83,0.94,0.99,0.99,0.87]
-    acc3 = [0.57,0.80,0.93,0.98,0.99,0.85]
+    # acc = [0.60,0.83,0.94,0.99,0.99,0.87]  # cnn cfo generalized
+    # acc2 = [0.59,0.83,0.94,0.99,0.99,0.87]
+    # acc3 = [0.57,0.80,0.93,0.98,0.99,0.85]
+    acc = [0.89, 0.96, 0.97, 0.99, 1.0, 0.96]
+    acc2 = [0.61, 0.83, 0.94, 0.99, 0.99, 0.87]
+    acc3 = [0.75, 0.98, 1.00, 1.00, 1.00, 0.95]
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
@@ -746,29 +749,29 @@ def plot_heatmap():
 def draw_comparison_chart():
 
     sirs = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB', '0-20 dB']
-    acc = [0.56, 0.74, 0.86, 0.93, 0.94, 0.81]
+    acc = [0.7, 0.84, 0.94, 1.0, 1.0, 0.89]
     # acc2 = [0.57,0.79,0.91,0.98,0.99,0.85]  # usrp
-    acc2 = [0.55, 0.74, 0.85, 0.91, 0.93, 0.80]
+    acc2 = [0.68, 0.89, 0.99, 1.0, 1.0, 0.91]
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc,
         # name="             ",
-        name="                          ",  # 'CNN (9-Layer)',
-        # text=acc,
-        # textfont=dict(color='black', size=10),
-        # textposition='auto',
+        name="                                ",  # 'CNN (9-Layer)',
+        text=acc,
+        textfont=dict(color='black', size=10),
+        textposition='auto',
         # marker_color='#66c56c',  # green
         # marker_line_color='#2ca02c',
         # marker_color='#ff6555', # red
         # marker_line_color='#d62728',
         # marker_color='rgb(128,125,186)',  # purple
         # marker_line_color='rgb(84,39,143)',
-        # marker_color='#23aaff', # blue
-        # marker_line_color='#1f77b4',
-        marker_color='rgb(103,219,165)',  # mint
-        marker_line_color='rgb(76,200,163)',
+        marker_color='#23aaff', # blue
+        marker_line_color='#1f77b4',
+        # marker_color='rgb(103,219,165)',  # mint
+        # marker_line_color='rgb(76,200,163)',
         # width=0.35,
         # offset=-0.32
     ))
@@ -776,20 +779,21 @@ def draw_comparison_chart():
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc2,
-        name="",  #'ResNet-101',
-        # text=acc2,
-        # textfont=dict(color='black', size=10),
-        # textposition='auto',
+        # name="",  #'ResNet-101',
+        name="                                ",
+        text=acc2,
+        textfont=dict(color='black', size=10),
+        textposition='auto',
         # marker_color='#f4b247',  # yellow
         # marker_line_color='#ff7f0e',
-        # marker_color='#66c56c',  # green
-        # marker_line_color='#2ca02c',
+        marker_color='#66c56c',  # green
+        marker_line_color='#2ca02c',
         # marker_color='#23aaff', # blue
         # marker_line_color='#1f77b4',
         # marker_color='#ff6555', # red
         # marker_line_color='#d62728',
-        marker_color='rgb(193,118,111)',  # brown
-        marker_line_color='rgb(166,84,97)',
+        # marker_color='rgb(193,118,111)',  # brown
+        # marker_line_color='rgb(166,84,97)',
         # width=0.35,
         # offset=0.02
     ))
@@ -805,7 +809,7 @@ def draw_comparison_chart():
                      tickmode='linear',
                      tick0=0,
                      dtick=0.1,
-                     range=[0, 1],
+                     range=[0, 1.05],
                      title=dict(
                          font=dict(
                              # family="sans-serif",
@@ -838,8 +842,8 @@ def draw_comparison_chart():
 
     fig.update_layout(
         # title_text='<b>Model Comparison with Interfering OFDM Signals <br>at SNR 10 dB',
-        margin=dict(b=160, l=0, r=150, t=20), # for small boxes
-        # margin=dict(b=350, l=0, r=200, t=20),  # normal
+        # margin=dict(b=260, l=0, r=150, t=20), # for small boxes
+        margin=dict(b=350, l=0, r=200, t=20),  # normal
         title_x=0.50,
         title_y=0.90,
         yaxis={"mirror": "all"},
@@ -1095,8 +1099,9 @@ def train_fraction_effect():
               'rgb(159,130,206)']
 
     for i in range(len(names)):
-        fig.add_trace(go.Scatter(x=snrs,y=y_dict[names[i]],# name="         ",
-            name=fracs[i],
+        fig.add_trace(go.Scatter(x=snrs,y=y_dict[names[i]],
+                                 name="         ",
+            # name=fracs[i],
             mode='lines+markers',marker_color=colors[i],
             # marker_color='#f4b247', marker_line_color='#ff7f0e',
             # width=0.25
@@ -1117,7 +1122,7 @@ def train_fraction_effect():
                      tickfont=dict(color="black",family='times new roman',size=16),
                      title=dict(font=dict( color="black",# family="sans-serif",size=15,
                     ),
-                    text='Classification accuracy'
+                    # text='Classification accuracy'
                     ))
 
     fig.update_xaxes(automargin=True, side='bottom', showline=True, ticks='inside',
@@ -1128,7 +1133,7 @@ def train_fraction_effect():
                              # size=15,
                              color="black"
                          ),
-                         text='SNR(dB)'
+                         # text='SNR(dB)'
                      ))
 
     fig.update_traces(marker_line_width=2)
@@ -1164,10 +1169,10 @@ def train_fraction_effect():
 
 def scalability_chart():
     snrs = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB']
-    acc_256 = [0.463,0.635,0.778,0.882,0.913]
-    acc_512 = [0.519,0.721,0.870,0.960,0.978]
-    acc_1024 = [0.571,0.785,0.915,0.980,0.991]
-    acc_2048 = [0.643,0.864,0.972,0.997,0.999]
+    acc_256 = [0.474, 0.654, 0.794, 0.888, 0.919]
+    acc_512 = [0.536, 0.74, 0.871, 0.952, 0.975]
+    acc_1024 = [0.609, 0.83, 0.942, 0.986, 0.995]
+    acc_2048 = [0.68, 0.9, 0.983, 0.998, 0.999]
     y_dict = {'256': acc_256, '512': acc_512, '1024': acc_1024, '2048': acc_2048}
 
     fig = go.Figure()
@@ -1542,72 +1547,125 @@ def plot_rc_impulse():
 
 
 def norm(x):
-    norm = [float(i) / sum(x) for i in x]
+
+    total = []
+    max_, min_ = total[0], total[0]
+    # print(min_)
+    c = 0
+    for list in total:
+
+        min_ = [min(value) for value in zip(min_,list)]
+        max_ = [max(value) for value in zip(max_,list)]
+
+    norm = [float((x[i]-min_[i]) / (max_[i]-min_[i])) for i in range(len(x))]
+
     return norm
 
 
 def sequential_chart():
-    path = "/home/rachneet/thesis_results/sequential_intf_bpsk_results.csv"
+    path = "/home/rachneet/thesis_results/sequential_intf_bpsk_results1.csv"
     df = pd.read_csv(path, delimiter=",", quoting=csv.QUOTE_MINIMAL)
+    # print(df.head())
     groups = df.groupby('True_label')
     names= ["SC_BPSK", "SC_QPSK", "SC_16QAM", "SC_64QAM",
         "OFDM_BPSK", "OFDM_QPSK", "OFDM_16QAM", "OFDM_64QAM"]
 
     fig = go.Figure()
     # blue #23aaff, red apple #ff6555, moss green #66c56c, mustard yellow #f4b247
-    colors = ['#23aaff',  #  blue
-            'rgb(253,141,60)',  # orange
-            '#66c56c',  # moss green
-           'rgb(159,130,206)',  # muted purple
-            '#f4b247',  # mustard yellow
-            '#ff6555',  # red apple
-            'rgb(247,104,161)',  # pink
-            'rgb(104,171,184)'   # teal
-              ]
+    # colors = ['#23aaff',  #  blue
+    #         'rgb(253,141,60)',  # orange
+    #         '#66c56c',  # moss green
+    #        'rgb(159,130,206)',  # muted purple
+    #         '#f4b247',  # mustard yellow
+    #         '#ff6555',  # red apple
+    #         'rgb(247,104,161)',  # pink
+    #         'rgb(104,171,184)'   # teal
+    #           ]
+    colors = [
+        '#1f77b4',  # muted blue
+        '#ff7f0e',  # safety orange
+        '#2ca02c',  # cooked asparagus green
+        '#d62728',  # brick red
+        '#9467bd',  # muted purple
+        '#8c564b',  # chestnut brown
+        '#e377c2',  # raspberry yogurt pink
+        '#bcbd22',  # curry yellow-green
+    ]
 
     line_colors = ['#1f77b4','#ff7f0e','#2ca02c','rgb(130,109,186)',
                    '#ff7f0e','#d62728','rgb(221,52,151)','rgb(79,144,166)']
-    x = np.arange(1, 48)
+    x = np.arange(1, 49)
+    total = []
     for i in range(len(names)):
         data = groups.get_group(names[i])
+        # print(data.head())
+
         sum_preds = [0]*48
+
         for row in data.iterrows():
             preds = literal_eval(row[1][1])
             # print(len(preds))
             for j in range(len(preds)):
                 sum_preds[j] += preds[j]
+        # print(sum_preds)
+        # print("------------------------------------")
+        #
+        # if total != []:
+        #     for i in range(len(sum_preds)):
+        #         # print("total: ", total)
+        #         sum = 0
+        #         sum = sum_preds[i] + total[i]
+        #         total[i] = sum
+        # else:
+        #     total.extend(sum_preds)
+        # print("total : ", total)
 
-        fig.add_trace(go.Bar(x=x, y=norm(sum_preds), orientation='v', name=names[i], marker=dict(
-            color=colors[i],
-            line=dict(color="black", width=0.2)
-        )))
-
+        if names[i] == "SC_BPSK":
+            fig.add_trace(go.Bar(x=x, y=norm(sum_preds), orientation='v', name=names[i], marker=dict(
+                color=colors[i], opacity=0.8,
+                line=dict(color="black", width=2)
+            )))
+        else:
+            fig.add_trace(go.Bar(x=x, y=norm(sum_preds), orientation='v', name=names[i], marker=dict(
+                color=colors[i], opacity=0.7,
+                line=dict(color=colors[i], width=0)
+            )))
+    #
     fig.update_yaxes(showline=True, mirror=True, ticks='outside',
                      linecolor='black', linewidth=1,
                      tickfont=dict(family='Times New Roman', color="black", size=18),
                      title=dict(font=dict(family='Times New Roman', color="black",  # family="sans-serif",size=15,
-                                          size=22), text="Normalized incorrect<br> predictions"))
+                                          size=22),
+                                # text="Normalized incorrect<br> predictions"
+                                ))
 
     fig.update_xaxes(side='bottom', showline=True, ticks='outside',
                      mirror=True, linecolor='black', linewidth=1,
                      tickfont=dict(family='Times New Roman', color="black", size=18),
+                     # tick0=5,
+                     # dtick=5,
                      title=dict(font=dict(
                          family='Times New Roman',
                          size=22,
                          color="black"
-                     ), text="Signal segments"))
+                     ),
+                         # text="Signal segments"
+                     ))
 
     fig.update_layout(barmode='relative', # title_text='Incorrect Predictions for Signal Segments',
                       paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
                       showlegend=False, title_x=0.50, title_y=0.90,
-                      # legend=dict(
-                      #     # bordercolor='black',
-                      #     # borderwidth=1,
-                      #     bgcolor='rgba(0,0,0,0)',
-                      #     orientation='h',
-                      #     itemsizing='constant')
+                      margin=dict(b=170, l=0, r=150, t=20),
+                      legend=dict(
+                          # bordercolor='black',
+                          # borderwidth=1,
+                          x=0.2, y=1.2,
+                          bgcolor='rgba(0,0,0,0)',
+                          orientation='h',
+                          itemsizing='trace')
                       )
 
+    # 450 700
     plotly.offline.plot(figure_or_data=fig, image_width=1000, image_height=500, filename='seq.html', image='svg')
 
 
@@ -1697,6 +1755,8 @@ def draw_activation(x):
 def deepsig_plots():
 
     x = np.arange(-20,21,2)
+    # x = ['-20 dB', '-10 dB', '0 dB', '10 dB', '20 dB']
+    # x = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB']
     # y_xgb = [0.04, 0.04, 0.05, 0.05, 0.06, 0.07, 0.12, 0.19, 0.28, 0.33, 0.43, 0.55, 0.63, 0.67, 0.71,
     #          0.72, 0.73, 0.73, 0.73, 0.73, 0.73]
     # y_cnn = [0.05, 0.05, 0.04, 0.05, 0.07, 0.11, 0.17, 0.23, 0.31, 0.4, 0.5, 0.59, 0.68, 0.76, 0.83,
@@ -1710,20 +1770,53 @@ def deepsig_plots():
     #          0.98, 0.98, 0.98]
     # y_res = [0.14, 0.14, 0.16, 0.2, 0.26, 0.37, 0.45, 0.51, 0.58, 0.73, 0.84, 0.91, 0.95, 0.96, 0.96, 0.96, 0.96, 0.96,
     #          0.96, 0.97, 0.96]
-    y_tr = [0.25, 0.28, 0.29, 0.34, 0.45, 0.61, 0.68, 0.72, 0.79, 0.86, 0.96, 0.99, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-            1.0, 1.0, 0.82]
-    y_tl = [0.25, 0.25, 0.25, 0.26, 0.25, 0.28, 0.33, 0.45, 0.53, 0.7, 0.83, 0.88, 0.92, 0.94, 0.97, 0.97, 0.97, 0.97,
-            0.97, 0.97, 0.97, 0.72]
+    # y_tr = [0.25, 0.28, 0.29, 0.34, 0.45, 0.61, 0.68, 0.72, 0.79, 0.86, 0.96, 0.99, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+    #         1.0, 1.0, 0.82]
+    # y_tl = [0.25, 0.25, 0.25, 0.26, 0.25, 0.28, 0.33, 0.45, 0.53, 0.7, 0.83, 0.88, 0.92, 0.94, 0.97, 0.97, 0.97, 0.97,
+    #         0.97, 0.97, 0.97, 0.72]
+
+    # c_lab = [0.608, 0.830, 0.941, 0.986, 0.994]
+    # c_sdr = [0.571, 0.785, 0.914, 0.979, 0.991]
+    # r_lab = [0.753, 0.980, 1.0, 1.0, 1.0]
+    # r_sdr = [0.604, 0.878, 0.977, 0.998, 1.0]
+
+    tr = [0.258, 0.251, 0.248, 0.238, 0.257, 0.266, 0.346, 0.47, 0.562, 0.667, 0.775, 0.823, 0.875, 0.94, 0.981, 0.989,
+          0.992, 0.991, 0.992, 0.993, 0.993]
+    gen = [0.255, 0.254, 0.253, 0.244, 0.257, 0.249, 0.251, 0.247, 0.246, 0.261, 0.254, 0.41, 0.418, 0.246, 0.249,
+           0.261, 0.246, 0.25, 0.246, 0.25, 0.248]
+    tl = [0.25, 0.253, 0.258, 0.235, 0.255, 0.252, 0.26, 0.31, 0.417, 0.536, 0.696, 0.791, 0.827, 0.894, 0.925, 0.938,
+          0.962, 0.948, 0.957, 0.954, 0.955]
+
+    # 'rgba(35, 170, 255, 1)'
+    # 'Traditional <br>Learning'  'Transfer <br>Learning'
     colors = ['rgba(255, 101, 85, 1)', 'rgba(35, 170, 255, 1)', 'rgba(244, 178, 71, 1)']
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=x, y=y_tr, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
-                             name='Traditional <br>Learning'))
-    fig.add_trace(go.Scatter(x=x, y=y_tl, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
-                             name='Transfer <br>Learning'))
+    fig.add_trace(go.Scatter(x=x, y=tr, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
+                             name='                                          '))
+    fig.add_trace(go.Scatter(x=x, y=gen, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
+                             name='                                          '))
+    fig.add_trace(go.Scatter(x=x, y=tl, mode="lines+markers", marker_symbol='diamond', marker_color=colors[2],
+                             name='                               ',
+                             # line=dict(
+                             #     # color="grey",
+                             #     # width=1,
+                             #     dash="dashdot",
+                             # )
+                             ))
+
+    # fig.add_trace(go.Scatter(x=x, y=r_sdr, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
+    #                          name='                               ',
+    #                          line=dict(
+    #                              # color="grey",
+    #                              # width=1,
+    #                              dash="dashdot",
+    #                          )
+    #                          ))
     # fig.add_trace(go.Scatter(x=x, y=y_res, mode="lines+markers", marker_symbol='diamond', marker_color=colors[2],
     #                          name="ResNet-101"))
 
-    line_ax = [0.2, 0.4, 0.6, 0.8]
+    line_ax = [0.2, 0.4, 0.6, 0.8, 1]
+    # line_ax = [0.6, 0.7, 0.8, 0.9, 1]
     for i in line_ax:
         fig.add_shape(type="line", x0=-20, y0=i, x1=20, y1=i,
                       line=dict(
@@ -1733,28 +1826,31 @@ def deepsig_plots():
                       ),
                       )
 
-    line_ax_2 = [-10, 0, 10]
-    for i in line_ax_2:
-        fig.add_shape(type="line", x0=i, y0=0, x1=i, y1=1.05,
-                      line=dict(
-                          color="grey",
-                          width=1,
-                          dash="dashdot",
-                      ),
-                      )
+    # line_ax_2 = [-10, 0, 10]
+    # line_ax_2 = [5, 10, 15]
+    # for i in line_ax_2:
+    #     fig.add_shape(type="line", x0=i, y0=0, x1=i, y1=1.05,
+    #                   line=dict(
+    #                       color="grey",
+    #                       width=1,
+    #                       dash="dashdot",
+    #                   ),
+    #                   )
 
     fig.update_yaxes(showline=True, mirror=True, ticks='outside',
                      linecolor='black', linewidth=1,
-                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     tickfont=dict(family='Times New Roman', color="black", size=16),
                      tick0=0,
                      dtick=0.2,
                      range=[0, 1.05],
                      title=dict(font=dict(family='Times New Roman', color="black",  # family="sans-serif",size=15,
-                                          size=18), text="Classification accuracy"))
+                                          size=18),
+                                # text="Classification accuracy"
+                                ))
 
     fig.update_xaxes(side='bottom', showline=True, ticks='outside',
                      mirror=True, linecolor='black', linewidth=1,
-                     tickfont=dict(family='Times New Roman', color="black", size=18),
+                     tickfont=dict(family='Times New Roman', color="black", size=16),
                      tick0=-20,
                      dtick=10,
                      range=[-20, 20],
@@ -1762,7 +1858,9 @@ def deepsig_plots():
                          family='Times New Roman',
                          size=18,
                          color="black"
-                     ), text="SNR(dB)"))
+                     ),
+                         # text="SNR(dB)"
+                     ))
 
     fig.update_traces(marker_line_width=1)
 
@@ -1772,17 +1870,20 @@ def deepsig_plots():
         paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
         # width=600, height=500,
         showlegend=True,
+        margin=dict(b=170, l=0, r=100, t=20),   # r=120
         legend=dict(
-            bordercolor='black',
-            borderwidth=1,
-            bgcolor='rgba(0,0,0,0)', orientation='v',
+            # bordercolor='black',
+            # borderwidth=1,
+            # bgcolor='rgba(0,0,0,0)',
+            orientation='h',
             itemsizing='constant',
-            x=0.01, y=0.99,
+            # y=0.01, x=0.65,
+            y=1.2, x=-0.15,
             font=dict(size=12, color="black", family='times new roman'), traceorder='normal'
         )
     )
 
-    plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=550, filename='deepsig_acc.html', image='svg')
+    plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=450, filename='deepsig_acc.html', image='svg')
     # pass
 
 
@@ -1930,13 +2031,15 @@ def plot_lpf():
 
 
 if __name__=="__main__":
-    deepsig_plots()
+    # deepsig_plots()
     # plot_lpf()
+    # train_fraction_effect()
     # x = np.arange(-10,10,0.2)
     # draw_activation(x)
     # draw_comparison_chart()
+    scalability_chart()
     # n = 4
-    # draw_comparison_chart()
+    # plot_barchart()
     # plot_heatmap()
     # plt_tl_chart()
     # for i in range(16):
@@ -1974,4 +2077,5 @@ if __name__=="__main__":
 
     # plot_melspectrogram(iq[13],'test.png')
     # sequential_chart()
+    # norm(0)
     # pass

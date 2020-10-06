@@ -166,8 +166,17 @@ def featurize(df, i, row):
         (12 * M21 ** 3 + 12 * M22 * M21 * M20 - 9 * M42 * M21 + M63) / np.abs(M21) ** 3)
 
 
+def filter_from_csv(path):
+    df = pd.read_csv(path)
+    mods = [0,1,2,3]
+    df = df.loc[df.label in mods]
+    print(df.shape)
+    print(df.head())
+
+
+
 def main():
-    dataset = "/home/rachneet/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr0_1024.h5"
+    dataset = "/home/rachneet/rf_dataset_inets/vsg_no_intf_all_normed.h5"
     h5fr = h5.File(dataset, 'r')
     dset1 = list(h5fr.keys())[0]
     dset2 = list(h5fr.keys())[1]
@@ -184,7 +193,7 @@ def main():
         featurize(df, i, iq_to_complex(row))
         # print(row)
 
-    df.to_csv("/home/rachneet/rf_featurized/dataset_vsg0_featurized_set.csv", encoding='utf-8', index=False)
+    df.to_csv("/home/rachneet/rf_featurized/dataset_vsg_all_featurized_set.csv", encoding='utf-8', index=False)
 
     # df2 = pd.read_csv("/home/rachneet/rf_featurized/deepsig_featurized_set.csv", encoding='utf-8')
     # print(df2.head())
@@ -193,3 +202,4 @@ def main():
 
 if __name__=="__main__":
     main()
+    # filter_from_csv("/home/rachneet/rf_featurized/deepsig_featurized_set.csv")

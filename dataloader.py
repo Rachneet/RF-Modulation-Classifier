@@ -197,21 +197,23 @@ def load_data(data_path, val_fraction, test_fraction, **training_params):
     if 'num_workers' not in training_params:
         training_params['num_workers'] = 1
 
-    train_idx, valid_idx, test_idx = indices[test_split:], indices[:val_split], indices[val_split:test_split]
-    train_sampler = SubsetRandomSampler(train_idx)
-    valid_sampler = SubsetRandomSampler(valid_idx)
+    test_idx = indices[val_split:test_split]
+    # train_idx, valid_idx, test_idx = indices[test_split:], indices[:val_split], indices[val_split:test_split]
+    # train_sampler = SubsetRandomSampler(train_idx)
+    # valid_sampler = SubsetRandomSampler(valid_idx)
     test_sampler = SubsetRandomSampler(test_idx)
-    train_dataset = DataLoader(dataset, batch_size=training_params['batch_size'],
-                                    shuffle=False, num_workers=training_params['num_workers'],
-                                    sampler=train_sampler)
-    val_dataset = DataLoader(dataset, batch_size=training_params['batch_size'],
-                                  shuffle=False, num_workers=training_params['num_workers'],
-                                  sampler=valid_sampler)
+    # train_dataset = DataLoader(dataset, batch_size=training_params['batch_size'],
+    #                                 shuffle=False, num_workers=training_params['num_workers'],
+    #                                 sampler=train_sampler)
+    # val_dataset = DataLoader(dataset, batch_size=training_params['batch_size'],
+    #                               shuffle=False, num_workers=training_params['num_workers'],
+    #                               sampler=valid_sampler)
     test_dataset = DataLoader(dataset, batch_size=training_params['batch_size'],
                                    shuffle=False, num_workers=training_params['num_workers'],
                                    sampler=test_sampler)
     print("==================Dataset created and batched==========================")
-    return train_dataset, val_dataset, test_dataset
+    # return train_dataset, val_dataset, test_dataset
+    return test_dataset
 
 
 def create_set(path, iq, label, sir):
@@ -306,8 +308,12 @@ if __name__=="__main__":
     #                        maxshape=(5,), compression='gzip', dtype=dt)
     # # df.to_hdf('test.h5', key='xyz', mode='w')
     #
-    # data = h5.File('test.h5','r')
-    # x = data['iq']
+    data = h5.File('/home/rachneet/rf_dataset_inets/dataset_vsg_vier_mod.h5','r')
+    raw_iq = data['iq']
+    labels = data['labels']
+    snrs = data['snrs']
+    print("iq: {}".format(raw_iq[0]),"\n", "label: {}".format(labels[0]),
+          "\n", "snr: {}".format(snrs[0]))
     # print(x[0])
     # print(x[0].shape)
     # for sample in x:
@@ -338,5 +344,5 @@ if __name__=="__main__":
     # iq, labels, snrs = reader.read_hdf5(path)
     # print(snrs.shape)
     # pass
-    load_batch("/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/GOLD_XYZ_OSC.0001_1024.hdf5"
-                      , 512, mode='train')
+    # load_batch("/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/GOLD_XYZ_OSC.0001_1024.hdf5"
+    #                   , 512, mode='train')

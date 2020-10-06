@@ -553,7 +553,7 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_mod.hdf5"
+    path = "/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_new.hdf5"
     out_path = "/home/rachneet/thesis_results/"
 
     parser = ArgumentParser()

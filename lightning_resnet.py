@@ -71,7 +71,8 @@ class DatasetFromHDF5(Dataset):
         # out = np.dot(S, x)
         # signals = out.reshape(-1, 128, 2)
         # -------------------------------------------------------------
-        data = preprocessing.scale(data,with_mean=False).astype(np.float32)
+        # data = preprocessing.scale(data,with_mean=False).astype(np.float32)
+        data = data.astype(np.float32)
         label = label.astype(np.float32)
         snr = snr.astype(np.int8)
         return data,label,snr
@@ -257,7 +258,7 @@ class LightningResnet(pl.LightningModule):
 
 
     def prepare_data(self, valid_fraction=0.05, test_fraction=0.2):
-        dataset = DatasetFromHDF5(self.hparams.data_path, 'iq', 'labels', 'sirs')
+        dataset = DatasetFromHDF5(self.hparams.data_path, 'iq', 'labels', 'snrs')
         num_train = len(dataset)
         indices = list(range(num_train))
         val_split = int(math.floor(valid_fraction * num_train))
@@ -334,12 +335,12 @@ def test_lightning(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/media/backup/Arsenal/thesis_results/res_sequential_test_bpsk/'
+CHECKPOINTS_DIR = '/home/rachneet/thesis_results/res_vsg_vier_mod/'
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="res_sequential_test_bpsk",   # change this for new runs
+    experiment_name="res_vsg_vier_mod",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -383,13 +384,13 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_snr10_1024.h5"
-    out_path = "/media/backup/Arsenal/thesis_results/"
+    path = "/home/rachneet/rf_dataset_inets/dataset_vsg_vier_mod.h5"
+    out_path = "/home/rachneet/thesis_results/"
 
     parser = ArgumentParser()
     parser.add_argument('--output_path', default=out_path)
     parser.add_argument('--data_path', default=path)
-    parser.add_argument('--gpus', default=1)
+    parser.add_argument('--gpus', default=0)
     parser.add_argument('--max_epochs', default=30)
     parser.add_argument('--batch_size', default=512)
     parser.add_argument('--num_workers', default=10)
@@ -397,13 +398,13 @@ if __name__=="__main__":
     parser.add_argument('--learning_rate', default=1e-2)
     parser.add_argument('--momentum', default=0.9)
     parser.add_argument('--in_dims', default=2)
-    parser.add_argument('--n_classes', default=8)
+    parser.add_argument('--n_classes', default=4)
     parser.add_argument('--block_sizes',type=list, default=[64,128,256,512])
     parser.add_argument('--depths', type=list, default=[3, 4, 23, 3])
     parser.add_argument('--res_block', default=ResnetBottleneckBlock)
 
     args = parser.parse_args()
 
-    # main(args)
-    test_lightning(args)
+    main(args)
+    # test_lightning(args)
 

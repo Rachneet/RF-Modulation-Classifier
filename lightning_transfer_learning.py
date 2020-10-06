@@ -367,7 +367,7 @@ class TransferLearningModel(pl.LightningModule):
         parser.add_argument('--epochs',default=15,type=int)
         parser.add_argument('--batch-size',default=512,type=int)
         parser.add_argument('--shuffle', default=False, type=bool)
-        parser.add_argument('--gpus', default=1, type=int)
+        parser.add_argument('--gpus', default=0, type=int)
         parser.add_argument('--lr','--learning-rate',default=1e-2,type=float)
         parser.add_argument('--momentum', default=0.9)
         parser.add_argument('--lr-scheduler-gamma',default=1e-1,type=float)
@@ -388,19 +388,19 @@ class TransferLearningModel(pl.LightningModule):
 # =========================================NEPTUNE AI===============================================================
 
 
-CHECKPOINTS_DIR = '/home/rachneet/thesis_results/tl_vsg_deepsig/'           # change this
+CHECKPOINTS_DIR = '/home/rachneet/thesis_results/tl_vsg_deepsig_new/'           # change this
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="tl_vsg_deepsig",   # change this  for new runs
+    experiment_name="tl_vsg_deepsig_new",   # change this  for new runs
 )
 
 # ===================================================================================================================
 
 def test_lightning(hparams: argparse.Namespace):
     model = TransferLearningModel.load_from_checkpoint(
-        CHECKPOINTS_DIR + 'epoch=6.ckpt'
+        CHECKPOINTS_DIR + 'epoch=14.ckpt'
     )
 
     # exp = Experiment(name='test_vsg20',save_dir=os.getcwd())
@@ -469,9 +469,9 @@ def main(hparams: argparse.Namespace) -> None:
     #             file_name = file
 
     model = TransferLearningModel.load_from_checkpoint(
-        checkpoint_path=CHECKPOINTS_DIR+"epoch=6.ckpt",
+        checkpoint_path=CHECKPOINTS_DIR+"epoch=14.ckpt",
         # hparams=hparams,
-        map_location="cuda:0"
+        # map_location="cuda:0"
     )
 
     trainer.test(model)
@@ -480,7 +480,7 @@ def main(hparams: argparse.Namespace) -> None:
 
 
 def get_args() -> argparse.Namespace:
-    root_path = "/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_mod.hdf5"
+    root_path = "/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_new.hdf5"
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument('--data_path',default=root_path, help='path to dataset')
     parser = TransferLearningModel.add_model_specific_args(parent_parser)

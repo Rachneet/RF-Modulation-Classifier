@@ -43,7 +43,7 @@ def train(data_path,num_epochs):
 
     # x_test,y_test,raw_lables,snr_gen
     x_train,y_train,x_val,y_val, x_test,y_test,raw_lables,snr_gen = \
-        dl.load_batch("/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_mod.hdf5"
+        dl.load_batch("/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_new.hdf5"
                       ,512,mode='both')  #GOLD_XYZ_OSC.0001_1024.hdf5
     # y_train = torch.from_numpy(y_train).view(-1, 1)
     # y_val = torch.from_numpy(y_val).view(-1, 1)
@@ -53,7 +53,7 @@ def train(data_path,num_epochs):
     # y_train = DataLoader(labels,batch_size=2)
 
     print("Data loaded and batched...")
-    model = cnn_model.CNN(n_classes=4)
+    model = cnn_model.CNN(n_classes=8)
     # model = dnn.DNN(2048, n_classes=8)
     # model = resnet.resnet50(2,24)
     # model = resnet_simplified.ResNet50(n_classes=8)
@@ -208,7 +208,7 @@ def get_evaluation(y_true, y_prob, list_metrics):
 
 if __name__=="__main__":
     # path = "/media/backup/Arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/"
-    path = "/home/rachneet/thesis_results/deepsig_vier_mod/"
+    path = "/home/rachneet/thesis_results/deepsig_cnn_vier_new/"
     train(path,30)
     # path = "/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/GOLD_XYZ_OSC.0001_1024.hdf5"
     # file = h5.File(path,'r')

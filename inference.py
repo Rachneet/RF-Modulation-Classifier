@@ -66,7 +66,11 @@ def compute_results(csv_path, snrs):
     """
 
     df = pd.read_csv(csv_path, delimiter=",", quoting=csv.QUOTE_MINIMAL)
-    # df['SNR'] = df['SNR'].apply(lambda x : literal_eval(x)[0])
+    # df = df.loc[df['SNR'] >=0]
+    # print(df.head())
+    # df['SNR'] = df['SNR'].apply(lambda x : round_to_five(x))
+    # print(df.head())
+    # df['SNR'] = df['SNR'].apply(lambda x: ast.literal_eval(x)[0])
     # print(df.head())
     groups = df.groupby('SNR')
     snrs = snrs
@@ -147,13 +151,13 @@ def inference(datapath, test_set, model_name, save_path):
         # test_true = np.array(test_true)
         # test_pred = np.argmax(test_prob, -1)
 
-    fieldnames = ['True_label', 'Predicted_label', 'SIR']
+    fieldnames = ['True_label', 'Predicted_label', 'SNR']
     with open(save_path + "output.csv", 'w',encoding='utf-8') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames, quoting=csv.QUOTE_NONNUMERIC)
         writer.writeheader()
         for i, j, k in zip(np.argmax(test_true, -1), np.argmax(test_prob, -1), snr_vals):
             writer.writerow(
-                {'True_label': i, 'Predicted_label': j, 'SIR': k})
+                {'True_label': i, 'Predicted_label': j, 'SNR': k})
 
     test_metrics = get_evaluation(test_true, test_prob,
                                   list_metrics=["accuracy", "loss", "confusion_matrix"])
@@ -188,11 +192,19 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
             temp.append('%.2f' % (cmap[i][j] / num_samples[i]))
         temp2.append(temp)
 
-
     # print(temp2)
+    # x = ['32-PSK','16-APSK','32-QAM','FM','GMSK','32-APSK','OQPSK','8-ASK','BPSK','8-PSK','AM-SSB-SC','4-ASK','16-PSK',
+    #      '64-APSK','128-QAM','128-APSK','AM-DSB-SC','AM-SSB-WC','64-QAM','QPSK','256-QAM','AM-DSB-WC','OOK','16-QAM']
 
-    x = ["SC <br>BPSK", "SC <br>QPSK", "SC 16-<br>QAM", "SC 64-<br>QAM",
-         "OFDM <br>BPSK", "OFDM <br>QPSK", "OFDM 16-<br>QAM", "OFDM 64-<br>QAM"]
+    # x = ['OOK', '4ASK', '8ASK', 'BPSK', 'QPSK', '8PSK', '16PSK', '32PSK', '16APSK', '32APSK', '64APSK',
+    #     '128APSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM', 'AM-SSB-WC', 'AM-SSB-SC', 'AM-DSB-WC',
+    #     'AM-DSB-SC', 'FM', 'GMSK', 'OQPSK']
+
+    # x = ['BPSK', 'QPSK', '8PSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM']
+
+    # x = ["SC <br>BPSK", "SC <br>QPSK", "SC 16-<br>QAM", "SC 64-<br>QAM",
+    #      "OFDM <br>BPSK", "OFDM <br>QPSK", "OFDM 16-<br>QAM", "OFDM 64-<br>QAM"]
+    x = ["Not Malware", "Malware"]
 
     y = list(reversed(x))
 
@@ -200,6 +212,7 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
 
     # change each element of z to type string for annotations
     z_text = [[str(y) for y in x] for x in np.array(temp2[::-1])]
+    # print(z_text)
 
     # print(z_text)
     z2 = []
@@ -214,6 +227,8 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
     # font_colors = ['white', 'black']
     fig = ff.create_annotated_heatmap(list(reversed(cmap)), x=x, y=y, annotation_text=z_text,
                                       colorscale=colorscale)
+    # fig = go.Figure(data=go.Heatmap(
+    #     z=list(reversed(temp2)), x=x, y=y, colorscale=colorscale))
 
     # add title
 
@@ -245,53 +260,58 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
     #                         yref="paper"))
 
     # adjust margins to make room for yaxis title
-    fig.update_layout(margin=dict(t=50, l=200),
+    fig.update_layout(margin=dict(t=50, l=75),
                       title_x=0.55,
                       title_y=0.97,
                       paper_bgcolor='white',
                       plot_bgcolor='rgba(0,0,0,0)'
                       )
 
-    fig['data'][0].colorbar = dict(title='Number of <br>Samples',
+    fig['data'][0].colorbar = dict(#title='Number of <br>Samples',
                                    outlinecolor="black",
                                    outlinewidth=1,
                                    ticks='outside',
-                                   len=1.045,                 #1.075,  #1.05 ow
+                                   len=1.12,                 #1.075,  #1.05 ow  #1.046
                                     # y=0.47,
                                    tickfont=dict(color='black')
                                    )
 
-    fig.update_yaxes(automargin=True,
-                     showline=True,
-                     ticks='outside',
-                     mirror=True,
-                     linecolor='black',
-                     linewidth=0.5,
-                     tickfont=dict(family="times new roman",color='black',size=14),
-                     title=dict(text = "True label",
-                         font=dict(
-                             # family="times new roman",
-                             size=18,
-                             color="black"
-                         ))
-                     )
-    fig.update_xaxes(automargin=True, tickangle=-90, side='bottom',
-                     showline=True,
-                     ticks='outside',
-                     mirror=True,
-                     linecolor='black',
-                     linewidth=0.5,
-                     tickfont=dict(family="times new roman",color='black',size=14),
-                     title=dict(text = "Predicted label",
-                         font=dict(
-                             # family="times new roman",
-                             size=18,
-                             color="black"
-                         ))
-                     )
 
+    fig.update_yaxes(automargin=True, tickangle=-90,
+                     showline=True,
+                     ticks='outside',
+                     mirror=True,
+                     linecolor='black',
+                     linewidth=0.5,
+                     tickfont=dict(#family="times new roman",
+                                   color='black',size=14),
+                     # title=dict(text="True label",
+                     #     font=dict(
+                     #         # family="times new roman",
+                     #         size=16,
+                     #         color="black"
+                     #     ))
+                     )
+    fig.update_xaxes(automargin=True, #tickangle=-90,
+                     side='bottom',
+                     showline=True,
+                     ticks='outside',
+                     mirror=True,
+                     linecolor='black',
+                     linewidth=0.5,
+                     tickfont=dict(#family="times new roman",
+                                   color='black',size=14),
+                     # title=dict(text="Predicted label",
+                     #     font=dict(
+                     #         # family="times new roman",
+                     #         size=16,
+                     #         color="black"
+                     #     ))
+                     )
+    # 400 465
+    # 600 650
     # fig.show()
-    plotly.offline.plot(fig, filename=fig_name + ".html", image='svg',image_height=500, image_width=700,
+    plotly.offline.plot(fig, filename=fig_name + ".html", image='svg',image_height=300, image_width=360,
                         include_plotlyjs=True)
 
 
@@ -319,57 +339,73 @@ def test_sequential(path):
             # print(len(t_label))
             t_label, p_label, sir = [], [], []
 
-
-        # if count==20:
-        #     print(signals)
-        #     break
+    # print(signals)
+    #     if count==20:
+    #         print(signals)
+    #         break
     print(len(signals))
     print("====================Signals created====================")
 
     # analyse correct predictions : get their indices
     predictions = {}
+    c = 0
     for k,v in signals.items():
+
         info = {}
         incorrect_idx = []
-        # print(v[1])
+        # print(v[0])
+        # break
 
         for i in range(len(v[0])):
             if v[1][i] != v[0][i]:
                 incorrect_idx.append(i+1)
-        # print(mod_schemes[v[1][0]])
         # print(incorrect_idx)
+        # break
+
         if len(incorrect_idx) == 0:
-            incorrect_idx = 0
+            incorrect_idx = np.nan
+
         info['incorrect_idx'] = incorrect_idx
-        info['True_label'] = mod_schemes[v[1][0]]
+        info['True_label'] = mod_schemes[v[0][0]]  # was potential mistake
         info['sir'] = v[2][0]
         predictions[k] = info
+        c += 1
 
+        # if c==3:
+        #     print(predictions)
+        #     break
 
 
     output = pd.DataFrame.from_dict(predictions, orient='index')
+    output = output.dropna()
+    # print(output.head())
+    # print(output.shape)
 
     # remove entries where all predictions are correct
-    output = output[output.incorrect_idx != 0]
+    # output = output.loc[output.incorrect_idx != []]
     output = output.sample(frac=1).reset_index(drop=True)
     # print(output.head(20))
     # print(output.head(50))
     sirs = [5,10,15,20,25]
     # labels = [0,1,2,3,4,5,6,7]
     groups = output.groupby(['True_label','sir'])
-    out_file = open("/home/rachneet/thesis_results/sequential_intf_ofdm_results.csv","w")
+
+    out_file = open("/home/rachneet/thesis_results/sequential_intf_ofdm_results1.csv","w")
     fieldnames = ["True_label", "Incorrect_preds", "SIR"]
     writer = csv.DictWriter(out_file, fieldnames=fieldnames, quoting=csv.QUOTE_NONNUMERIC)
     writer.writeheader()
-
+    #
     for sir in sirs:
         for mod in mod_schemes:
             idx = []
             try:
                 data = groups.get_group((mod,sir)).reset_index(drop=True)
+                # print(data.shape)
+
                 for row in data.iterrows():
                     # print(row[1][0])
                     idx.extend(row[1][0])
+                print(len(idx))
                 unique, counts = np.unique(idx, return_counts=True)
                 # print(unique, counts)
                 # print("====================Processing final counts========================")
@@ -384,41 +420,28 @@ def test_sequential(path):
 
                 print(mod, sir)
                 print(unique, counts)
-                # break
 
             except Exception as e:
                 print(repr(e))
 
-
-        #     break
-        # break
     out_file.close()
 
 
+def round_to_five(num):
+    x = round(num/5)*5
+    return x
 
 
 if __name__ == "__main__":
+
     # pass
-    # path = "/home/rachneet/thesis_results/res_sequential_test_intf_ofdm/"
-    # test_sequential(path)
-    # path = "/home/rachneet/thesis_results/sequential_intf_bpsk_results.csv"
-    # df = pd.read_csv(path, delimiter=",", quoting=csv.QUOTE_MINIMAL)
- #    cmap = [[1268  ,   0  ,   0 ,    0 ,    0 ,    0  ,   0  ,   0],
- # [    0 ,1186 ,    0 ,    0,     0,     0 ,    0 ,    0],
- # [    0  ,   0, 1233 ,  0 ,    0   ,  0   ,  0 ,    0],
- # [    0  ,   0 ,   0 ,1266,     0 ,    0  ,   0,     0],
- # [    0 ,    0 ,    0 ,    0 ,882 ,   128 ,    87  ,   143],
- # [    0   ,  0  ,   0  ,   0 ,  81 ,685,   297 ,   168],
- # [    0  ,   0 ,    0   ,  0  ,  65 ,  270, 771,  205],
- # [    0  ,   0  ,   0   ,  0  ,  112 ,  259 ,  126 ,768]]
- #
- #    counts=[]
- #    for i in cmap:
- #        counts.append(sum(i))
- #    # counts = [30761,30659,30766,30813,30740,30802,30472,30747]
- #    # print(counts)
- #
- #    plot_confusion_matrix(cmap, counts, "cmap", "")
+    # training_params = {'batch_size': 512, 'num_workers': 10}
+    # path = "/home/rachneet/rf_dataset_inets/dataset_vsg_vier_mod.h5"
+    # save_path = "/home/rachneet/thesis_results/deepsig_vsg_mod/"
+    # model_path = "/home/rachneet/thesis_results/deepsig_cnn_vier_new/"
+    # test_set = load_data(path, 0.05, 0.2, **training_params)
+    # inference(model_path, test_set, "model", save_path)
+
 
     # ---------------------------------------MAIN-------------------------------------------------------
     # training_params = {'batch_size':512, 'num_workers':10}
@@ -439,52 +462,66 @@ if __name__ == "__main__":
 
     # -------------PLot overall conf maps------------------------------------------------------------
     # datapath = "/home/rachneet/thesis_results/"
-    # file = datapath+'dnn_vsg20/output.csv'
+    # file = datapath+'vsg0_xgb/output.csv'
     # df = pd.read_csv(file)
     # # print(df.tail())
     # output = {}
-    # y_true = df['True label'].values
-    # y_pred = df['Predicted label'].values
+    # # df['SNR'] = df['SNR'].apply(lambda x: ast.literal_eval(x)[0])
+    # # df = df.loc[df.SNR >= 0]
+    # y_true = df['True_label'].values
+    # y_pred = df['Predicted_label'].values
     # print(metrics.accuracy_score(y_true, y_pred))
     # cmap = metrics.confusion_matrix(y_true, y_pred)
-    # # # print(cmap)
-    # unique, counts = np.unique(df['True label'].values, return_counts=True)
-    # # # print(counts)
-    # # # k=25
-    # plot_confusion_matrix(cmap, counts, "cmap_" + "dnn", "dnn")
+    # print(cmap)
+    # print(metrics.accuracy_score(y_true, y_pred))
+    # unique, counts = np.unique(df['True_label'].values, return_counts=True)
+    # print(counts)
+    # k=25
+    # plot_confusion_matrix(cmap, counts, "cmap_" + "xg0", "xg0")
 
     # -------------PLot individual conf maps------------------------------------------------------------
-    datapath = "/home/rachneet/thesis_results/"
-    # file = datapath + 'output_unk_vsg_snr20.csv'
-    # df = pd.read_csv(file)
-    # # print(df.tail())
-    # count,output = compute_results(file,[20])
+    datapath = "/home/rachneet/PycharmProjects/networkAnalysis/"
+    # test_sequential(datapath+"res_sequential_test_intf_ofdm/")
+    file = datapath + 'output.csv'
+    df = pd.read_csv(file)
+    unique, counts = np.unique(df['True_label'].values, return_counts=True)
+    cmap = metrics.confusion_matrix(df['True_label'], df['Predicted_label'])
+    # plot_confusion_matrix(cmap, counts, "cmap_malware", 0)
+    print(cmap)
+    # print(df.tail())
+    # count,output = compute_results(file,[5,10, 15,20,25])
     # for k, v in output.items():
-    #     # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap"+str(k),k)
-    #     # print(v['confusion_matrix'])
-    #     print(v['accuracy'])
+    #     plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap"+str(k),k)
+        # print(v['confusion_matrix'])
+        # print(v['accuracy'])
 
     # -------------------Plot collective conf maps-----------------------------------------------------
     # y = np.arange(-20,21,2)
-    y = np.arange(-20,21,2)
-    path = datapath + "tl_vsg_deepsig/output.csv"
-    df = pd.read_csv(path)
-    count, output = compute_results(path,y)# ['0db', '5db', '10db', '15db', '20db'])
-    # [0,5,10,15,20])
-    # print(count,output)
-    # print(count)
-    acc = []
-    for k,v in output.items():
-        # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_bpsk_snr_"+str(k),k)
-        # print(v['confusion_matrix'])
+    # y = np.arange(0,21,5)
+    # y =[0]
+    # # y = np.arange(0,21,2)
+    # path = datapath + "res_vsg_all/output.csv"
+    # df = pd.read_csv(path)
+    # count, output = compute_results(path,y)# ['0db', '5db', '10db', '15db', '20db'])
+    # # [0,5,10,15,20])
+    # # print(count,output)
+    # # print(count)
+    # acc = []
+    # for k,v in output.items():
+    #     # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_bpsk_snr_"+str(k),k)
+    #     # print(v['confusion_matrix'])
+    #
+    #     acc.append(round(v['accuracy'],3))
+    #     # acc.append(v['accuracy'])
+    # # df = df.loc[df['SNR'] >= 0]
+    # y_true = df['True_label'].values
+    # y_pred = df['Predicted_label'].values
+    # print(metrics.confusion_matrix(y_true, y_pred))
+    # total = metrics.accuracy_score(y_true, y_pred)
+    # acc.append(round(total,3))
+    # # acc.append(total)
+    # print(acc)
 
-        acc.append(round(v['accuracy'],2))
-
-    y_true = df['True_label'].values
-    y_pred = df['Predicted_label'].values
-    total = metrics.accuracy_score(y_true, y_pred)
-    acc.append(round(total,2))
-    print(acc)
 
     # --------------------------------CFO correction--------------------------------------------------
 

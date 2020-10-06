@@ -26,8 +26,11 @@ class XgbModule(object):
         shap.initjs()
         self.data_path = data_path
         self.save_path = save_path
-        self.mod_schemes = ["SC_BPSK", "SC_QPSK", "SC_16QAM", "SC_64QAM",
-                       "OFDM_BPSK", "OFDM_QPSK", "OFDM_16QAM", "OFDM_64QAM"]
+        # self.mod_schemes = ["SC_BPSK", "SC_QPSK", "SC_16QAM", "SC_64QAM",
+        #                "OFDM_BPSK", "OFDM_QPSK", "OFDM_16QAM", "OFDM_64QAM"]
+        self.mod_schemes = ["SC_BPSK", "SC_QPSK", "SC_16QAM", "SC_64QAM"]
+        self.mods = ["SC BPSK", "SC QPSK", "SC 16-QAM", "SC 64-QAM",
+                "OFDM BPSK", "OFDM QPSK", "OFDM 16-QAM", "OFDM 64-QAM"]
         self.snr = [0, 5, 10, 15, 20]
         self.save_results = save_results
 
@@ -60,17 +63,21 @@ class XgbModule(object):
                 if directory == "pkl":
                     files_in_directory = glob.glob(os.path.join(root, directory) + "/*.pkl")
                     all_files.extend(files_in_directory)
+        # print(all_files)
 
         for file_path in all_files:
             snr = re.search(r"\d+(\.\d+)?", file_path)
-            if int(snr.group(0)) in self.snr:
+            # print(snr.group(1))
+            if int(snr.group(0)) in self.snr:    # remember change
                 sorted_files.append(file_path)
+                print(sorted_files)
 
         for file in sorted_files:
             with open(file,'rb') as f:
                 out = pkl.load(f)
                 x_data.append(out['X'])
                 y_data.append(out['y'])
+        print(x_data)
         df_X = pd.concat(x_data).reset_index(drop=True)
         df_y = pd.concat(y_data).reset_index(drop=True)
 
@@ -89,8 +96,12 @@ class XgbModule(object):
         features = list(df1.columns)
         scale_features = list(set(features) - set(['SNR']))
         df1.loc[:, scale_features] = preprocessing.scale(df1.loc[:,scale_features])
+        # print(list(df1.columns))
+        # df1 = df1.rename(columns={'$\\mu^A_{42}$':'$\\mu^a_{42}$'})
+        # print(list(df1.columns))
         df2['label'] = df2['mod_type'] + "_" + df2['mod']
         df2['label'] = df2['label'].apply(lambda x: self.label_id(x))
+        # df2['label'] = df2.loc[df2['label'].isin([0,1,2,3])]
         # shuffle datasets
         np.random.seed(4)
         idx = np.random.permutation(df1.index)
@@ -112,18 +123,18 @@ class XgbModule(object):
 
         params = {
             'learning_rate': 0.2,   # learning rate, prevents overfitting
-            'max_depth': 18,  # depth of decision trees
+            'max_depth': 15,  # depth of decision trees
             'gamma': 0.4,
             'colsample_bytree': 0.3,
             'min_child_weight': 3,
             'objective': 'multi:softprob',   # loss function
-            'num_class': 8}
+            'num_class': 4}
             # 'gpu_id': 0,
             # 'tree_method': 'gpu_hist'}
 
         steps = 200  # The number of training iterations
         evals = [(D_val,"validation")]
-        model = xg.train(params, D_train, num_boost_round=steps, evals=evals, early_stopping_rounds=10,
+        model = xg.train(params, D_train, num_boost_round=steps, evals=evals, # early_stopping_rounds=10,
                           verbose_eval=True)
 
         preds = model.predict(D_test)
@@ -146,7 +157,7 @@ class XgbModule(object):
             with open(self.save_path + "output.csv", 'w', encoding='utf-8') as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=fieldnames, quoting=csv.QUOTE_NONNUMERIC)
                 writer.writeheader()
-                for i, j, k in zip(y_test['label'], best_preds, y_test['SNR']):
+                for i, j, k in zip(y_test['label'], best_preds, y_test['snr_class']):  # rem change
                     writer.writerow(
                         {'True_label': i, 'Predicted_label': j, 'SNR': k})
 
@@ -279,8 +290,8 @@ class XgbModule(object):
 
 
     def class_labels(self, y_test):
-        return [f'{self.mod_schemes[i]} ({y_test[i].round(2):.2f})'
-        for i in range(len(self.mod_schemes))]
+        return [f'{self.mods[i]} ({y_test[i].round(2):.2f})'
+        for i in range(len(self.mods))]
 
 
     def get_shape_values(self, model, df_x, df_y):
@@ -298,21 +309,35 @@ class XgbModule(object):
 
     def shap_feature_importance(self, model, df_x,df_y):
         _, shap_values, X_test, _ = self.get_shape_values(model, df_x, df_y)
+        # print(shap_values)
         shap.summary_plot(shap_values, X_test, show=False, plot_type="bar",color=plt.get_cmap("tab10"),
-                                class_names=self.mod_schemes)
+                                class_names=self.mods)
 
         handles, labels = plt.gca().get_legend_handles_labels()
         order = [7, 6, 4, 2, 1, 5, 3, 0]
         plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order])
+        # plt.ylabel("Features", fontsize=13)
+        plt.xlabel("")
+        # plt.xticks(np.arange(0, 12, step=2))
+        locs, labels = plt.xticks()
+
+        # print(locs, labels)
+        plt.xticks(locs, [0, 2, 4, 6, 8, 10, 12], fontsize=14)
+        plt.yticks(fontsize=14)
+        plt.gca().spines['right'].set_visible(True)
+        plt.gca().spines['top'].set_visible(True)
+        plt.gca().spines['left'].set_visible(True)
+        # plt.show()
         plt.savefig(self.save_path + "shap_summary.svg")
 
 
     def shap_decision_plot(self, model, df_x, df_y):
 
+        print(df_x.columns)
         expected_values, shap_values, X_test, y_test = self.get_shape_values(model, df_x, df_y)
-
+        # 2 qpsk 8  45
         row_index = 2
-        y_pred = model.predict(xgb.DMatrix(X_test))
+        y_pred = model.predict(xg.DMatrix(X_test))
         # print(y_test['label'][:50])
         # print([np.argmax(pred) for pred in y_pred[:50]])
         # print(list(df_x.columns))
@@ -323,8 +348,18 @@ class XgbModule(object):
                                        highlight=[y_test['label'][row_index]],
                                        feature_names=list(df_x.columns),
                                        legend_labels=self.class_labels(y_pred[row_index]),
-                                       legend_location='lower right', show=False)
-
+                                       legend_location='lower right', show=False,
+                                       feature_display_range=slice(None, -11, -1))
+        locs_y, labels_y = plt.yticks()
+        print(locs_y, labels_y)
+        plt.xlabel("")
+        plt.gca().spines['right'].set_visible(True)
+        plt.gca().spines['top'].set_visible(True)
+        plt.gca().spines['left'].set_visible(True)
+        plt.xticks(fontsize=14)
+        # plt.yticks([0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5] ,['$ZC$', '$\\sigma_{aa}$', '$\\gamma_{2,max}$', '$\\sigma_{a}$',
+        #                                                                '$\\Psi_{max}$', '$\\mu^a_{42}$', '$|\\widetilde{C}_{40}|$',
+        # '$\\widetilde{C}_{63}$', '$\\widetilde{C}_{42}$', '$\\mu^R_{42}$'], fontsize=14)
         # plt.show()
         plt.savefig(self.save_path + "shap_decision_qpsk.svg")
 
@@ -352,37 +387,58 @@ class XgbModule(object):
             # s = np.array(shap_values)
             # s[s==0] = 0.1
             # s = list(s)
-            shap.dependence_plot('$\\mu^R_{42}$', shap_values[4], X_test,
-                                 show=False)# ,interaction_index='$\\sigma_{ap,CNL}$')
+            # shap.dependence_plot('$\\mu^R_{42}$', shap_values[5], X_test,
+            #                      show=False)# ,interaction_index='$\\sigma_{ap,CNL}$')
+            shap.dependence_plot('$\\widetilde{C}_{42}$', shap_values[3], X_test,
+                                 show=False)#, interaction_index='$|\\widetilde{C}_{40}|$')
+
+        figure = plt.gcf()
+        figure.set_size_inches(4.6, 3)
         plt.tight_layout()
+        # cb = plt.colorbar(x)
+        # cb.set_ylabel("")
+
+        plt.gca().spines['right'].set_visible(True)
+        plt.gca().spines['top'].set_visible(True)
+        # plt.xticks(fontsize=14)
+        # plt.yticks(fontsize=14)
+        # plt.xlabel("")
+        # plt.ylabel("")
+
         # plt.show()
-        plt.savefig(self.save_path + "shap_dep_ofdm_bpsk.svg")
+        plt.savefig(self.save_path + "shap_dep_sc_64qam.svg")
 
     # main file
     def main(self):
         # self.train_xgb_cnn()
-        x_data, y_data = self.create_deepsig_set()  # note: pre-processing done in-situ
-        # x_data, y_data = self.preprocess_data(x_data, y_data)
+        x_data, y_data = self.create_dataset()  # note: pre-processing done in-situ
+        x_data, y_data = self.preprocess_data(x_data, y_data)
         # # print(x_data.head())
         # # print(y_data.head())
         # self.grid_cv(x_data, y_data)
         self.classifier(x_data, y_data)
         # model = pickle.load(open(self.save_path+"model.dat",'rb'))
+        # self.shap_feature_importance(model, x_data, y_data)
+        # self.shap_decision_plot(model, x_data, y_data)
         # # self.cross_validate_model(x_data, y_data)
-        # # self.dependence_plot(model, x_data, y_data)
+        # self.dependence_plot(model, x_data, y_data)
         # plot_tree(model)
         # plt.show()
 
 
 def split_csv():
-    classes = ['32PSK', '16APSK', '32QAM', 'FM', 'GMSK', '32APSK', 'OQPSK', '8ASK', 'BPSK',
-               '8PSK', 'AM-SSB-SC', '4ASK', '16PSK', '64APSK', '128QAM', '128APSK', 'AM-DSB-SC',
-               'AM-SSB-WC', '64QAM', 'QPSK', '256QAM', 'AM-DSB-WC', 'OOK', '16QAM']
+    # classes = ['32PSK', '16APSK', '32QAM', 'FM', 'GMSK', '32APSK', 'OQPSK', '8ASK', 'BPSK',
+    #            '8PSK', 'AM-SSB-SC', '4ASK', '16PSK', '64APSK', '128QAM', '128APSK', 'AM-DSB-SC',
+    #            'AM-SSB-WC', '64QAM', 'QPSK', '256QAM', 'AM-DSB-WC', 'OOK', '16QAM']
+    classes = ['OOK', '4ASK', '8ASK', 'BPSK', 'QPSK', '8PSK', '16PSK', '32PSK', '16APSK', '32APSK', '64APSK',
+               '128APSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM', 'AM-SSB-WC', 'AM-SSB-SC', 'AM-DSB-WC',
+               'AM-DSB-SC', 'FM', 'GMSK', 'OQPSK']
     norm_classes = ['OOK', '4ASK', 'BPSK', 'QPSK', '8PSK', '16QAM', 'AM-SSB-SC', 'AM-DSB-SC', 'FM', 'GMSK', 'OQPSK']
     digital_mods = ['BPSK', 'QPSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM']
+    vier_mods = ['BPSK', 'QPSK', '16QAM', '64QAM']
     label_list = []
 
-    for i in digital_mods:
+    for i in vier_mods:
         for j in range(len(classes)):
             if i == classes[j]:
                 label_list.append(j)
@@ -392,7 +448,7 @@ def split_csv():
     df = df[df['label'].isin(label_list)]
     df['label'] = df['label'].apply(lambda x:mod_fix(x, label_list))
     # print(df.head())
-    df.to_csv(path+"deepsig_featurized_dig_mod.csv", index=False)
+    df.to_csv(path+"deepsig_featurized_vier_mod.csv", index=False)
     # t_label = sorted(list(pd.unique(df['True_label'].values)))
     # print(t_label)
     # print(df.head())
@@ -418,8 +474,8 @@ def explore_results():
 
 
 if __name__ == "__main__":
-    datapath = "/home/rachneet/rf_featurized/dataset_vsg0_featurized_set.csv"
-    save_path = "/home/rachneet/thesis_results/vsg0_xgb/"
+    datapath = "/home/rachneet/rf_featurized/vsg_no_cfo_vier_mod/"
+    save_path = "/home/rachneet/thesis_results/xg_boost_vsg_vier_mod/"
     xgb_obj = XgbModule(datapath, save_path, save_results=True)
     xgb_obj.main()
     # split_csv()

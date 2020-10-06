@@ -205,11 +205,14 @@ def sample_deepsig():
     # path_deepsig = "/home/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/"
     files = [path + "GOLD_XYZ_OSC.0001_1024.hdf5"]
 
-    classes = ['32PSK', '16APSK', '32QAM', 'FM', 'GMSK', '32APSK', 'OQPSK', '8ASK', 'BPSK',
-               '8PSK', 'AM-SSB-SC', '4ASK', '16PSK', '64APSK', '128QAM', '128APSK', 'AM-DSB-SC',
-               'AM-SSB-WC', '64QAM', 'QPSK', '256QAM', 'AM-DSB-WC', 'OOK', '16QAM']
+    # classes = ['32PSK', '16APSK', '32QAM', 'FM', 'GMSK', '32APSK', 'OQPSK', '8ASK', 'BPSK',
+    #            '8PSK', 'AM-SSB-SC', '4ASK', '16PSK', '64APSK', '128QAM', '128APSK', 'AM-DSB-SC',
+    #            'AM-SSB-WC', '64QAM', 'QPSK', '256QAM', 'AM-DSB-WC', 'OOK', '16QAM']
+    classes = ['OOK', '4ASK', '8ASK', 'BPSK', 'QPSK', '8PSK', '16PSK', '32PSK', '16APSK', '32APSK', '64APSK',
+         '128APSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM', 'AM-SSB-WC', 'AM-SSB-SC', 'AM-DSB-WC',
+         'AM-DSB-SC', 'FM', 'GMSK', 'OQPSK']
     norm_classes = ['OOK', '4ASK', 'BPSK', 'QPSK', '8PSK', '16QAM', 'AM-SSB-SC', 'AM-DSB-SC', 'FM', 'GMSK', 'OQPSK']
-    # digital_mods = ['BPSK', 'QPSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM']
+    # digital_mods = ['BPSK', 'QPSK', '8PSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM']
     vier_mods = ['BPSK', 'QPSK', '16QAM', '64QAM']
     label_list = []
 
@@ -218,7 +221,7 @@ def sample_deepsig():
             if vier_mods[i] == classes[j]:
                 label_list.append(j)
     # print(label_list)
-    with h5.File(path + 'dataset_deepsig_vier_mod.hdf5', mode='w') as file:
+    with h5.File(path + 'dataset_deepsig_vier_new.hdf5', mode='w') as file:
         row1, i = 0, 0
         for dataset in files:
             h5fr = h5.File(dataset, 'r')
@@ -294,8 +297,9 @@ def hdf_to_csv():
     classes = ['32PSK', '16APSK', '32QAM', 'FM', 'GMSK', '32APSK', 'OQPSK', '8ASK', 'BPSK',
                '8PSK', 'AM-SSB-SC', '4ASK', '16PSK', '64APSK', '128QAM', '128APSK', 'AM-DSB-SC',
                'AM-SSB-WC', '64QAM', 'QPSK', '256QAM', 'AM-DSB-WC', 'OOK', '16QAM']
+
     norm_classes = ['OOK', '4ASK', 'BPSK', 'QPSK', '8PSK', '16QAM', 'AM-SSB-SC', 'AM-DSB-SC', 'FM', 'GMSK', 'OQPSK']
-    digital_mods = ['BPSK', 'QPSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM']
+    digital_mods = ['BPSK', 'QPSK', '8PSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM']
     label_list = []
 
     for i in range(len(digital_mods)):
