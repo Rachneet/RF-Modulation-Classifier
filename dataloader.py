@@ -116,6 +116,8 @@ def load_batch(path,batch_size=512,mode="train"):
 
         train_bound = int(0.75 * df.labels.shape[0])
         val_bound = int(0.80 * df.labels.shape[0])
+
+        # ------------------------------Optional testing-------------------------------------------------
         # test_bound = int(0.85 * df.labels.shape[0])
 
 
@@ -149,6 +151,8 @@ def load_batch(path,batch_size=512,mode="train"):
         # labels = df.labels.values
         #
         # np.savez("/media/backup/Arsenal/rf_dataset_inets/dataset_vsg_sc_snr20.npz", matrix=matrix, labels=labels)
+
+        # -------------------------------------------------------------------------------------------------------
 
         # using dataframe values
         if mode=='train':
@@ -287,62 +291,5 @@ def sequential_set():
 
 
 if __name__=="__main__":
-    # iq = np.array([[[0.2 , 0.2],[0.2 , 0.2]],
-    #  [[0.3 , 0.3],[0.2 , 0.2]],
-    #  [[0.4 , 0.4],[0.2 , 0.2]],
-    #  [[0.5 , 0.5],[0.2 , 0.2]],
-    #  [[0.6,  0.6],[0.2 , 0.2]]])
-    # print(iq.shape)
-    # labels = np.array([[1,0,0,0],[0,1,0,0],
-    #           [0,0,1,0],[0,0,0,1],[0,1,0,0]])
-    # df = pd.DataFrame()
-    # # df['iq'] = list(map(lambda x: np.array(x), iq))
-    # # df['labels'] = list(map(lambda x: np.array(x), labels))
-    # x =[[0, 0, 0, 0, 0, 0, 1, 0, 0]]
-    # print(np.array(x))
-    # true_label = label_idx(x[0])
-    # print(true_label)
-    # with h5.File("test.h5", 'w') as hdf:
-    #     dt = h5.special_dtype(vlen=np.dtype('float32'))
-    #     hdf.create_dataset('iq', data=df.iq.values, chunks=True,
-    #                        maxshape=(5,), compression='gzip', dtype=dt)
-    # # df.to_hdf('test.h5', key='xyz', mode='w')
-    #
-    data = h5.File('/home/rachneet/rf_dataset_inets/dataset_vsg_vier_mod.h5','r')
-    raw_iq = data['iq']
-    labels = data['labels']
-    snrs = data['snrs']
-    print("iq: {}".format(raw_iq[0]),"\n", "label: {}".format(labels[0]),
-          "\n", "snr: {}".format(snrs[0]))
-    # print(x[0])
-    # print(x[0].shape)
-    # for sample in x:
-    #     print(sample)
-    # print(type(df.iq.values))
-    #
-    # print(df.head())
-    # print(len(df.iq.values))
-    # print(label_idx(df.labels.values[1]))
-    #
-    # matrix = np.zeros((5,2), dtype=np.complex64)
-    # matrix = df.iq.values
-    # print(matrix)
-    # print(matrix[0].shape)
-    #
-    # normalize_iq(iq)
-
-    # print(iq.shape)
-    # print(labels.shape)
-    # label_data = np.array([np.array([0,0,0,0,0,0,0,0,1]) for label in labels[:100]])
-    # print(label_data)
-    # print(label_data.shape)
-    # label_data = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
-    # print(label_data.shape)
-    # load_batch("/media/backup/Arsenal/rf_dataset_inets/dataset_intf_bpsk_usrp_snr20_sir25_1024.h5",mode='')
-    # sequential_set()
-    # path ="/media/rachneet/arsenal/rf_dataset_inets/dataset_intf_free_vsg_cfo5_all.h5"
-    # iq, labels, snrs = reader.read_hdf5(path)
-    # print(snrs.shape)
-    # pass
-    # load_batch("/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/GOLD_XYZ_OSC.0001_1024.hdf5"
-    #                   , 512, mode='train')
+    load_batch("/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/GOLD_XYZ_OSC.0001_1024.hdf5"
+                      , 512, mode='train')

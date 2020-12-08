@@ -471,6 +471,7 @@ def deep_dream(iq_sample):
 
 def plot_barchart():
     sirs = ['0 dB','5 dB','10 dB','15 dB','20 dB','0-20 dB']
+    # sirs = ['5 dB', '10 dB', '15 dB', '20 dB', '5-20 dB']
     # acc = [0.82,0.86,0.87,0.88,0.89]
     # acc2 = [0.83,0.86,0.86,0.87,0.87]
     # acc3 = [0.71,0.80,0.86,0.87,0.87]
@@ -483,15 +484,24 @@ def plot_barchart():
     # acc = [0.60,0.83,0.94,0.99,0.99,0.87]  # cnn cfo generalized
     # acc2 = [0.59,0.83,0.94,0.99,0.99,0.87]
     # acc3 = [0.57,0.80,0.93,0.98,0.99,0.85]
-    acc = [0.89, 0.96, 0.97, 0.99, 1.0, 0.96]
-    acc2 = [0.61, 0.83, 0.94, 0.99, 0.99, 0.87]
-    acc3 = [0.75, 0.98, 1.00, 1.00, 1.00, 0.95]
+    # acc = [0.89, 0.96, 0.97, 0.99, 1.0, 0.96]
+    # acc2 = [0.61, 0.83, 0.94, 0.99, 0.99, 0.87]
+    # acc3 = [0.75, 0.98, 1.00, 1.00, 1.00, 0.95]
+    # vsg usrp tl
+    # acc = [0.61, 0.83, 0.94, 0.99, 0.99, 0.87]   # tl vsg
+    # acc2 = [0.51, 0.55, 0.57, 0.49, 0.42, 0.51]
+    # acc3 = [0.55, 0.74, 0.85, 0.91, 0.93, 0.80]
+    # intf tl
+    acc = [0.72,0.76,0.79,0.80,0.77]
+    acc2 = [0.35, 0.54, 0.68, 0.69, 0.57]
+    acc3 = [0.62,0.74,0.77,0.78,0.73]
+
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc,
-        name="                                ",#'SC_BPSK',
+        name="Train: SC BPSK <br>Test: SC BPSK",#'SC_BPSK',
         text=acc,
         textfont=dict(color='black', size=10),
         textposition='auto',
@@ -505,7 +515,7 @@ def plot_barchart():
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc2,
-        name="                                  ",#'SC_16QAM',
+        name="Train: None <br>Test: SC BPSK",#'SC_16QAM',
         text=acc2,
         textfont=dict(color='black', size=10),
         textposition='auto',
@@ -519,7 +529,7 @@ def plot_barchart():
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc3,
-        name="                             ",#'OFDM_64QAM',
+        name="Train: None <br>Transfer: SC BPSK",#'OFDM_64QAM',
         text=acc3,
         textfont=dict(color='black', size=10),
         textposition='auto',
@@ -547,8 +557,8 @@ def plot_barchart():
                              size=14,
                              color="black"
                          ),
-                     # text='Accuracy')
-                     ))
+                     text='Classification Accuracy')
+                     )
     fig.update_xaxes(automargin=True, side='bottom',
                      showline=True,
                      ticks='outside',
@@ -562,7 +572,7 @@ def plot_barchart():
                              size=14,
                              color="black"
                          ),
-                     # text='SIR'
+                     text='SIR'
                      )
                      )
     # Customize aspect
@@ -593,7 +603,7 @@ def plot_barchart():
             y=1.2,
             font=dict(
                 # family="sans-serif",
-                size=10,
+                size=12,
                 color="black"
             ),
             traceorder='normal'
@@ -2033,11 +2043,12 @@ def plot_lpf():
 if __name__=="__main__":
     # deepsig_plots()
     # plot_lpf()
+    plot_barchart()
     # train_fraction_effect()
     # x = np.arange(-10,10,0.2)
     # draw_activation(x)
     # draw_comparison_chart()
-    scalability_chart()
+    # scalability_chart()
     # n = 4
     # plot_barchart()
     # plot_heatmap()

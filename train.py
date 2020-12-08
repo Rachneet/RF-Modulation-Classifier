@@ -208,49 +208,8 @@ def get_evaluation(y_true, y_prob, list_metrics):
 
 if __name__=="__main__":
     # path = "/media/backup/Arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/"
-    path = "/home/rachneet/thesis_results/deepsig_cnn_vier_new/"
-    train(path,30)
-    # path = "/media/rachneet/arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/GOLD_XYZ_OSC.0001_1024.hdf5"
-    # file = h5.File(path,'r')
-    # iq = file['X']
-    # label = file['Y']
-    # print(iq[0])
-    # print(label[0])
-    # x = torch.tensor([[[1.6946e-01, -4.8737e-01],
-    #                    [-1.7219e-02, -9.9859e-01],
-    #                    [-1.8434e-01, -1.2288e+00],
-    #                    [1.1188e-01, -7.9144e-01],
-    #                    [-7.2184e-01, -1.1227e+00],
-    #                    [-1.2231e+00, -1.3255e+00]],
-    #
-    #                   [[-1.5068e-01, 3.7411e-02],
-    #                    [-9.9978e-02, 4.0878e-01],
-    #                    [1.7568e-01, 1.2573e+00],
-    #                    [-1.5838e-03, -2.3893e+00],
-    #                    [1.0081e+00, -1.6239e+00],
-    #                    [9.6221e-01, -3.4776e-01]]],
-    #                  device='cuda:0')
-    # x = x.view(-1,x.shape[1]*x.shape[2])
-    # print(x.shape)
-    # print(x)
-    #
-    # ica = FastICA(n_components=8,tol=1e-5,max_iter=1000)
-    # out = ica.fit_transform(x.cpu())
-    # print(out)
-    # tList = [ica.fit_transform(sample.cpu()) for sample in torch.unbind(x, dim=0)]
-    # out = torch.Tensor(tList).cuda()
-    #
-    # print(out)
-    # signal=[]
-    # for src in tList[0]:
-    #     real = src.T[0]
-    #     img = src.T[1]
-    #     signal.append((real, img))
-    # print(signal)
-    # res = torch.stack(torch.Tensor(out), dim=0)
-    # print(res.cuda())
-
-
-
-
+    # path = "/home/rachneet/thesis_results/deepsig_cnn_vier_new/"
+    # train(path,30)
+    x = torch.randn((5,4,4,4))
+    print(x[0].shape)
 

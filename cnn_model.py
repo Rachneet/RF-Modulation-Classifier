@@ -1,8 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-import pandas as pd
 from pytorch_model_summary import summary
 
 
@@ -93,11 +90,6 @@ class CNN(nn.Module):
         # layer 9
         self.fc3 = nn.Linear(n_fc_neurons, n_classes)
 
-        # self.softmax = nn.Softmax(dim=1)
-        # self.sigmoid = nn.Sigmoid()
-
-        # if filters == 64 and n_fc_neurons == 128:
-        #     self._create_weights(mean=0.0, std=1)
         if filters == 256 and n_fc_neurons == 1024:
             self._create_weights(mean=0.0, std=0.05)
         elif filters == 1024 and n_fc_neurons == 2048:
@@ -109,17 +101,10 @@ class CNN(nn.Module):
                 module.weight.data.normal_(mean, std)
 
     def forward(self, input):
-        # print(input)
-        # print(input.shape)
-        # changing dimensions to suit my network
-        # input = input.permute(0, 3, 1, 2)   # for images
+
         input = input.permute(0,2,1)
         input = input.unsqueeze(dim=3)
-        # print(input.shape)
-        # print(type(input))
-        #         input = input.view([1]+list(input.shape[1:]))
-        #         print(input.shape)
-        # print(input)
+
         output = self.conv1(input)
         # print(output.size())
         output = self.conv2(output)
@@ -132,16 +117,9 @@ class CNN(nn.Module):
         # print("output after conv6:", output.shape)
 
         output = output.view(output.size(0), -1)
-        # print("o/p befor fc:", output.shape)
-        # x = torch.cat((output, torch.tensor([[0,1,2,4,5,6],[0,1,2,3,4,5]], dtype=torch.float)), 1)
-        # print(x.shape)
-        # print(x)
-        # print(output.shape)
         output = self.fc1(output)
         output = self.fc2(output)
         output = self.fc3(output)
-        # output = self.sigmoid(output)
-        # print("final output:", output)
 
         return output
 
@@ -150,22 +128,3 @@ class CNN(nn.Module):
 if __name__=="__main__":
     model = CNN(n_classes=8)
     print(summary(model,torch.ones((1,1024,2)),show_input=False, show_hierarchical=False))
-    # input = [[[5,3,6,2,1,1],[9,4,7,2,4,6],[2,8,7,3,2,1],
-    #          [4,3,6,9,0,1],[3,6,1,0,5,2],[6,1,1,4,7,3]],
-    #          [[5, 3, 6, 2, 1, 1], [9, 4, 7, 2, 4, 6], [2, 8, 7, 3, 2, 1],
-    #           [4, 3, 6, 9, 0, 1], [3, 6, 1, 0, 5, 2], [6, 1, 1, 4, 7, 3]]]
-    # nb_channels = 1
-    # h, w = 6, 6
-    # x = torch.randn(1, nb_channels, h, w)
-    # weights = torch.tensor([[1., 0., 0.],
-    #                         [0., 1., 0.],
-    #                         [0., 0., 1.]])
-    # weights = weights.view(1, 1, 3, 3).repeat(1, 1, 1, 1)
-    # # input = torch.rand(6,6)
-    # input = torch.tensor(input).float()
-    # # input = input.unsqueeze(dim=0)
-    # input = input.unsqueeze(dim=1)
-    # conv = F.conv2d(input, weights)
-    # # print(conv.weight)
-    # # out = conv(input)
-    # print(conv)

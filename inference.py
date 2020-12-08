@@ -26,14 +26,10 @@ pio.renderers.default = 'svg'
 from lightning_resnet import *
 
 def get_evaluation(y_true, y_prob, list_metrics):
-    # print(y_true)
-    # print(y_prob)
-    # print(type(y_true))
-    # print(type(y_prob))
+
     y_pred = np.argmax(y_prob, -1)
-    # print(y_pred)
     y_true = np.argmax(y_true,-1)
-    # print(y_true)
+
     output = {}
     if 'accuracy' in list_metrics:
         output['accuracy'] = metrics.accuracy_score(y_true, y_pred)
@@ -202,9 +198,8 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
 
     # x = ['BPSK', 'QPSK', '8PSK', '16QAM', '32QAM', '64QAM', '128QAM', '256QAM']
 
-    # x = ["SC <br>BPSK", "SC <br>QPSK", "SC 16-<br>QAM", "SC 64-<br>QAM",
-    #      "OFDM <br>BPSK", "OFDM <br>QPSK", "OFDM 16-<br>QAM", "OFDM 64-<br>QAM"]
-    x = ["Not Malware", "Malware"]
+    x = ["SC <br>BPSK", "SC <br>QPSK", "SC 16-<br>QAM", "SC 64-<br>QAM",
+         "OFDM <br>BPSK", "OFDM <br>QPSK", "OFDM 16-<br>QAM", "OFDM 64-<br>QAM"]
 
     y = list(reversed(x))
 
@@ -232,19 +227,19 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
 
     # add title
 
-    # fig.update_layout(title_text='<b>Resnet Performance with the presence of Interfering BPSK Signals <br> at SIR ' + str(snr) + 'dB </b>',
-    #                   # xaxis = dict(title='x'),
-    #                   # yaxis = dict(title='x')
-    #                   )
+    fig.update_layout(title_text='<b>Resnet Performance with the presence of Interfering BPSK Signals <br> at SIR ' + str(snr) + 'dB </b>',
+                      # xaxis = dict(title='x'),
+                      # yaxis = dict(title='x')
+                      )
 
     # add custom xaxis title
-    # fig.add_annotation(dict(font=dict(color="black", size=14),
-    #                         x=0.5,
-    #                         y=-0.18,
-    #                         showarrow=False,
-    #                         #text="Predicted class",
-    #                         xref="paper",
-    #                         yref="paper"))
+    fig.add_annotation(dict(font=dict(color="black", size=14),
+                            x=0.5,
+                            y=-0.18,
+                            showarrow=False,
+                            #text="Predicted class",
+                            xref="paper",
+                            yref="paper"))
 
     # add colorbar
     fig['data'][0]['showscale'] = True
@@ -461,7 +456,7 @@ if __name__ == "__main__":
     # pass
 
     # -------------PLot overall conf maps------------------------------------------------------------
-    # datapath = "/home/rachneet/thesis_results/"
+    datapath = "/home/rachneet/thesis_results/"
     # file = datapath+'vsg0_xgb/output.csv'
     # df = pd.read_csv(file)
     # # print(df.tail())
@@ -480,7 +475,7 @@ if __name__ == "__main__":
     # plot_confusion_matrix(cmap, counts, "cmap_" + "xg0", "xg0")
 
     # -------------PLot individual conf maps------------------------------------------------------------
-    datapath = "/home/rachneet/PycharmProjects/networkAnalysis/"
+    # datapath = "/home/rachneet/PycharmProjects/networkAnalysis/"
     # test_sequential(datapath+"res_sequential_test_intf_ofdm/")
     file = datapath + 'output.csv'
     df = pd.read_csv(file)

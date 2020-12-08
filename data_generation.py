@@ -9,52 +9,7 @@ import re
 from helper_functions import info,read_binary
 from filter_data import filter_samples
 from Receiver import Receiver
-print(os.getcwd())
-# print(os.listdir("/data"))
-# file = "/data/all_RFSignal_cdv/interference/ota/no_cfo/tx_usrp/rx_usrp/intf_vsg/i_SC_BPSK/10db/sir_5db/bin/SC_BPSK_1.bin"
-# size = os.stat(file).st_size
-# print("file size: ", size)
-#
-# samples = int(size/8)
-# print("number of samples: ", samples)
-#  # one file contains a single recording of 10 ms
-#  # 1 ms at front and end are removed to account for transient effects
-#  # thus 8 ms recording
-#
-#
-# data = np.array([0 + 0 *1j] * samples, dtype = np.complex64)
-#
-# with open(file, 'rb') as binary_file:
-#     binary_data = binary_file.read()
-#     unpacked_data = np.array(struct.unpack('f' * samples * 2, binary_data))
-#     data.real = unpacked_data[::2]
-#     data.imag = unpacked_data[1::2]
-#
-# print("real data: ",data.real)
-# print("Img data: ",data.imag)
-# print(len(data.real))
-# print(len(data.imag))
-#
-# num_iq = data.size/10  # per signal segment
-# print("Number of IQ samples",num_iq)
-#
-# filter_data = filter_data.filter_samples(data)
-# # print(filter_data)
-# # print(len(filter_data))
-# # print(filter_data.shape)
-# # print(filter_data.real)
-#
-# i=0
-# # allocate memory
-# matrix = np.zeros((8, num_iq), dtype=np.complex64)
-# # remove transients: first and last segments
-# # 8 segments in total each of 1ms
-# matrix[i*8:(i+1)*8, :] = np.stack(np.split(filter_data, 10)[1:-1])
-#
-# print("shape of matrix:",matrix.shape)
-# print(matrix[0])
 
-#print(np.array((matrix.real,matrix.imag)))
 
 def generate_dataset():
 

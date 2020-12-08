@@ -1,10 +1,4 @@
-import csv
-import pandas as pd
-import numpy as np
-from tqdm import tqdm
-from skimage.io import imread
 from torch.utils.data import DataLoader
-import torch
 import torchvision
 import torchvision.transforms as tf
 
@@ -33,12 +27,6 @@ def image_dataloader(path,batch_size):
     test_set = DataLoader(test_dataset, **training_params)
 
     return train_set,test_set
-
-    # print(train_x.shape)
-    # print(train_y.shape)
-    # print(test_x.shape)
-    # print(test_y.shape)
-
 
 
 if __name__=="__main__":

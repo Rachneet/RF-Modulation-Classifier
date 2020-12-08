@@ -1,10 +1,5 @@
-import torch
 import torch.nn as nn
 import numpy as np
-import read_h5 as reader
-from torch.utils.data import DataLoader
-import dataloader
-from pytorch_model_summary import summary
 import h5py as h5
 
 
@@ -94,11 +89,6 @@ class CNN(nn.Module):
         # layer 9
         self.fc3 = nn.Linear(n_fc_neurons, n_classes)
 
-        # self.softmax = nn.Softmax(dim=1)
-        # self.sigmoid = nn.Sigmoid()
-
-        # if filters == 64 and n_fc_neurons == 128:
-        #     self._create_weights(mean=0.0, std=1)
         if filters == 256 and n_fc_neurons == 1024:
             self._create_weights(mean=0.0, std=0.05)
         elif filters == 1024 and n_fc_neurons == 2048:
@@ -110,17 +100,9 @@ class CNN(nn.Module):
                 module.weight.data.normal_(mean, std)
 
     def forward(self, input):
-        # print(input)
-        # print(input.shape)
-        # changing dimensions to suit my network
-        # input = input.permute(0, 3, 1, 2)   # for images
+
         input = input.permute(0,2,1)
         input = input.unsqueeze(dim=3)
-        # print(input.shape)
-        # print(type(input))
-        #         input = input.view([1]+list(input.shape[1:]))
-        #         print(input.shape)
-        # print(input)
         output = self.conv1(input)
         # print(output.size())
         output = self.conv2(output)
@@ -133,38 +115,16 @@ class CNN(nn.Module):
         # print("output after conv6:", output.shape)
 
         output = output.view(output.size(0), -1)
-        # print("o/p befor fc:", output.shape)
-        # print(output.shape)
         output = self.fc1(output)
-        # print(output)
-        # # modify your learning here
-        # data = np.load("/media/backup/Arsenal/rf_dataset_inets/aggregated_fetaures_cnn.npz",allow_pickle=True)
-        # features=data['features']
-        # corr=[]
-        # for feature in features:
-        #     corr.append(np.corrcoef(feature,output.cpu().data.numpy())[1,0])
-        # print(corr)
-
         output = self.fc2(output)
         output = self.fc3(output)
-        # output = self.softmax(output)
-        # print("final output:", output)
 
         return output
 
 
 
 if __name__=="__main__":
-    # model = CNN(n_classes=9)
-    # path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5"
-    # iq, labels, snrs = reader.read_hdf5(path)
-    # print(labels[1])
-    # x = torch.Tensor(iq[1]).unsqueeze(dim=0)
-    # print(x.shape)
-    # out = model(x)
-    # print(out)
 
-    # print(summary(model,torch.ones((1,1024,2)),show_input=False, show_hierarchical=True))
     path = "/media/backup/Arsenal/rf_dataset_inets/feature_set_training_fc8_vsg20.h5"
     data = h5.File(path,'r')
     # features,pred_labels,true_labels = data['features'],data['pred_labels'],data['true_labels']
@@ -189,10 +149,5 @@ if __name__=="__main__":
         agg_features.append(features/count)
 
     print(np.array(agg_features).shape)
-    # output_path = "/media/backup/Arsenal/rf_dataset_inets/features_fc7_complete_training_cnn.h5"
-    # num_features = 128
-    # with h5.File(output_path, 'w') as hdf:
-    #     hdf.create_dataset('features', data=agg_features, chunks=True, maxshape=(None, num_features),
-    #                        compression='gzip')
     np.savez("/media/backup/Arsenal/rf_dataset_inets/features_fc8_mav.npz",
              features=np.array(agg_features))

@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from pytorch_model_summary import summary
 
 class CharCNN(nn.Module):
@@ -95,11 +94,6 @@ class CharCNN(nn.Module):
         # print(input.shape)
         # changing dimensions to suit my network
         input = input.permute(0, 2, 1)
-        # print(input.shape)
-        # print(type(input))
-        #         input = input.view([1]+list(input.shape[1:]))
-        #         print(input.shape)
-        print(input)
         output = self.conv1(input)
         # print(output.size())
         output = self.conv2(output)
@@ -109,11 +103,8 @@ class CharCNN(nn.Module):
         output = self.conv4(output)
         output = self.conv5(output)
         output = self.conv6(output)
-        # print("output after conv6:", output.shape)
 
         output = output.view(output.size(0), -1)
-        # print("o/p befor fc:", output)
-        # print(output.shape)
         output = self.fc1(output)
         output = self.fc2(output)
         output = self.fc3(output)
