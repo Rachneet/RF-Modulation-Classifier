@@ -227,19 +227,19 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
 
     # add title
 
-    fig.update_layout(title_text='<b>Resnet Performance with the presence of Interfering BPSK Signals <br> at SIR ' + str(snr) + 'dB </b>',
-                      # xaxis = dict(title='x'),
-                      # yaxis = dict(title='x')
-                      )
+    # fig.update_layout(title_text='<b>Resnet Performance with the presence of Interfering BPSK Signals <br> at SIR ' + str(snr) + 'dB </b>',
+    #                   # xaxis = dict(title='x'),
+    #                   # yaxis = dict(title='x')
+    #                   )
 
     # add custom xaxis title
-    fig.add_annotation(dict(font=dict(color="black", size=14),
-                            x=0.5,
-                            y=-0.18,
-                            showarrow=False,
-                            #text="Predicted class",
-                            xref="paper",
-                            yref="paper"))
+    # fig.add_annotation(dict(font=dict(color="black", size=14),
+    #                         x=0.5,
+    #                         y=-0.18,
+    #                         showarrow=False,
+    #                         #text="Predicted class",
+    #                         xref="paper",
+    #                         yref="paper"))
 
     # add colorbar
     fig['data'][0]['showscale'] = True
@@ -266,20 +266,21 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
                                    outlinecolor="black",
                                    outlinewidth=1,
                                    ticks='outside',
-                                   len=1.12,                 #1.075,  #1.05 ow  #1.046
+                                   len=1.05,                 #1.075,  #1.05 ow  #1.046
                                     # y=0.47,
-                                   tickfont=dict(color='black')
+                                   tickfont=dict(  # family="times new roman",
+                                   color='black', size=15)
                                    )
 
 
-    fig.update_yaxes(automargin=True, tickangle=-90,
+    fig.update_yaxes(automargin=True,# tickangle=-90,
                      showline=True,
                      ticks='outside',
                      mirror=True,
                      linecolor='black',
                      linewidth=0.5,
                      tickfont=dict(#family="times new roman",
-                                   color='black',size=14),
+                                   color='black', size=15),
                      # title=dict(text="True label",
                      #     font=dict(
                      #         # family="times new roman",
@@ -287,7 +288,7 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
                      #         color="black"
                      #     ))
                      )
-    fig.update_xaxes(automargin=True, #tickangle=-90,
+    fig.update_xaxes(automargin=True, tickangle=-90,
                      side='bottom',
                      showline=True,
                      ticks='outside',
@@ -295,7 +296,7 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
                      linecolor='black',
                      linewidth=0.5,
                      tickfont=dict(#family="times new roman",
-                                   color='black',size=14),
+                                   color='black', size=15),
                      # title=dict(text="Predicted label",
                      #     font=dict(
                      #         # family="times new roman",
@@ -305,8 +306,10 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
                      )
     # 400 465
     # 600 650
+    for i in range(len(fig.layout.annotations)):
+        fig.layout.annotations[i].font.size = 15
     # fig.show()
-    plotly.offline.plot(fig, filename=fig_name + ".html", image='svg',image_height=300, image_width=360,
+    plotly.offline.plot(fig, filename=fig_name + ".html", image='svg',image_height=500, image_width=560,
                         include_plotlyjs=True)
 
 
@@ -369,7 +372,6 @@ def test_sequential(path):
         # if c==3:
         #     print(predictions)
         #     break
-
 
     output = pd.DataFrame.from_dict(predictions, orient='index')
     output = output.dropna()
@@ -477,16 +479,16 @@ if __name__ == "__main__":
     # -------------PLot individual conf maps------------------------------------------------------------
     # datapath = "/home/rachneet/PycharmProjects/networkAnalysis/"
     # test_sequential(datapath+"res_sequential_test_intf_ofdm/")
-    file = datapath + 'output.csv'
-    df = pd.read_csv(file)
-    unique, counts = np.unique(df['True_label'].values, return_counts=True)
-    cmap = metrics.confusion_matrix(df['True_label'], df['Predicted_label'])
-    # plot_confusion_matrix(cmap, counts, "cmap_malware", 0)
-    print(cmap)
+    # file = datapath + 'cnn_vsg_all/output.csv'
+    # df = pd.read_csv(file)
+    # unique, counts = np.unique(df['True_label'].values, return_counts=True)
+    # cmap = metrics.confusion_matrix(df['True_label'], df['Predicted_label'])
+    # plot_confusion_matrix(cmap, counts, "cmap_cnn_vsg_all", '')
+    # print(cmap)
     # print(df.tail())
-    # count,output = compute_results(file,[5,10, 15,20,25])
+    # count,output = compute_results(file,[0, 5, 10, 15, 20])
     # for k, v in output.items():
-    #     plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap"+str(k),k)
+        # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap"+str(k),k)
         # print(v['confusion_matrix'])
         # print(v['accuracy'])
 
@@ -495,27 +497,27 @@ if __name__ == "__main__":
     # y = np.arange(0,21,5)
     # y =[0]
     # # y = np.arange(0,21,2)
-    # path = datapath + "res_vsg_all/output.csv"
-    # df = pd.read_csv(path)
-    # count, output = compute_results(path,y)# ['0db', '5db', '10db', '15db', '20db'])
+    path = datapath + "res_vsg_cfo5/output.csv"
+    df = pd.read_csv(path)
+    count, output = compute_results(path,[0, 5, 10, 15, 20])# ['0db', '5db', '10db', '15db', '20db'])
     # # [0,5,10,15,20])
     # # print(count,output)
     # # print(count)
-    # acc = []
-    # for k,v in output.items():
-    #     # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_intf_bpsk_snr_"+str(k),k)
-    #     # print(v['confusion_matrix'])
-    #
-    #     acc.append(round(v['accuracy'],3))
+    acc = []
+    for k,v in output.items():
+        # plot_confusion_matrix(v['confusion_matrix'],count[k],"cmap_cnn_vsg"+str(k),k)
+        # print(v['confusion_matrix'])
+
+        acc.append(round(v['accuracy'],3))
     #     # acc.append(v['accuracy'])
     # # df = df.loc[df['SNR'] >= 0]
-    # y_true = df['True_label'].values
-    # y_pred = df['Predicted_label'].values
-    # print(metrics.confusion_matrix(y_true, y_pred))
-    # total = metrics.accuracy_score(y_true, y_pred)
-    # acc.append(round(total,3))
-    # # acc.append(total)
-    # print(acc)
+    y_true = df['True_label'].values
+    y_pred = df['Predicted_label'].values
+    print(metrics.confusion_matrix(y_true, y_pred))
+    total = metrics.accuracy_score(y_true, y_pred)
+    acc.append(round(total,3))
+    # acc.append(total)
+    print(acc)
 
 
     # --------------------------------CFO correction--------------------------------------------------

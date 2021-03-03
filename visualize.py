@@ -759,16 +759,16 @@ def plot_heatmap():
 def draw_comparison_chart():
 
     sirs = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB', '0-20 dB']
-    acc = [0.7, 0.84, 0.94, 1.0, 1.0, 0.89]
+    acc = [0.58, 0.80, 0.93, 0.98, 0.99, 0.86]
     # acc2 = [0.57,0.79,0.91,0.98,0.99,0.85]  # usrp
-    acc2 = [0.68, 0.89, 0.99, 1.0, 1.0, 0.91]
+    acc2 = [0.59, 0.81, 0.94, 0.99, 1.0, 0.87]
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc,
         # name="             ",
-        name="                                ",  # 'CNN (9-Layer)',
+        name="              ",  # 'CNN (9-Layer)',
         text=acc,
         textfont=dict(color='black', size=10),
         textposition='auto',
@@ -794,10 +794,10 @@ def draw_comparison_chart():
         text=acc2,
         textfont=dict(color='black', size=10),
         textposition='auto',
-        # marker_color='#f4b247',  # yellow
-        # marker_line_color='#ff7f0e',
-        marker_color='#66c56c',  # green
-        marker_line_color='#2ca02c',
+        marker_color='#f4b247',  # yellow
+        marker_line_color='#ff7f0e',
+        # marker_color='#66c56c',  # green
+        # marker_line_color='#2ca02c',
         # marker_color='#23aaff', # blue
         # marker_line_color='#1f77b4',
         # marker_color='#ff6555', # red
@@ -883,7 +883,8 @@ def draw_comparison_chart():
         )
     )
 # image_width=400, image_height=400
-    plotly.offline.plot(figure_or_data=fig, filename='test_bar.html', image='svg')
+
+    plotly.offline.plot(figure_or_data=fig, filename='test_bar.html', image='svg', image_height=550, image_width=600)
 
 
 def plt_tl_chart():
@@ -2043,11 +2044,11 @@ def plot_lpf():
 if __name__=="__main__":
     # deepsig_plots()
     # plot_lpf()
-    plot_barchart()
+    # plot_barchart()
     # train_fraction_effect()
     # x = np.arange(-10,10,0.2)
     # draw_activation(x)
-    # draw_comparison_chart()
+    draw_comparison_chart()
     # scalability_chart()
     # n = 4
     # plot_barchart()

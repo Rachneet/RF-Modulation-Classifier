@@ -17,7 +17,7 @@ from test_tube import Experiment
 # from comet_ml import Experiment
 # from pytorch_lightning.logging import CometLogger
 # from pytorch_lightning.loggers import TestTubeLogger
-from pytorch_lightning.logging.neptune import NeptuneLogger
+from pytorch_lightning.loggers.neptune import NeptuneLogger
 from sklearn import metrics
 from collections import OrderedDict
 import csv
@@ -287,15 +287,15 @@ class LightningResnet(pl.LightningModule):
                                   sampler=test_sampler)
 
 
-    @pl.data_loader
+    # @pl.data_loader
     def train_dataloader(self):
         return self.train_dataset
 
-    @pl.data_loader
+    # @pl.data_loader
     def val_dataloader(self):
         return self.val_dataset
 
-    @pl.data_loader
+    # @pl.data_loader
     def test_dataloader(self):
         return self.test_dataset
 

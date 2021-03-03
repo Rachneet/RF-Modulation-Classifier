@@ -465,9 +465,6 @@ def explore_results():
     df = pd.read_csv(path+"output.csv")
     snr = sorted(list(pd.unique(df['SNR'].values)))
     t_label = sorted(list(pd.unique(df['True_label'].values)))
-    # print(t_label)
-    # print(snr)
-    # print(type(snr))
     count, result = compute_results(path+"output.csv", snr)
     for k, v in result.items():
         print(k,":",v['accuracy'])
@@ -478,5 +475,3 @@ if __name__ == "__main__":
     save_path = "/home/rachneet/thesis_results/xg_boost_vsg_vier_mod/"
     xgb_obj = XgbModule(datapath, save_path, save_results=True)
     xgb_obj.main()
-    # split_csv()
-    # explore_results()
