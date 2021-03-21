@@ -1178,6 +1178,143 @@ def train_fraction_effect():
     plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=500, filename='train_chart.html', image='svg')
 
 
+def plot_line_chart():
+    colors = ['rgba(255, 101, 85, 1)', 'rgba(35, 170, 255, 1)', 'rgba(244, 178, 71, 1)', 'rgba(42, 187, 155, 1)']
+    # c_cfo1 = [0.577, 0.801, 0.927, 0.98, 0.992]
+    # r_cfo1 = [0.753, 0.983, 1, 1, 1]
+    # c_cfo5 = [0.592, 0.814, 0.937, 0.986, 0.995]
+    # r_cfo5 = [0.709, 0.966, 0.999, 1, 1]
+
+    c_bpsk = [0.72, 0.76, 0.79, 0.8]
+    c_16qam = [0.75, 0.8, 0.8, 0.81]
+    c_ofdm = [0.69, 0.78, 0.8, 0.82]
+    r_bpsk = [0.86, 0.89, 0.89, 0.89]
+    r_16qam = [0.81, 0.85, 0.86, 0.86]
+    r_ofdm = [0.78, 0.86, 0.87, 0.87]
+
+    cfo1 = [0.603, 0.829, 0.941, 0.986, 0.995]
+    cfo2 = [0.594, 0.828, 0.939, 0.986, 0.994, 0.868]
+    cfo3 = [0.569, 0.801, 0.926, 0.980, 0.991, 0.853]
+    cfo4 = [0.586, 0.814, 0.936, 0.987, 0.995, 0.863]
+
+    intf1 = [0.35, 0.54, 0.68, 0.69]
+    intf2 = [0.37, 0.61, 0.75, 0.77]
+    intf3 = [0.38, 0.65, 0.73, 0.75]
+
+
+
+    x = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB']
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=x, y=cfo1, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
+                             name='     <br>                                              '))
+    fig.add_trace(go.Scatter(x=x, y=cfo2, mode="lines+markers", marker_symbol='circle', marker_color=colors[1],
+                             name='       <br>                                             '))
+    fig.add_trace(go.Scatter(x=x, y=cfo3, mode="lines+markers", marker_symbol='circle', marker_color=colors[2],
+                             name='           <br>                          '))
+    fig.add_trace(go.Scatter(x=x, y=cfo4, mode="lines+markers", marker_symbol='circle', marker_color=colors[3],
+                             name='         <br>                            '))
+    # fig.add_trace(go.Scatter(x=x, y=cfo4, mode="lines+markers", marker_symbol='circle', marker_color=colors[3],
+    #                          name='                                                    '))
+    # fig.add_trace(go.Scatter(x=x, y=r_bpsk, mode="lines+markers", marker_symbol='circle', marker_color=colors[1],
+    #                          name='                                                '))
+    #
+    # fig.add_trace(go.Scatter(x=x, y=c_16qam, mode="lines+markers", marker_symbol='square', marker_color=colors[0],
+    #                          name='                                                ',
+    #                          line=dict(
+    #                              # color="grey",
+    #                              # width=1,
+    #                              dash="dashdot",
+    #                          )
+    #                          ))
+    # fig.add_trace(go.Scatter(x=x, y=r_16qam, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
+    #                          name='                                                 ',
+    #                          line=dict(
+    #                              # color="grey",
+    #                              # width=1,
+    #                              dash="dashdot",
+    #                          )
+    #                          ))
+    #
+    # fig.add_trace(go.Scatter(x=x, y=c_ofdm, mode="lines+markers", marker_symbol='diamond', marker_color=colors[0],
+    #                          name='                                               ',
+    #                          line=dict(
+    #                              # color="grey",
+    #                              # width=1,
+    #                              dash="dot",
+    #                          )
+    #                          ))
+    #
+    # fig.add_trace(go.Scatter(x=x, y=r_ofdm, mode="lines+markers", marker_symbol='diamond', marker_color=colors[1],
+    #                              name='                                                ',
+    #                              line=dict(
+    #                                  # color="grey",
+    #                                  # width=1,
+    #                                  dash="dot",
+    #                              )
+    #                              ))
+
+    line_ax = [0.6, 0.7, 0.8, 0.9, 1]  # change
+    for i in line_ax:
+        fig.add_shape(type="line", x0=-0.3, y0=i, x1=4.3, y1=i,  # change
+                      line=dict(
+                          color="grey",
+                          width=1,
+                          dash="dashdot",
+                      ),
+                      )
+
+    fig.update_yaxes(automargin=True, showline=True, ticks="", mirror=True,
+                     linecolor='black', linewidth=1,
+                     tickfont=dict(color="black", family='times new roman', size=16),
+                     tick0=0.5,  # change
+                     dtick=0.1,
+                     range=[0.5, 1.05],
+                     title=dict(font=dict(color="black",  # family="sans-serif",size=15,
+                                          ),
+                                # text='Accuracy')
+                                ))
+
+    fig.update_xaxes(automargin=True, side='bottom', showline=True, ticks='inside',
+                     mirror=True, linecolor='black', linewidth=1,
+                     tickfont=dict(color="black", family='times new roman', size=16),
+                     # tick0=0.5,
+                     # dtick=0.1,
+                     # range=[0.5, 1.05],
+                     title=dict(font=dict(
+                         # family="sans-serif",
+                         # size=15,
+                         color="black"
+                     ),
+                         # text='SNR'
+                     ))
+
+    fig.update_traces(marker_line_width=2)
+    fig.update_layout(
+        margin=go.layout.Margin(
+            l=0,  # left margin
+            r=110,  # right margin  130
+            b=160,  # bottom margin
+            t=20,  # top margin
+        ),
+        # title_text='<b>Model Scalability with Number of IQ Samples',
+        # title_x=0.50, title_y=0.90,
+        xaxis={"mirror": "all"},
+        paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
+        width=500, height=500,
+        legend=dict(
+            # bordercolor='black',
+            # borderwidth=1,
+            bgcolor='rgba(0,0,0,0)', orientation='h',
+            itemsizing='constant', x=0.05, y=1.5,
+            font=dict(size=12, color="black", family='times new roman'), traceorder='normal'
+        ),
+    )
+    plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=400, filename='gen_cfo.html', image='svg')
+
+
+
+
 def scalability_chart():
     snrs = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB']
     acc_256 = [0.474, 0.654, 0.794, 0.888, 0.919]
@@ -1765,7 +1902,8 @@ def draw_activation(x):
 
 def deepsig_plots():
 
-    x = np.arange(-20,21,2)
+    # x = np.arange(-20,21,2)
+    x = np.arange(0, 21, 5)
     # x = ['-20 dB', '-10 dB', '0 dB', '10 dB', '20 dB']
     # x = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB']
     # y_xgb = [0.04, 0.04, 0.05, 0.05, 0.06, 0.07, 0.12, 0.19, 0.28, 0.33, 0.43, 0.55, 0.63, 0.67, 0.71,
@@ -1791,6 +1929,11 @@ def deepsig_plots():
     # r_lab = [0.753, 0.980, 1.0, 1.0, 1.0]
     # r_sdr = [0.604, 0.878, 0.977, 0.998, 1.0]
 
+    c_cfo1 = [0.577, 0.801, 0.927, 0.98, 0.992]
+    r_cfo1 = [0.753, 0.983, 1, 1, 1]
+    c_cfo5 = [0.592, 0.814, 0.937, 0.986, 0.995]
+    r_cfo5 = [0.709, 966, 0.999, 1, 1]
+
     tr = [0.258, 0.251, 0.248, 0.238, 0.257, 0.266, 0.346, 0.47, 0.562, 0.667, 0.775, 0.823, 0.875, 0.94, 0.981, 0.989,
           0.992, 0.991, 0.992, 0.993, 0.993]
     gen = [0.255, 0.254, 0.253, 0.244, 0.257, 0.249, 0.251, 0.247, 0.246, 0.261, 0.254, 0.41, 0.418, 0.246, 0.249,
@@ -1802,29 +1945,30 @@ def deepsig_plots():
     # 'Traditional <br>Learning'  'Transfer <br>Learning'
     colors = ['rgba(255, 101, 85, 1)', 'rgba(35, 170, 255, 1)', 'rgba(244, 178, 71, 1)']
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=x, y=tr, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
+    fig.add_trace(go.Scatter(x=x, y=c_cfo1, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
                              name='                                          '))
-    fig.add_trace(go.Scatter(x=x, y=gen, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
+    fig.add_trace(go.Scatter(x=x, y=c_cfo5, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
                              name='                                          '))
-    fig.add_trace(go.Scatter(x=x, y=tl, mode="lines+markers", marker_symbol='diamond', marker_color=colors[2],
-                             name='                               ',
-                             # line=dict(
-                             #     # color="grey",
-                             #     # width=1,
-                             #     dash="dashdot",
-                             # )
-                             ))
-
-    # fig.add_trace(go.Scatter(x=x, y=r_sdr, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
+    # fig.add_trace(go.Scatter(x=x, y=tl, mode="lines+markers", marker_symbol='diamond', marker_color=colors[2],
     #                          name='                               ',
-    #                          line=dict(
-    #                              # color="grey",
-    #                              # width=1,
-    #                              dash="dashdot",
-    #                          )
+    #                          # line=dict(
+    #                          #     # color="grey",
+    #                          #     # width=1,
+    #                          #     dash="dashdot",
+    #                          # )
     #                          ))
-    # fig.add_trace(go.Scatter(x=x, y=y_res, mode="lines+markers", marker_symbol='diamond', marker_color=colors[2],
-    #                          name="ResNet-101"))
+
+    fig.add_trace(go.Scatter(x=x, y=r_cfo1, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
+                             name='                               ',
+                             line=dict(
+                                 # color="grey",
+                                 # width=1,
+                                 dash="dashdot",
+                             )
+                             ))
+    fig.add_trace(go.Scatter(x=x, y=r_cfo5, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
+                             name='                               '
+                             ))
 
     line_ax = [0.2, 0.4, 0.6, 0.8, 1]
     # line_ax = [0.6, 0.7, 0.8, 0.9, 1]
@@ -1894,7 +2038,7 @@ def deepsig_plots():
         )
     )
 
-    plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=450, filename='deepsig_acc.html', image='svg')
+    plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=450, filename='cfo_comp.html', image='svg')
     # pass
 
 
@@ -2038,17 +2182,18 @@ def plot_lpf():
     #
     # plt.tight_layout()
     # # plt.show()
+    # # plt.show()
     # plt.savefig("test.svg")
 
 
 if __name__=="__main__":
-    # deepsig_plots()
+    plot_line_chart()
     # plot_lpf()
     # plot_barchart()
     # train_fraction_effect()
     # x = np.arange(-10,10,0.2)
     # draw_activation(x)
-    draw_comparison_chart()
+    # draw_comparison_chart()
     # scalability_chart()
     # n = 4
     # plot_barchart()
