@@ -107,7 +107,11 @@ class LightningResnet(pl.LightningModule):
         # exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3)   # dynamic reduction based on val_loss
         # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[9,18,27],gamma=0.1)
-        return [optimizer],[scheduler]
+        return {
+           'optimizer': optimizer,
+           'lr_scheduler': scheduler, # Changed scheduler to lr_scheduler
+           'monitor': 'val_loss'
+       }
 
     def cross_entropy_loss(self,logits, labels):
         loss = nn.CrossEntropyLoss()
@@ -326,7 +330,7 @@ def test_lightning(hparams):
     # logger = TestTubeLogger('tb_logs', name='CNN')
     # callback = [test_callback()]
     # print(neptune_logger.experiment.name)
-    model_checkpoint = pl.callbacks.ModelCheckpoint(filepath=CHECKPOINTS_DIR)
+    model_checkpoint = pl.callbacks.ModelCheckpoint(CHECKPOINTS_DIR)
     trainer = Trainer(logger=neptune_logger, gpus=hparams.gpus,checkpoint_callback=model_checkpoint)
     trainer.test(model)
     # Save checkpoints folder
@@ -335,12 +339,12 @@ def test_lightning(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/home/rachneet/thesis_results/res_vsg_vier_mod/'
+CHECKPOINTS_DIR = '/home/rachneet/thesis_results/res_mixed_recordings/'
 neptune_logger = NeptuneLogger(
     api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
             "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
     project_name="rachneet/sandbox",
-    experiment_name="res_vsg_vier_mod",   # change this for new runs
+    experiment_name="res_mixed_recordings",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -351,7 +355,7 @@ def main(hparams):
     # exp = Experiment(save_dir=os.getcwd())
     if not os.path.exists(CHECKPOINTS_DIR):
         os.makedirs(CHECKPOINTS_DIR)
-    model_checkpoint = pl.callbacks.ModelCheckpoint(filepath=CHECKPOINTS_DIR)
+    model_checkpoint = pl.callbacks.ModelCheckpoint(CHECKPOINTS_DIR)
     early_stop_callback = pl.callbacks.EarlyStopping(
         monitor='val_loss',
         min_delta=0.00,
@@ -359,9 +363,12 @@ def main(hparams):
         verbose=False,
         mode='min'
     )
-    trainer = Trainer(logger=neptune_logger,gpus=hparams.gpus,max_nb_epochs=hparams.max_epochs,
-                      add_log_row_interval=100,log_save_interval=200, checkpoint_callback=model_checkpoint,
-                      early_stop_callback=early_stop_callback)
+    trainer = Trainer(logger=neptune_logger,gpus=hparams.gpus,max_epochs=hparams.max_epochs,
+                      # add_log_row_interval=100,
+                      # log_save_interval=200,
+                      checkpoint_callback=model_checkpoint,
+                      # early_stop_callback=early_stop_callback
+                      )
     trainer.fit(model)
     # load best model
     file_name = ''
@@ -384,21 +391,21 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/home/rachneet/rf_dataset_inets/dataset_vsg_vier_mod.h5"
+    path = "/home/rachneet/rf_dataset_inets/mixed_parameters/no_cfo/usrp/intf_vsg/dataset_mixed_recordings_1024.h5"
     out_path = "/home/rachneet/thesis_results/"
 
     parser = ArgumentParser()
     parser.add_argument('--output_path', default=out_path)
     parser.add_argument('--data_path', default=path)
     parser.add_argument('--gpus', default=0)
-    parser.add_argument('--max_epochs', default=30)
+    parser.add_argument('--max_epochs', default=3)
     parser.add_argument('--batch_size', default=512)
     parser.add_argument('--num_workers', default=10)
     parser.add_argument('--shuffle', default=False)
     parser.add_argument('--learning_rate', default=1e-2)
     parser.add_argument('--momentum', default=0.9)
     parser.add_argument('--in_dims', default=2)
-    parser.add_argument('--n_classes', default=4)
+    parser.add_argument('--n_classes', default=8)
     parser.add_argument('--block_sizes',type=list, default=[64,128,256,512])
     parser.add_argument('--depths', type=list, default=[3, 4, 23, 3])
     parser.add_argument('--res_block', default=ResnetBottleneckBlock)
