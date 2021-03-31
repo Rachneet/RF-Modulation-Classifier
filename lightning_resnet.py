@@ -1,50 +1,24 @@
 import pytorch_lightning as pl
 import torch
-import torch.nn as nn
 import numpy as np
-import random
-from torch.nn import functional as F
 from torch.utils.data import DataLoader, SequentialSampler, Subset, Dataset
-from sklearn import preprocessing
-import time
 from torch.utils.data.sampler import SubsetRandomSampler
 import h5py as h5
 import math
-import os
 from pytorch_lightning import Trainer
 from argparse import ArgumentParser
-from test_tube import Experiment
-# from comet_ml import Experiment
-# from pytorch_lightning.logging import CometLogger
-# from pytorch_lightning.loggers import TestTubeLogger
 from pytorch_lightning.loggers.neptune import NeptuneLogger
 from sklearn import metrics
-from collections import OrderedDict
 import csv
-from scikitplot.metrics import plot_confusion_matrix
+import os
+# from scikitplot.metrics import plot_confusion_matrix
 import matplotlib.pyplot as plt
-from argparse import Namespace
 torch.manual_seed(4)  # for reproducibility of results
-
-from sklearn.decomposition import FastICA
 from sklearn.exceptions import ConvergenceWarning
 import warnings
 warnings.simplefilter('always',ConvergenceWarning)
 
 from resnet import *
-
-# ================================================Visualization=============================================
-
-# comet_logger = CometLogger(
-#     api_key="gKzrti6C84TsoTTyqlT5OHarD",
-#     workspace="rachneet", # Optional
-#     project_name="Master_Thesis" # Optional
-#     # rest_api_key=os.environ["COMET_REST_KEY"], # Optional
-#     # experiment_name="default" # Optional
-# )
-
-# ====================================================================================================================
-
 
 class DatasetFromHDF5(Dataset):
     def __init__(self, filename, iq,labels,snrs):
@@ -64,13 +38,6 @@ class DatasetFromHDF5(Dataset):
             data = file[self.iq][item]
             label = file[self.labels][item]
             snr = file[self.snrs][item]
-        # ----------- Blind source separation ------------------------
-        # x = np.expand_dims(data, axis=0)
-        # x = x.reshape(-1, 256)
-        # S = compute_ica(x)
-        # out = np.dot(S, x)
-        # signals = out.reshape(-1, 128, 2)
-        # -------------------------------------------------------------
         # data = preprocessing.scale(data,with_mean=False).astype(np.float32)
         data = data.astype(np.float32)
         label = label.astype(np.float32)
@@ -199,7 +166,7 @@ class LightningResnet(pl.LightningModule):
             'test_acc': test_acc,
             'true_label': y,
             'pred_label': y_hat,
-            'snrs' : z,
+            'snrs': z,
         })
 
         return output
@@ -253,7 +220,7 @@ class LightningResnet(pl.LightningModule):
         neptune_logger.experiment.log_metric('test_loss', test_loss_mean)
         # Log charts
         fig, ax = plt.subplots(figsize=(16, 12))
-        plot_confusion_matrix(self.all_true, self.all_pred, ax=ax)
+        # plot_confusion_matrix(self.all_true, self.all_pred, ax=ax)
         neptune_logger.experiment.log_image('confusion_matrix', fig)
         # Save checkpoints folder
         neptune_logger.experiment.log_artifact(CHECKPOINTS_DIR + "output.csv")
@@ -303,21 +270,13 @@ class LightningResnet(pl.LightningModule):
     def test_dataloader(self):
         return self.test_dataset
 
-# ==================================================================================================================
-
-# class test_callback(pl.Callback):
-#
-#     def on_test_end(self,trainer,output):
-#         print("Test ended")
-#         print(trainer)
-#         print(output)
 # ----------------------------------------Testing the model-----------------------------------------------
 
 # function to test the model separately
 def test_lightning(hparams):
 
     model = LightningResnet(hparams)
-    checkpoint_path = '/media/backup/Arsenal/thesis_results/res_intf_bpsk_snr10_all/epoch=12.ckpt'
+    checkpoint_path = '/home/rachneet/thesis_results/res_mixed_recordings/epoch=2-step=12347.ckpt'
     checkpoint = torch.load(checkpoint_path, map_location=lambda storage, loc: storage)
     model.load_state_dict(checkpoint['state_dict'])
 
@@ -341,8 +300,7 @@ def test_lightning(hparams):
 # -------------------------------------------------------------------------------------------------------------------
 CHECKPOINTS_DIR = '/home/rachneet/thesis_results/res_mixed_recordings/'
 neptune_logger = NeptuneLogger(
-    api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
-            "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
+    api_key=os.environ.get("NEPTUNE_API_KEY"),
     project_name="rachneet/sandbox",
     experiment_name="res_mixed_recordings",   # change this for new runs
 )
@@ -397,7 +355,7 @@ if __name__=="__main__":
     parser = ArgumentParser()
     parser.add_argument('--output_path', default=out_path)
     parser.add_argument('--data_path', default=path)
-    parser.add_argument('--gpus', default=0)
+    parser.add_argument('--gpus', default=1)
     parser.add_argument('--max_epochs', default=3)
     parser.add_argument('--batch_size', default=512)
     parser.add_argument('--num_workers', default=10)
@@ -412,6 +370,6 @@ if __name__=="__main__":
 
     args = parser.parse_args()
 
-    main(args)
-    # test_lightning(args)
+    # main(args)
+    test_lightning(args)
 
