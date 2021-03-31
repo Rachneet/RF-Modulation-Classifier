@@ -507,8 +507,7 @@ def test_lightning(hparams):
 # -------------------------------------------------------------------------------------------------------------------
 CHECKPOINTS_DIR = '/home/rachneet/thesis_results/vsg_deepsig_mod/'
 neptune_logger = NeptuneLogger(
-    api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
-            "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
+    api_key=os.environ.get("NEPTUNE_API_KEY"),
     project_name="rachneet/sandbox",
     experiment_name="vsg_deepsig_mod",   # change this for new runs
 )

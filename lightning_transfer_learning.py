@@ -390,8 +390,7 @@ class TransferLearningModel(pl.LightningModule):
 
 CHECKPOINTS_DIR = '/home/rachneet/thesis_results/tl_vsg_deepsig_new/'           # change this
 neptune_logger = NeptuneLogger(
-    api_key="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmU"
-            "uYWkiLCJhcGlfa2V5IjoiZjAzY2IwZjMtYzU3MS00ZmVhLWIzNmItM2QzOTY2NTIzOWNhIn0=",
+    api_key=os.environ.get("NEPTUNE_API_KEY"),
     project_name="rachneet/sandbox",
     experiment_name="tl_vsg_deepsig_new",   # change this  for new runs
 )
