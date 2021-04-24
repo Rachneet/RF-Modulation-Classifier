@@ -5,12 +5,12 @@ import libmr
 import scipy as sp
 import torch
 from sklearn import preprocessing
-import read_h5 as reader
+import data_processing.read_h5 as reader
 from scipy import spatial
 import statistics
 from tqdm import tqdm
 import pandas as pd
-from dataloader import label_idx
+from data_processing.dataloader import label_idx
 import csv
 import matplotlib.pyplot as plt
 from scipy import stats
@@ -372,19 +372,7 @@ def main(path):
 
     combined_df = combined_df.sample(frac=1, random_state=4)
     print("sampling done")
-    print(combined_df.normalized_iq[0].shape)
-    print(combined_df.normalized_iq.values[0])
-    print(combined_df.labels.values[0].shape)
-    print(combined_df.labels.values[0])
-    # df = pd.DataFrame()
-    # df['iq'] = list(map(lambda x: np.array(x,dtype=np.float32), iq))
-    # df['labels'] = list(map(lambda x: np.array(x,dtype=np.float32), labels))
-    # df['snr'] = list(map(lambda x: x, snrs))
-    # df = df.sample(frac=1, random_state=4)
-    # print(file['Y'][200000]                     # np.random.rand(1024,2)            #iq[1][:1024]
-    # input = [(i.real,i.imag) for i in input]
-    # input = preprocessing.scale(input, with_mean=False)
-    # print(input)
+
     test_bound = int(0.80 * combined_df.labels.shape[0])
     end = int(0.85 * combined_df.labels.shape[0])
     iter = len(combined_df.labels[test_bound:end].values)
@@ -409,23 +397,8 @@ def main(path):
         for i, j, k in zip(t_label, p_label, snr_label):
             writer.writerow(
                 {'True label': i, 'Predicted label': j, 'SNR': k})
-        # print(openmax,softmax)
-        # print("Openmax class: {}".format(np.argmax(openmax)))
-        # print("Softmax class: {}".format(np.argmax(softmax)))
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     path = "/media/backup/Arsenal/rf_dataset_inets/"
-    # get_top_k_mav(path)
-    # create_mav(path)
-    # compute_distance(path)
-    # dist = weibull_fitting(path,20,'mahal_dist')[0]['weibull_model']
-    # data = weibull_fitting(path,20,'eucos_dist')[0]['mean_vec']
-    # x = [2.288636509003411134699e+01 ,1.075142944521545240733e+00 , 6.849604477651003264782e+01,
-    #      7.646948210562351633257e+00 ,2.675352631377265311130e+00, 4.320672862326142560363e-01 , 1 ,
-    #      5.000000000000000000000e+00 ,1, 20, 1 ,2.175134124755859375000e+02 ,0]
-    # plt.plot(data, stats.exponweib.pdf(data, *stats.exponweib.fit(data, 1, 1, scale=2, loc=0)))
-    # plt.plot(x)
-    # plt.show()
-    # print(dist)
     main(path)

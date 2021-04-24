@@ -57,4 +57,3 @@ if __name__=="__main__":
     model = "trained_cnn_intf_free_vsg20"
     gbp = GuidedBackprop(model)
     guided_grads = gbp.get_gradients()
-

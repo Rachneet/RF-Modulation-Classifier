@@ -1,5 +1,5 @@
-import resnet
-from image_dataloader import image_dataloader
+from models.pytorch.resnet import resnet101
+from data_processing.image_dataloader import image_dataloader
 
 import torch.nn as nn
 import torch
@@ -13,7 +13,7 @@ def train(data_path,num_epochs):
     train_set, test_set = image_dataloader(data_path,44)  #GOLD_XYZ_OSC.0001_1024.hdf5
     print("Data loaded and batched...")
     #model = cnn_model.CNN(n_classes=8)
-    model = resnet.resnet101(3,8)
+    model = resnet101(3,8)
     # model = resnet_simplified.ResNet50(n_classes=8)
     model.cuda()
     criterion = nn.CrossEntropyLoss()
@@ -48,15 +48,10 @@ def train(data_path,num_epochs):
             optimizer.zero_grad()
             t_iq, t_mod = batch
             prediction = model(t_iq)
-            # print(type(prediction))
             n_prob_label = prediction.cpu().data.numpy()
-            # print("Model Prediction: {}".format(n_prob_label))
-            #
-            # print("Actual label: {}".format(t_mod.float()))  # torch.max(t_mod, 1)[1]
 
             loss = criterion(prediction, t_mod)   # + l2_reg*reg_lambda
             running_loss += loss.item()
-            # print("Running loss: {}".format(running_loss))
             loss.backward()
             optimizer.step()
 
@@ -71,7 +66,6 @@ def train(data_path,num_epochs):
         average_loss = running_loss/num_iter_per_epoch
         print("Average loss: {}".format(average_loss))
 
-            # print("pred during training: {}".format(np.argmax(prediction.cpu().data.numpy(), -1)))
         # evaluation of validation data
         model.eval()
         with torch.no_grad():
@@ -137,10 +131,6 @@ def train(data_path,num_epochs):
 
 
 def get_evaluation(y_true, y_prob, list_metrics):
-    # print(y_true)
-    # print(y_prob)
-    # print(type(y_true))
-    # print(type(y_prob))
     y_pred = np.argmax(y_prob, -1)
     # print(y_pred)
     # y_true = np.argmax(y_true,-1)
@@ -158,8 +148,6 @@ def get_evaluation(y_true, y_prob, list_metrics):
     return output
 
 
-
-if __name__=="__main__":
-    # path = "/media/backup/Arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/"
+if __name__ == "__main__":
     path = "/home/rachneet/datasets/spectrogram_dataset/"
     train(path,num_epochs=20)

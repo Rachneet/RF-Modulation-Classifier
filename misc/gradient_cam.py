@@ -6,9 +6,6 @@ from PIL import Image
 import torchvision.transforms as tf
 import torch.nn as nn
 
-# from visualize import SaveFeatures
-import resnet
-
 
 class SaveFeatures():
     def __init__(self, module, backward=False):
