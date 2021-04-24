@@ -8,7 +8,6 @@ import pandas as pd
 from data_processing.dataloader import label_idx
 from visualization.visualize import iq_to_complex
 from data_processing.Receiver import Receiver
-import time
 
 dummyReceiver = Receiver(**{'bin_dir': '/home/rachneet/rf_featurized/',
                             'freq': 5750000000.0,
@@ -207,9 +206,6 @@ def main():
         final_df = final_df.append(df, ignore_index=True)
         remaining_data -= chunk_size
 
-    # start = time.time()
-    # end = time.time()
-    # print("Total time taken: ", end-start)
     final_df.to_csv("/home/rachneet/featurized_data/dataset_vsg_512_featurized.csv",
                     encoding='utf-8', index=False)
 

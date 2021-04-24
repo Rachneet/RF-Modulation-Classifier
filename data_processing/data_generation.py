@@ -1,12 +1,8 @@
 import os
 import glob
 import numpy as np
-import struct
-import data_processing.filter_data
-import re
 
-from data_processing.helper_functions import info,read_binary
-from data_processing.filter_data import filter_samples
+from data_processing.helper_functions import read_binary
 from data_processing.Receiver import Receiver
 
 
@@ -36,21 +32,15 @@ def generate_dataset():
     dummyReceiver.name = "dummy"
 
     for subdir, dirs, files in os.walk(root_folder+param_folder):
-        #print(subdir)
-        #print(dirs)
-        # print(files)
         file_register = {}   # dict to store the folder name as keys and file names as values
         total_files = 0
         for directory in dirs:
 
             if directory == "bin":
-                #print(glob.glob(os.path.join(subdir, directory)))
                 files_in_directory = glob.glob(os.path.join(subdir, directory) + "/*.bin")
                 subfolder = os.path.join(subdir, directory) + "/"
                 file_register[subfolder] = files_in_directory
                 total_files += len(files_in_directory)
-
-        #print("sys", "Found %d files in %d directories" % (total_files, len(file_register.keys())))
 
         for iteration, subfolder in enumerate(file_register.keys()):
             print(subfolder)
@@ -73,7 +63,6 @@ def generate_dataset():
                     matrix = np.zeros((num_samples, num_iq), dtype=np.complex64)
                     snrs = -1 * np.ones(num_samples, dtype=float)
                     labels = -1 * np.ones(num_samples, dtype=int)
-
 
                     # for every binary file
                     for i, file in enumerate(files):
@@ -100,11 +89,3 @@ def generate_dataset():
 
                     np.savez(output_file, matrix=matrix, snrs=snrs, labels=labels)
                     print("OS", "saved .npz data in %s" % output_file)
-
-
-
-
-
-
-
-

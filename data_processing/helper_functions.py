@@ -50,7 +50,6 @@ def read_binary(file_path, num_samples=-1):
 
 
 # Scripts
-
 def SINR_calibration(transmitter, receiver, interferer, target_SNR, target_SIR, tolerance=0.1, iters=10, t=0.1):
     """Calibrates for a given SNR, SIR. Assumes transmitter data to be loaded"""
 

@@ -8,8 +8,11 @@ import data_processing.read_h5 as reader
 from data_processing.read_filtered import sort_matrix_entries, encode_labels
 
 
-# function to generate more samples from iq segments
 def exrapolate_data():
+    """
+    function to generate more samples from iq segments
+    :return: None
+    """
 
     root_folder = "/media/backup/Arsenal/rf_dataset_inets/"
     param_folder = "/no_cfo/tx_usrp/rx_usrp/intf_vsg/i_SC_16QAM"
@@ -17,7 +20,6 @@ def exrapolate_data():
     file_paths = []
 
     for subdir, dirs, files in os.walk(root_folder + param_folder):
-        # print(dirs)
         for directory in dirs:
             if directory == "npz":
                 files_in_directory = glob.glob(os.path.join(subdir, directory) + "/*.npz")
@@ -36,21 +38,15 @@ def exrapolate_data():
         iq = data['matrix'][:, :cut_off]
         labels = data['labels']
         snrs = data['snrs']
-        # print(type(iq))
         total_samples = labels.shape[0] * int(num_iq / batch)  # samples after batching iq to 128
-
         # batch_iq = np.array([np.array(np.split(iq[row],samples_per_segment)) for row in range(len(iq))])
-        # print(batch_iq.shape)
         batch_labels = np.zeros(samples_per_segment, dtype=np.int8)
         batch_snrs = np.zeros(samples_per_segment, dtype=np.int8)
+
         for row in range(len(iq)):
-            # print(iq[row].shape)
             batch_iq = np.array(np.split(iq[row], samples_per_segment))
             batch_labels[:] = np.array(labels[row])
             batch_snrs[:] = np.array(snrs[row])
-            # print(batch_iq.shape)
-            # print(batch_labels.shape)
-            # print(batch_snrs.shape)
 
             processed_iq = np.apply_along_axis(sort_matrix_entries, axis=1, arr=batch_iq)
             processed_labels = encode_labels(8, batch_labels)
@@ -73,10 +69,3 @@ def exrapolate_data():
                     hf["snrs"].resize((hf["snrs"].shape[0] + batch_snrs.shape[0]), axis=0)
                     hf["snrs"][-batch_snrs.shape[0]:] = batch_snrs
                     print(hf['iq'].shape)
-
-if __name__=="__main__":
-
-    exrapolate_data()
-
-
-
