@@ -2,12 +2,11 @@ import numpy as np
 import os
 import glob
 import h5py as h5
-import random
-from read_filtered import sort_matrix_entries, encode_labels
+from data_processing.read_filtered import sort_matrix_entries, encode_labels
 from sklearn import preprocessing
-import dataloader as dl
+import data_processing.dataloader as dl
 import pandas as pd
-import xgb
+from models.pytorch import xgb
 
 
 def merge_files():

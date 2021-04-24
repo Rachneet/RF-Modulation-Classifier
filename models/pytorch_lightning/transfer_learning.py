@@ -1,7 +1,5 @@
-import torch
-from train import *
-from cnn_model import *
-from py_lightning import LightningCNN
+from models.pytorch.train import *
+from models.pytorch_lightning.py_lightning import LightningCNN
 
 
 def transfer_learning(path):

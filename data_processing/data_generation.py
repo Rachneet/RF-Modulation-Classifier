@@ -1,14 +1,13 @@
 import os
 import glob
-import sys
 import numpy as np
 import struct
-import filter_data
+import data_processing.filter_data
 import re
 
-from helper_functions import info,read_binary
-from filter_data import filter_samples
-from Receiver import Receiver
+from data_processing.helper_functions import info,read_binary
+from data_processing.filter_data import filter_samples
+from data_processing.Receiver import Receiver
 
 
 def generate_dataset():

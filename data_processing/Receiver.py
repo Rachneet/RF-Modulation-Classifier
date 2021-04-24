@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import abc
-from Radio import Radio
-from helper_functions import info, debug, warning, error, critical
-from colors import color_array,color_bw_noise,color_bw_signal
+from data_processing.Radio import Radio
+from data_processing.helper_functions import info, debug, warning, error, critical
+from visualization.colors import color_array,color_bw_noise,color_bw_signal
 
 import sys
 import numpy as np

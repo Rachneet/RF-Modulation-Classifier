@@ -19,11 +19,10 @@ Note:
 
 import torch
 import torch.nn as nn
-from typing import Optional, Generator, Union
+from typing import Optional
 from torch.optim import Optimizer
 import pytorch_lightning as pl
 import argparse
-from pathlib import Path
 from collections import OrderedDict
 import numpy as np
 import math
@@ -31,10 +30,9 @@ from sklearn import metrics
 import os
 import csv
 from torch.utils.data import DataLoader,SubsetRandomSampler
-from pytorch_lightning.logging.neptune import NeptuneLogger
+from pytorch_lightning.loggers.neptune import NeptuneLogger
 
-from py_lightning import LightningCNN, DatasetFromHDF5
-from cnn_model import CNN
+from models.pytorch_lightning.py_lightning import LightningCNN, DatasetFromHDF5
 
 BN_TYPES = (torch.nn.BatchNorm1d, torch.nn.BatchNorm2d, torch.nn.BatchNorm3d)
 # --------------------------------------------Utility Functions--------------------------------------------------

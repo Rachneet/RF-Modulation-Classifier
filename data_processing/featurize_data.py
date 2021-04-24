@@ -5,9 +5,10 @@ import csv
 from tqdm import tqdm
 import pandas as pd
 
-from dataloader import label_idx
-from visualize import iq_to_complex
-from Receiver import Receiver
+from data_processing.dataloader import label_idx
+from visualization.visualize import iq_to_complex
+from data_processing.Receiver import Receiver
+import time
 
 dummyReceiver = Receiver(**{'bin_dir': '/home/rachneet/rf_featurized/',
                             'freq': 5750000000.0,
@@ -174,31 +175,44 @@ def filter_from_csv(path):
     print(df.head())
 
 
-
 def main():
-    dataset = "/home/rachneet/rf_dataset_inets/vsg_no_intf_all_normed.h5"
+    dataset = "/home/rachneet/datasets/vsg_all_512.h5"
     h5fr = h5.File(dataset, 'r')
     dset1 = list(h5fr.keys())[0]
     dset2 = list(h5fr.keys())[1]
     dset3 = list(h5fr.keys())[2]
-    iq = h5fr[dset1][:]
-    label = h5fr[dset2][:]
-    snr = h5fr[dset3][:]
-    df = pd.DataFrame()
-    # df['SNR'] = [item for sublist in snr for item in sublist]
-    df['SNR'] = [val for val in snr]
-    df['label'] = [label_idx(sublist) for sublist in label]
 
-    for i,row in enumerate(tqdm(iq)):
-        featurize(df, i, iq_to_complex(row))
-        # print(row)
+    data_len = len(h5fr[dset2][:])
+    chunk_size = 10000
+    num_chunks = int(data_len/chunk_size)
+    remaining_samples = data_len - (num_chunks * chunk_size)
+    print(num_chunks, remaining_samples)
+    final_df = pd.DataFrame()
+    remaining_data = data_len
+    for chunk in tqdm(range(num_chunks+1)):
+        df = pd.DataFrame()
+        if remaining_data >= chunk_size:
+            iq = h5fr[dset1][chunk_size*chunk: chunk_size*(chunk+1)]
+            label = h5fr[dset2][chunk_size*chunk: chunk_size*(chunk+1)]
+            snr = h5fr[dset3][chunk_size*chunk: chunk_size*(chunk+1)]
+        else:
+            iq = h5fr[dset1][-remaining_data:]
+            label = h5fr[dset2][-remaining_data:]
+            snr = h5fr[dset3][-remaining_data:]
 
-    df.to_csv("/home/rachneet/rf_featurized/dataset_vsg_all_featurized_set.csv", encoding='utf-8', index=False)
+        df['SNR'] = [val for val in snr]
+        df['label'] = [label_idx(sublist) for sublist in label]
+        for i,row in enumerate(tqdm(iq)):
+            featurize(df, i, iq_to_complex(row))
+        final_df = final_df.append(df, ignore_index=True)
+        remaining_data -= chunk_size
 
-    # df2 = pd.read_csv("/home/rachneet/rf_featurized/deepsig_featurized_set.csv", encoding='utf-8')
-    # print(df2.head())
+    # start = time.time()
+    # end = time.time()
+    # print("Total time taken: ", end-start)
+    final_df.to_csv("/home/rachneet/featurized_data/dataset_vsg_512_featurized.csv",
+                    encoding='utf-8', index=False)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
-    # filter_from_csv("/home/rachneet/rf_featurized/deepsig_featurized_set.csv")

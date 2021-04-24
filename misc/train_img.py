@@ -1,61 +1,19 @@
-import cnn_model
-import dnn
-import char_cnn
-import cnn_unk
 import resnet
-# from image_dataloader import image_dataloader
-import resnet_simplified
-import dataloader as dl
-import h5py as h5
-import read_h5 as reader
-import inference_new as inf
-import visualize
-import scipy.spatial.distance as spd
-from read_filtered import sort_matrix_entries
+from image_dataloader import image_dataloader
 
 import torch.nn as nn
 import torch
-from torch.utils.data import DataLoader
 import numpy as np
 from sklearn import metrics
-from sklearn.decomposition import FastICA
 from torch.autograd import Variable
-from functools import partial
-from collections import defaultdict
-from sklearn import preprocessing
-# torch.cuda.set_device(1)
-
-def list_duplicates(seq):
-    tally = defaultdict(list)
-    for i,item in enumerate(seq):
-        tally[item].append(i)
-    return ((key,locs) for key,locs in tally.items()
-                            if len(locs)>1)
-
-
-def Convert(tup, di):
-    for a, b in tup:
-        di.setdefault(a,b)
-    return di
 
 
 def train(data_path,num_epochs):
 
-    # x_test,y_test,raw_lables,snr_gen
-    x_train,y_train,x_val,y_val, x_test,y_test,raw_lables,snr_gen = \
-        dl.load_batch("/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_new.hdf5"
-                      ,512,mode='both')  #GOLD_XYZ_OSC.0001_1024.hdf5
-    # y_train = torch.from_numpy(y_train).view(-1, 1)
-    # y_val = torch.from_numpy(y_val).view(-1, 1)
-    # path = "/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5"
-    # iq, labels, snrs = reader.read_hdf5(path)
-    # x_train = DataLoader(iq,batch_size=2)
-    # y_train = DataLoader(labels,batch_size=2)
-
+    train_set, test_set = image_dataloader(data_path,44)  #GOLD_XYZ_OSC.0001_1024.hdf5
     print("Data loaded and batched...")
-    model = cnn_model.CNN(n_classes=8)
-    # model = dnn.DNN(2048, n_classes=8)
-    # model = resnet.resnet50(2,24)
+    #model = cnn_model.CNN(n_classes=8)
+    model = resnet.resnet101(3,8)
     # model = resnet_simplified.ResNet50(n_classes=8)
     model.cuda()
     criterion = nn.CrossEntropyLoss()
@@ -69,36 +27,34 @@ def train(data_path,num_epochs):
     #     else:
     #         l2_reg = l2_reg+w.norm(2)
 
-    num_iter_per_epoch = len(x_train)
+    num_iter_per_epoch = len(train_set)
+
     best_accuracy = 0
     # reg_lambda = 0.1
 
-    output_file = open(data_path+"train_logs.txt", "w")
-    # ica = FastICA(n_components=256,tol=1e-5,max_iter=1000)
+    output_file = open("rf_resnet101_spectrogram_16k.txt", "w")
     # print(zip(x_train_gen, y_train_gen))
-    # activations = visualize.SaveFeatures(list(model.children())[5])
+
     model.train()
     for epoch in range(num_epochs):
         running_loss = 0
         average_loss = 0
 
-        for iter, batch in enumerate(zip(x_train,y_train)):
+        for iter, batch in enumerate(train_set):
 
             _, n_mod = batch
 
             batch = [Variable(record).cuda() for record in batch]
             optimizer.zero_grad()
             t_iq, t_mod = batch
-
-            # # perform blind source separation
-            # x = t_iq.view(-1, t_iq.shape[1] * t_iq.shape[2])
-            # input = ica.fit_transform(x.cpu())
-            # input = torch.Tensor(input).cuda()
-            # input = input.view(-1,128,2)
-            pred = model(t_iq)
-            n_prob_label = pred.cpu().data.numpy()
+            prediction = model(t_iq)
+            # print(type(prediction))
+            n_prob_label = prediction.cpu().data.numpy()
             # print("Model Prediction: {}".format(n_prob_label))
-            loss = criterion(pred, torch.max(t_mod,1)[1])   # + l2_reg*reg_lambda
+            #
+            # print("Actual label: {}".format(t_mod.float()))  # torch.max(t_mod, 1)[1]
+
+            loss = criterion(prediction, t_mod)   # + l2_reg*reg_lambda
             running_loss += loss.item()
             # print("Running loss: {}".format(running_loss))
             loss.backward()
@@ -123,16 +79,18 @@ def train(data_path,num_epochs):
             validation_true = []
             validation_prob = []
 
-            for batch in zip(x_val,y_val):
+            for batch in test_set:
                 _, n_mod = batch
+
+                # setting volatile to true because we are in inference mode
+                # we will not be backpropagating here
+                # conserving our memory by doing this
+                # edit:volatile is deprecated now; using torch.no_grad();see above
                 batch = [Variable(record).cuda() for record in batch]
+                # i = Variable(i).cuda()
+                # j = Variable(j).cuda()
                 # get inputs
                 t_iq, _ = batch
-                # perform blind source separation
-                # x = t_iq.view(-1, t_iq.shape[1] * t_iq.shape[2])
-                # input = ica.fit_transform(x.cpu())
-                # input = torch.Tensor(input).cuda()
-                # input = input.view(-1, 128, 2)
                 # forward pass
                 t_predicted_label = model(t_iq)
                 # using sigmoid to predict the label
@@ -157,8 +115,7 @@ def train(data_path,num_epochs):
                                       list_metrics=["accuracy", "loss", "confusion_matrix"])
 
         output_file.write(
-            "Epoch: {}/{} \nTraining loss: {} Training accuracy: {} \nTest loss: {} Test accuracy: {}"
-            "\nAverage Loss: {} \nTest confusion matrix: \n{}\n\n".format(
+                "Epoch: {}/{} \nTraining loss: {} Training accuracy: {} \nTest loss: {} Test accuracy: {} \nAverage Loss: {}  \nTest confusion matrix: \n{}\n\n".format(
                 epoch + 1, num_epochs,
                 training_metrics["loss"],
                 training_metrics["accuracy"],
@@ -176,12 +133,7 @@ def train(data_path,num_epochs):
         # saving the model with best accuracy
         if test_metrics["accuracy"] > best_accuracy:
             best_accuracy = test_metrics["accuracy"]
-            torch.save(model, data_path+"model")
-
-    print("Training complete")
-    print("-------------------------------------------")
-    print("Starting inference module")
-    inf.inference(data_path, x_test, y_test, raw_lables, snr_gen, "model")
+            torch.save(model, "trained_resnet101_spectrogram_16k")
 
 
 def get_evaluation(y_true, y_prob, list_metrics):
@@ -191,7 +143,7 @@ def get_evaluation(y_true, y_prob, list_metrics):
     # print(type(y_prob))
     y_pred = np.argmax(y_prob, -1)
     # print(y_pred)
-    y_true = np.argmax(y_true,-1)
+    # y_true = np.argmax(y_true,-1)
     # print(y_true)
     output = {}
     if 'accuracy' in list_metrics:
@@ -206,10 +158,8 @@ def get_evaluation(y_true, y_prob, list_metrics):
     return output
 
 
+
 if __name__=="__main__":
     # path = "/media/backup/Arsenal/2018.01.OSC.0001_1024x2M.h5/2018.01/"
-    # path = "/home/rachneet/thesis_results/deepsig_cnn_vier_new/"
-    # train(path,30)
-    x = torch.randn((5,4,4,4))
-    print(x[0].shape)
-
+    path = "/home/rachneet/datasets/spectrogram_dataset/"
+    train(path,num_epochs=20)

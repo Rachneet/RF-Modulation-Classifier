@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.interactive(False)
 from sklearn.preprocessing import LabelEncoder
-from colors import *
+from visualization.colors import *
 import matplotlib.gridspec as gridspec
-from dataloader import label_idx
+from data_processing.dataloader import label_idx
 import h5py as h5
 
 

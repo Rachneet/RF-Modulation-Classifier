@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="rachneet@134.130.165.229:22" autoUploadExternalChanges="true" showEqualInSync="true">
+  <component name="PublishConfigData" autoUpload="Always" serverName="rachneet@134.130.222.115:22" autoUploadExternalChanges="true" showEqualInSync="true">
     <serverData>
       <paths name="rachneet@134.130.165.229:22">
         <serverdata>
@@ -9,14 +9,119 @@
           </mappings>
         </serverdata>
       </paths>
-      <paths name="rachneet@134.130.222.115:22">
+      <paths name="rachneet@134.130.165.229:22 (1)">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
+      <paths name="rachneet@134.130.165.229:22 (2)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="rachneet@134.130.165.229:22 (3)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="rachneet@134.130.222.115:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/rf_classification" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="rachneet@134.130.222.115:22 (1)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="rachneet@134.130.222.115:22 (2)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="rachneet@134.130.222.115:22 (3)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/rachneet/rf_classification" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="rachneet@134.130.222.115:22 (4)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/rf_classification" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="rachneet@134.130.223.72:22">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="ubuntu@ec2-18-191-199-177.us-east-2.compute.amazonaws.com:22">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="ubuntu@ec2-3-12-103-15.us-east-2.compute.amazonaws.com:22">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="ubuntu@ec2-3-12-103-15.us-east-2.compute.amazonaws.com:22 (1)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="ubuntu@ec2-3-12-103-15.us-east-2.compute.amazonaws.com:22 (4)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="ubuntu@ec2-3-12-103-15.us-east-2.compute.amazonaws.com:22 (6)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="ubuntu@ec2-3-12-103-15.us-east-2.compute.amazonaws.com:22 (7)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="ubuntu@ec2-3-12-103-15.us-east-2.compute.amazonaws.com:22 (8)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="ubuntu@ec2-3-142-51-121.us-east-2.compute.amazonaws.com:22">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />

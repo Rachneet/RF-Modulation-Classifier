@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import dataloader as dl
+import data_processing.dataloader as dl
 from pytorch_model_summary import summary
 import time
 import matplotlib.pyplot as plt

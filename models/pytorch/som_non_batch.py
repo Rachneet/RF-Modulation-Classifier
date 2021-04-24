@@ -4,7 +4,7 @@ import numpy as np
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 plt.interactive(True)
-import dataloader as dl
+import data_processing.dataloader as dl
 
 
 class SOM(nn.Module):

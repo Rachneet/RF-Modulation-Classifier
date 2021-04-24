@@ -1,6 +1,6 @@
 import numpy as np
-from visualize import iq_to_complex
-import read_h5 as reader
+from visualization.visualize import iq_to_complex
+import data_processing.read_h5 as reader
 from sklearn import preprocessing
 
 

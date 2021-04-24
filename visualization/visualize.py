@@ -1,37 +1,28 @@
-import numpy as np
-from Receiver import *
-from dataloader import *
-from cnn_model import *
+from data_processing.Receiver import *
+from data_processing.dataloader import *
+from models.pytorch.cnn_model import *
 import torch
 from torch.autograd import Variable
-from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-import random
-from tqdm import tqdm
-from PIL import Image
 # import librosa
 # import librosa.display
-import h5py as h5
 import os
-import cv2
-import gc
+# import cv2
+# import gc
 import csv
 from ast import literal_eval
-from sklearn import preprocessing
 from tqdm import tqdm
-import scipy.signal as sig
-import read_h5 as reader
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 # plotting libraries
 import plotly
-import commpy
-import plotly.express as px
+# import commpy
+# import plotly.express as px
 import plotly.figure_factory as ff
-import plotly.graph_objects as go
-import plotly.io as pio
-plotly.io.orca.config.save()
-pio.renderers.default = 'svg'
+import plotly.graph_objs as go
+# import plotly.io as pio
+# plotly.io.orca.config.save()
+# pio.renderers.default = 'svg'
 
 
 def visualize_signal(iq_signal):
@@ -1178,19 +1169,171 @@ def train_fraction_effect():
     plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=500, filename='train_chart.html', image='svg')
 
 
+def plot_tl_line_chart():
+    colors = ['rgba(255, 101, 85, 1)', 'rgba(35, 170, 255, 1)', 'rgba(244, 178, 71, 1)', 'rgba(42, 187, 155, 1)']
+    # colors = ['#1f77b4',  # muted blue
+    #         '#ff7f0e',  # safety orange
+    #         '#2ca02c',  # cooked asparagus green
+    #           ]
+    # hw tl
+    norm_lab = [0.61, 0.83, 0.94, 0.99, 0.99]
+    norm_sdr = [0.57, 0.79, 0.91, 0.98, 0.99]
+    tl_lab_sdr = [0.561, 0.742, 0.859, 0.926, 0.942]
+    tl_sdr_lab = [0.551, 0.744, 0.847, 0.907, 0.93]
+    mismatch_lab_sdr = [0.53, 0.66, 0.73, 0.75, 0.76]
+    mismatch_sdr_lab = [0.51, 0.55, 0.57, 0.49, 0.42]
+
+    # intf tl
+    norm_bpsk = [0.72, 0.76, 0.79, 0.8]
+    norm_16qam = [0.75, 0.8, 0.8, 0.81]
+    norm_ofdm = [0.69, 0.78, 0.8, 0.82]
+
+    tl_no_intf_bpsk = [0.623, 0.736, 0.773, 0.781]
+    tl_no_intf_16qam = [0.705, 0.802, 0.816, 0.823]
+    tl_no_intf_ofdm = [0.661, 0.757, 0.789, 0.804]
+
+    mismatch_no_intf_bpsk = [0.35, 0.54, 0.68, 0.69]
+    mismatch_no_intf_16qam = [0.37, 0.61, 0.75, 0.77]
+    mismatch_no_intf_ofdm = [0.38, 0.65, 0.73, 0.75]
+
+
+    x = ['0 dB','5 dB', '10 dB', '15 dB', '20 dB']
+    fig = go.Figure()
+    # tl
+    fig.add_trace(go.Scatter(x=x, y=tl_sdr_lab, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
+                             name='                       <br>                                 '))
+    fig.add_trace(go.Scatter(x=x, y=tl_lab_sdr, mode="lines+markers", marker_symbol='circle', marker_color=colors[1],
+                             name='                       <br>                              '))
+    # fig.add_trace(go.Scatter(x=x, y=tl_no_intf_ofdm, mode="lines+markers", marker_symbol='circle', marker_color=colors[2],
+    #                          name='                       <br>               <br>             '))
+
+    # norm
+    fig.add_trace(go.Scatter(x=x, y=norm_lab, mode="lines+markers", marker_symbol='square', marker_color=colors[0],
+                             name='            <br>                                    ',
+                             line=dict(
+                                 # color="grey",
+                                 # width=1,
+                                 dash="dash",
+                             )
+                             ))
+    fig.add_trace(go.Scatter(x=x, y=norm_sdr, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
+                             name='               <br>                                  ',
+                             line=dict(
+                                 # color="grey",
+                                 # width=1,
+                                 dash="dash",
+                             )
+                             ))
+    # fig.add_trace(go.Scatter(x=x, y=norm_ofdm, mode="lines+markers", marker_symbol='square', marker_color=colors[2],
+    #                          name='               <br>                                  ',
+    #                          line=dict(
+    #                              # color="grey",
+    #                              # width=1,
+    #                              dash="dash",
+    #                          )
+    #                          ))
+
+    # mismatch
+    fig.add_trace(go.Scatter(x=x, y=mismatch_sdr_lab, mode="lines+markers", marker_symbol='diamond', marker_color=colors[0],
+                             name='          <br>                                      ',
+                             line=dict(
+                                 # color="grey",
+                                 # width=1,
+                                 dash="dot",
+                             )
+                             ))
+    fig.add_trace(go.Scatter(x=x, y=mismatch_lab_sdr, mode="lines+markers", marker_symbol='diamond', marker_color=colors[1],
+                             name='             <br>                                    ',
+                             line=dict(
+                                 # color="grey",
+                                 # width=1,
+                                 dash="dot",
+                             )
+                             ))
+
+    # fig.add_trace(
+    #     go.Scatter(x=x, y=mismatch_no_intf_ofdm, mode="lines+markers", marker_symbol='diamond', marker_color=colors[2],
+    #                name='             <br>                                    ',
+    #                line=dict(
+    #                    # color="grey",
+    #                    # width=1,
+    #                    dash="dot",
+    #                )
+    #                ))
+
+    line_ax = [ 0.5, 0.6, 0.7, 0.8, 0.9, 1]  # change
+    for i in line_ax:
+        fig.add_shape(type="line", x0=-0.3, y0=i, x1=4.3, y1=i,  # change
+                      line=dict(
+                          color="grey",
+                          width=0.5,
+                          dash="dashdot",
+                      ),
+                      )
+
+    fig.update_yaxes(automargin=True, showline=True, ticks="", mirror=True,
+                     linecolor='black', linewidth=1,
+                     tickfont=dict(color="black", family='times new roman', size=16),
+                     tick0=0.4,  # change
+                     dtick=0.1,
+                     range=[0.4, 1.05],
+                     title=dict(font=dict(color="black",  # family="sans-serif",size=15,
+                                          ),
+                                # text='Accuracy')
+                                ))
+
+    fig.update_xaxes(automargin=True, side='bottom', showline=True, ticks='inside',
+                     mirror=True, linecolor='black', linewidth=1,
+                     tickfont=dict(color="black", family='times new roman', size=16),
+                     # tick0=0.5,
+                     # dtick=0.1,
+                     # range=[0.5, 1.05],
+                     title=dict(font=dict(
+                         # family="sans-serif",
+                         # size=15,
+                         color="black"
+                     ),
+                         # text='SNR'
+                     ))
+
+    fig.update_traces(marker_line_width=1)
+    fig.update_layout(
+        margin=go.layout.Margin(
+            l=0,  # left margin
+            r=110,  # right margin  130
+            b=160,  # bottom margin
+            t=20,  # top margin
+        ),
+        # title_text='<b>Model Scalability with Number of IQ Samples',
+        # title_x=0.50, title_y=0.90,
+        xaxis={"mirror": "all"},
+        paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
+        width=550, height=500,
+        legend=dict(
+            bordercolor='black',
+            borderwidth=1,
+            bgcolor='rgba(0,0,0,0)', orientation='v',
+            itemsizing='constant', x=1.05, y=1,
+            font=dict(size=12, color="black", family='times new roman'), traceorder='normal'
+        ),
+    )
+    plotly.offline.plot(figure_or_data=fig, image_width=650, image_height=400, filename='tl_hw_comp.html', image='svg')
+
+
 def plot_line_chart():
     colors = ['rgba(255, 101, 85, 1)', 'rgba(35, 170, 255, 1)', 'rgba(244, 178, 71, 1)', 'rgba(42, 187, 155, 1)']
-    # c_cfo1 = [0.577, 0.801, 0.927, 0.98, 0.992]
-    # r_cfo1 = [0.753, 0.983, 1, 1, 1]
-    # c_cfo5 = [0.592, 0.814, 0.937, 0.986, 0.995]
-    # r_cfo5 = [0.709, 0.966, 0.999, 1, 1]
 
-    c_bpsk = [0.72, 0.76, 0.79, 0.8]
-    c_16qam = [0.75, 0.8, 0.8, 0.81]
-    c_ofdm = [0.69, 0.78, 0.8, 0.82]
-    r_bpsk = [0.86, 0.89, 0.89, 0.89]
-    r_16qam = [0.81, 0.85, 0.86, 0.86]
-    r_ofdm = [0.78, 0.86, 0.87, 0.87]
+    xgb_hw = [[0.466, 0.583, 0.661, 0.75, 0.823], [0.466, 0.592, 0.679, 0.773, 0.834]]
+    cnn_hw = [[0.61, 0.83, 0.94, 0.99, 0.99], [0.57, 0.79, 0.91, 0.98, 0.99]]
+    res_hw = [[0.753, 0.98, 1.0, 1.0, 1.0], [0.604, 0.878, 0.977, 0.998, 1.0]]
+
+    xgb_cfo = [[0.473, 0.592, 0.675, 0.765, 0.837], [0.429, 0.586, 0.665, 0.729, 0.788]]
+    cnn_cfo = [[0.577, 0.801, 0.927, 0.98, 0.992], [0.592, 0.814, 0.937, 0.986, 0.995]]
+    res_cfo = [[0.753, 0.983, 1, 1, 1], [0.709, 0.966, 0.999, 1, 1]]
+
+    xgb_intf = [[0.447, 0.51, 0.537, 0.564], [0.509, 0.566, 0.584, 0.584], [0.524, 0.591, 0.614, 0.611]]
+    cnn_intf = [[0.72, 0.76, 0.79, 0.8], [0.75, 0.8, 0.8, 0.81],[0.69, 0.78, 0.8, 0.82]]
+    res_intf = [[0.86, 0.89, 0.89, 0.89], [0.81, 0.85, 0.86, 0.86], [0.78, 0.86, 0.87, 0.87]]
 
     cfo1 = [0.603, 0.829, 0.941, 0.986, 0.995]
     cfo2 = [0.594, 0.828, 0.939, 0.986, 0.994, 0.868]
@@ -1201,23 +1344,69 @@ def plot_line_chart():
     intf2 = [0.37, 0.61, 0.75, 0.77]
     intf3 = [0.38, 0.65, 0.73, 0.75]
 
-
+    # hw tl
+    norm_lab = [0.61, 0.83, 0.94, 0.99, 0.99]
+    norm_sdr = [0.57, 0.79, 0.91, 0.98, 0.99]
+    tl_lab = [0.561, 0.742, 0.859, 0.926, 0.942]
+    tl_sdr = []
+    mismatch_lab = [0.53, 0.66, 0.73, 0.75, 0.76]
+    mismatch_sdr = [0.51, 0.55, 0.57, 0.49, 0.42]
 
     x = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB']
     fig = go.Figure()
 
-    fig.add_trace(go.Scatter(x=x, y=cfo1, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
-                             name='     <br>                                              '))
-    fig.add_trace(go.Scatter(x=x, y=cfo2, mode="lines+markers", marker_symbol='circle', marker_color=colors[1],
-                             name='       <br>                                             '))
-    fig.add_trace(go.Scatter(x=x, y=cfo3, mode="lines+markers", marker_symbol='circle', marker_color=colors[2],
-                             name='           <br>                          '))
-    fig.add_trace(go.Scatter(x=x, y=cfo4, mode="lines+markers", marker_symbol='circle', marker_color=colors[3],
-                             name='         <br>                            '))
+    # fig.add_trace(go.Scatter(x=x, y=cfo1, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
+    #                          name='     <br>                                              '))
+    # fig.add_trace(go.Scatter(x=x, y=cfo2, mode="lines+markers", marker_symbol='circle', marker_color=colors[1],
+    #                          name='       <br>                                             '))
+    # fig.add_trace(go.Scatter(x=x, y=cfo3, mode="lines+markers", marker_symbol='circle', marker_color=colors[2],
+    #                          name='           <br>                          '))
+    # fig.add_trace(go.Scatter(x=x, y=cfo4, mode="lines+markers", marker_symbol='circle', marker_color=colors[3],
+    #                          name='         <br>                            '))
     # fig.add_trace(go.Scatter(x=x, y=cfo4, mode="lines+markers", marker_symbol='circle', marker_color=colors[3],
     #                          name='                                                    '))
     # fig.add_trace(go.Scatter(x=x, y=r_bpsk, mode="lines+markers", marker_symbol='circle', marker_color=colors[1],
     #                          name='                                                '))
+    #
+
+    line_ax = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]  # change
+    for i in line_ax:
+        fig.add_shape(type="line", x0=-0.3, y0=i, x1=4.3, y1=i,  # change
+                      line=dict(
+                          color="lightgray",
+                          width=1,
+                          dash="dash",
+                      ),
+                      )
+
+    num_models = 2
+    results_hw = [xgb_hw, cnn_hw, res_hw]
+    marker_symbol = ["circle", "square", "diamond"]
+    dash = ["solid", "dash", "dot"]
+    # for each model
+    for i in range(num_models):
+        # for each interference
+        for j in range(len(results_hw)):
+            fig.add_trace(go.Scatter(x=x, y=results_hw[j][i],
+                                     mode="lines+markers",
+                                     marker_symbol=marker_symbol[i],
+                                     marker_color=colors[j],
+                                     name='                                        ',
+                                     line=dict(
+                                         # color="grey",
+                                         # width=1,
+                                         dash=dash[i],
+                                     )
+                                     ))
+
+    # fig.add_trace(go.Scatter(x=x, y=r_16qam, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
+    #                          name='                                                 ',
+    #                          line=dict(
+    #                              # color="grey",
+    #                              # width=1,
+    #                              dash="dashdot",
+    #                          )
+    #                          ))
     #
     # fig.add_trace(go.Scatter(x=x, y=c_16qam, mode="lines+markers", marker_symbol='square', marker_color=colors[0],
     #                          name='                                                ',
@@ -1254,22 +1443,14 @@ def plot_line_chart():
     #                              )
     #                              ))
 
-    line_ax = [0.6, 0.7, 0.8, 0.9, 1]  # change
-    for i in line_ax:
-        fig.add_shape(type="line", x0=-0.3, y0=i, x1=4.3, y1=i,  # change
-                      line=dict(
-                          color="grey",
-                          width=1,
-                          dash="dashdot",
-                      ),
-                      )
+
 
     fig.update_yaxes(automargin=True, showline=True, ticks="", mirror=True,
                      linecolor='black', linewidth=1,
                      tickfont=dict(color="black", family='times new roman', size=16),
-                     tick0=0.5,  # change
+                     tick0=0.4,  # change
                      dtick=0.1,
-                     range=[0.5, 1.05],
+                     range=[0.4, 1.05],
                      title=dict(font=dict(color="black",  # family="sans-serif",size=15,
                                           ),
                                 # text='Accuracy')
@@ -1301,18 +1482,16 @@ def plot_line_chart():
         # title_x=0.50, title_y=0.90,
         xaxis={"mirror": "all"},
         paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
-        width=500, height=500,
+        # width=500, height=500,
         legend=dict(
-            # bordercolor='black',
-            # borderwidth=1,
+            bordercolor='black',
+            borderwidth=1,
             bgcolor='rgba(0,0,0,0)', orientation='h',
-            itemsizing='constant', x=0.05, y=1.5,
+            itemsizing='constant', x=1.05, y=0.9,
             font=dict(size=12, color="black", family='times new roman'), traceorder='normal'
         ),
     )
-    plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=400, filename='gen_cfo.html', image='svg')
-
-
+    plotly.offline.plot(figure_or_data=fig, image_width=500, image_height=400, filename='hw_comp.html', image='svg')
 
 
 def scalability_chart():
@@ -2187,6 +2366,7 @@ def plot_lpf():
 
 
 if __name__=="__main__":
+    # plot_tl_line_chart()
     plot_line_chart()
     # plot_lpf()
     # plot_barchart()

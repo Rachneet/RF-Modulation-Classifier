@@ -1,7 +1,7 @@
 import torch.nn as nn
 from functools import partial
 from collections import OrderedDict
-from pytorch_model_summary import summary
+# from pytorch_model_summary import summary
 import torch
 # from torchsummary import summary
 

@@ -1,22 +1,13 @@
 # inference module for cnn
-import torch
-import numpy as np
-from torch.utils.data import DataLoader
-from torch.autograd import Variable
-from cnn_model import *
-from dataloader import *
-from train import *
+from data_processing.dataloader import *
+from models.pytorch.train import *
 import csv
 from copy import deepcopy
-import dnn
 # torch.cuda.set_device(0)
 
 
 # plotting libraries
 import plotly
-import plotly.express as px
-import plotly.figure_factory as ff
-import plotly.graph_objects as go
 import plotly.io as pio
 plotly.io.orca.config.save()
 pio.renderers.default = 'svg'

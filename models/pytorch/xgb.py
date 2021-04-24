@@ -11,21 +11,22 @@ import glob
 import re
 import csv
 import pickle
-import shap
+# import shap
 import matplotlib.pyplot as plt
 import warnings
 from xgboost import plot_tree
-from inference import compute_results
-import dataloader as dl
-from merge_filtered import *
+from inference.inference import compute_results
+import data_processing.dataloader as dl
+from data_processing.merge_filtered import *
 
 
 class XgbModule(object):
-    def __init__(self, data_path, save_path, save_results=True):
+    def __init__(self, data_path, save_path, train_size, save_results=True):
 
-        shap.initjs()
+        # shap.initjs()
         self.data_path = data_path
         self.save_path = save_path
+        self.train_size = train_size
         # self.mod_schemes = ["SC_BPSK", "SC_QPSK", "SC_16QAM", "SC_64QAM",
         #                "OFDM_BPSK", "OFDM_QPSK", "OFDM_16QAM", "OFDM_64QAM"]
         self.mod_schemes = ["SC_BPSK", "SC_QPSK", "SC_16QAM", "SC_64QAM"]
@@ -112,33 +113,46 @@ class XgbModule(object):
         df2 = df2.reindex(idx)
         return df1, df2[['label','snr_class']]
 
-
-    def classifier(self, df_x, df_y):
-        X_tr, X_test, y_tr, y_test = train_test_split(df_x, df_y, test_size=0.2, shuffle=False)
-        X_train, X_val, y_train, y_val = train_test_split(X_tr, y_tr, test_size=0.0625, shuffle=False)
-
-        D_train = xg.DMatrix(X_train, label=y_train['label'])
-        D_val = xg.DMatrix(X_val, label=y_val['label'])
-        D_test = xg.DMatrix(X_test, label=y_test['label'])
-
+    def classifier(self, df_x, df_y, do_train=True, do_predict=True):
+        test_size = 0.2
+        X_tr, X_test, y_tr, y_test = train_test_split(df_x, df_y, test_size=test_size, shuffle=False)
+        # X_train, X_val, y_train, y_val = train_test_split(X_tr, y_tr, test_size=0.0625, shuffle=False)
+        train_size = self.train_size/(1-test_size)
+        X_train, X_val, y_train, y_val = train_test_split(X_tr, y_tr, train_size=train_size, shuffle=False)
         params = {
-            'learning_rate': 0.2,   # learning rate, prevents overfitting
+            'learning_rate': 0.2,  # learning rate, prevents overfitting
             'max_depth': 15,  # depth of decision trees
             'gamma': 0.4,
             'colsample_bytree': 0.3,
             'min_child_weight': 3,
-            'objective': 'multi:softprob',   # loss function
-            'num_class': 4}
-            # 'gpu_id': 0,
-            # 'tree_method': 'gpu_hist'}
+            'objective': 'multi:softprob',  # loss function
+            'num_class': 8}
 
-        steps = 200  # The number of training iterations
-        evals = [(D_val,"validation")]
-        model = xg.train(params, D_train, num_boost_round=steps, evals=evals, # early_stopping_rounds=10,
-                          verbose_eval=True)
-
-        preds = model.predict(D_test)
-        best_preds = np.asarray([np.argmax(pred) for pred in preds])
+        best_preds = np.array([])
+        if do_train and do_predict:
+            D_train = xg.DMatrix(X_train, label=y_train['label'])
+            D_val = xg.DMatrix(X_val, label=y_val['label'])
+            D_test = xg.DMatrix(X_test, label=y_test['label'])
+            steps = 200  # The number of training iterations
+            evals = [(D_val, "validation")]
+            model = xg.train(params, D_train, num_boost_round=steps, evals=evals,  # early_stopping_rounds=10,
+                             verbose_eval=True)
+            preds = model.predict(D_test)
+            best_preds = np.asarray([np.argmax(pred) for pred in preds])
+        elif do_train:
+            D_train = xg.DMatrix(X_train, label=y_train['label'])
+            D_val = xg.DMatrix(X_val, label=y_val['label'])
+            steps = 200  # The number of training iterations
+            evals = [(D_val, "validation")]
+            model = xg.train(params, D_train, num_boost_round=steps, evals=evals,  # early_stopping_rounds=10,
+                             verbose_eval=True)
+        elif do_predict:
+            D_test = xg.DMatrix(X_test, label=y_test['label'])
+            model = pickle.load(open(self.save_path + "model.dat", "rb"))
+            preds = model.predict(D_test)
+            best_preds = np.asarray([np.argmax(pred) for pred in preds])
+        else:
+            print("Select whether to train or test or both")
 
         # evaluation metrics
         print("Precision = {}".format(precision_score(y_test['label'], best_preds, average='macro')))
@@ -151,13 +165,14 @@ class XgbModule(object):
             if not os.path.exists(self.save_path):
                 os.makedirs(self.save_path)
             # save model
-            pickle.dump(model, open(self.save_path + "model.dat", "wb"))
+            if do_train:
+                pickle.dump(model, open(self.save_path + "model.dat", "wb"))
             # save metrics
             fieldnames = ['True_label', 'Predicted_label', 'SNR']
             with open(self.save_path + "output.csv", 'w', encoding='utf-8') as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=fieldnames, quoting=csv.QUOTE_NONNUMERIC)
                 writer.writeheader()
-                for i, j, k in zip(y_test['label'], best_preds, y_test['snr_class']):  # rem change
+                for i, j, k in zip(y_test['label'], best_preds, y_test['SNR']):  # rem change
                     writer.writerow(
                         {'True_label': i, 'Predicted_label': j, 'SNR': k})
 
@@ -294,129 +309,127 @@ class XgbModule(object):
         for i in range(len(self.mods))]
 
 
-    def get_shape_values(self, model, df_x, df_y):
-        X_train, X_test, y_train, y_test = train_test_split(df_x, df_y, train_size=0.8, shuffle=False)
-        X_test = X_test.reset_index(drop=True)
-        y_test = y_test.reset_index(drop=True)
-        # print(X_test.iloc[0, :])
-        # compute the SHAP values for every prediction in the test dataset
-        explainer = shap.TreeExplainer(model)
-        shap_values = explainer.shap_values(X_test)
-        expected_values = explainer.expected_value
-
-        return expected_values, shap_values, X_test, y_test
-
-
-    def shap_feature_importance(self, model, df_x,df_y):
-        _, shap_values, X_test, _ = self.get_shape_values(model, df_x, df_y)
-        # print(shap_values)
-        shap.summary_plot(shap_values, X_test, show=False, plot_type="bar",color=plt.get_cmap("tab10"),
-                                class_names=self.mods)
-
-        handles, labels = plt.gca().get_legend_handles_labels()
-        order = [7, 6, 4, 2, 1, 5, 3, 0]
-        plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order])
-        # plt.ylabel("Features", fontsize=13)
-        plt.xlabel("")
-        # plt.xticks(np.arange(0, 12, step=2))
-        locs, labels = plt.xticks()
-
-        # print(locs, labels)
-        plt.xticks(locs, [0, 2, 4, 6, 8, 10, 12], fontsize=14)
-        plt.yticks(fontsize=14)
-        plt.gca().spines['right'].set_visible(True)
-        plt.gca().spines['top'].set_visible(True)
-        plt.gca().spines['left'].set_visible(True)
-        # plt.show()
-        plt.savefig(self.save_path + "shap_summary.svg")
+    # def get_shape_values(self, model, df_x, df_y):
+    #     X_train, X_test, y_train, y_test = train_test_split(df_x, df_y, train_size=0.8, shuffle=False)
+    #     X_test = X_test.reset_index(drop=True)
+    #     y_test = y_test.reset_index(drop=True)
+    #     # print(X_test.iloc[0, :])
+    #     # compute the SHAP values for every prediction in the test dataset
+    #     explainer = shap.TreeExplainer(model)
+    #     shap_values = explainer.shap_values(X_test)
+    #     expected_values = explainer.expected_value
+    #
+    #     return expected_values, shap_values, X_test, y_test
 
 
-    def shap_decision_plot(self, model, df_x, df_y):
+    # def shap_feature_importance(self, model, df_x,df_y):
+    #     _, shap_values, X_test, _ = self.get_shape_values(model, df_x, df_y)
+    #     # print(shap_values)
+    #     shap.summary_plot(shap_values, X_test, show=False, plot_type="bar",color=plt.get_cmap("tab10"),
+    #                             class_names=self.mods)
+    #
+    #     handles, labels = plt.gca().get_legend_handles_labels()
+    #     order = [7, 6, 4, 2, 1, 5, 3, 0]
+    #     plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order])
+    #     # plt.ylabel("Features", fontsize=13)
+    #     plt.xlabel("")
+    #     # plt.xticks(np.arange(0, 12, step=2))
+    #     locs, labels = plt.xticks()
+    #
+    #     # print(locs, labels)
+    #     plt.xticks(locs, [0, 2, 4, 6, 8, 10, 12], fontsize=14)
+    #     plt.yticks(fontsize=14)
+    #     plt.gca().spines['right'].set_visible(True)
+    #     plt.gca().spines['top'].set_visible(True)
+    #     plt.gca().spines['left'].set_visible(True)
+    #     # plt.show()
+    #     plt.savefig(self.save_path + "shap_summary.svg")
 
-        print(df_x.columns)
-        expected_values, shap_values, X_test, y_test = self.get_shape_values(model, df_x, df_y)
-        # 2 qpsk 8  45
-        row_index = 2
-        y_pred = model.predict(xg.DMatrix(X_test))
-        # print(y_test['label'][:50])
-        # print([np.argmax(pred) for pred in y_pred[:50]])
-        # print(list(df_x.columns))
-        # print(np.array(shap_values)[2][0])
 
-        shap.multioutput_decision_plot(expected_values, shap_values,
-                                       row_index=row_index,
-                                       highlight=[y_test['label'][row_index]],
-                                       feature_names=list(df_x.columns),
-                                       legend_labels=self.class_labels(y_pred[row_index]),
-                                       legend_location='lower right', show=False,
-                                       feature_display_range=slice(None, -11, -1))
-        locs_y, labels_y = plt.yticks()
-        print(locs_y, labels_y)
-        plt.xlabel("")
-        plt.gca().spines['right'].set_visible(True)
-        plt.gca().spines['top'].set_visible(True)
-        plt.gca().spines['left'].set_visible(True)
-        plt.xticks(fontsize=14)
+    # def shap_decision_plot(self, model, df_x, df_y):
+    #
+    #     print(df_x.columns)
+    #     expected_values, shap_values, X_test, y_test = self.get_shape_values(model, df_x, df_y)
+    #     # 2 qpsk 8  45
+    #     row_index = 2
+    #     y_pred = model.predict(xg.DMatrix(X_test))
+    #     # print(y_test['label'][:50])
+    #     # print([np.argmax(pred) for pred in y_pred[:50]])
+    #     # print(list(df_x.columns))
+    #     # print(np.array(shap_values)[2][0])
+    #
+    #     shap.multioutput_decision_plot(expected_values, shap_values,
+    #                                    row_index=row_index,
+    #                                    highlight=[y_test['label'][row_index]],
+    #                                    feature_names=list(df_x.columns),
+    #                                    legend_labels=self.class_labels(y_pred[row_index]),
+    #                                    legend_location='lower right', show=False,
+    #                                    feature_display_range=slice(None, -11, -1))
+    #     locs_y, labels_y = plt.yticks()
+    #     print(locs_y, labels_y)
+    #     plt.xlabel("")
+    #     plt.gca().spines['right'].set_visible(True)
+    #     plt.gca().spines['top'].set_visible(True)
+    #     plt.gca().spines['left'].set_visible(True)
+    #     plt.xticks(fontsize=14)
         # plt.yticks([0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5] ,['$ZC$', '$\\sigma_{aa}$', '$\\gamma_{2,max}$', '$\\sigma_{a}$',
         #                                                                '$\\Psi_{max}$', '$\\mu^a_{42}$', '$|\\widetilde{C}_{40}|$',
         # '$\\widetilde{C}_{63}$', '$\\widetilde{C}_{42}$', '$\\mu^R_{42}$'], fontsize=14)
         # plt.show()
-        plt.savefig(self.save_path + "shap_decision_qpsk.svg")
+        # plt.savefig(self.save_path + "shap_decision_qpsk.svg")
 
 
-    def identify_outliers(self, model, df_x, df_y):
-        expected_values, _, X_test, y_test = self.get_shape_values(model, df_x, df_y)
-        y_pred = model.predict(xgb.DMatrix(X_test))
-        T = X_test[(y_pred>0.03)&(y_pred<0.1)]
-        T = T.reset_index(drop=True)
-        explainer = shap.TreeExplainer(model)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            sh = explainer.shap_values(T)
-        r = shap.multioutput_decision_plot(expected_values, sh, T, feature_order='hclust',
-                                           return_objects=True)
-        plt.show()
+    # def identify_outliers(self, model, df_x, df_y):
+    #     expected_values, _, X_test, y_test = self.get_shape_values(model, df_x, df_y)
+    #     y_pred = model.predict(xgb.DMatrix(X_test))
+    #     T = X_test[(y_pred>0.03)&(y_pred<0.1)]
+    #     T = T.reset_index(drop=True)
+    #     explainer = shap.TreeExplainer(model)
+    #     with warnings.catch_warnings():
+    #         warnings.simplefilter('ignore')
+    #         sh = explainer.shap_values(T)
+    #     r = shap.multioutput_decision_plot(expected_values, sh, T, feature_order='hclust',
+    #                                        return_objects=True)
+    #     plt.show()
 
 
-    def dependence_plot(self, model, df_x, df_y):
-        print(list(df_x.columns))
-        expected_values, shap_values, X_test, y_test = self.get_shape_values(model, df_x, df_y)
-        # np.seterr(divide='ignore', invalid='ignore')
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            # s = np.array(shap_values)
-            # s[s==0] = 0.1
-            # s = list(s)
-            # shap.dependence_plot('$\\mu^R_{42}$', shap_values[5], X_test,
-            #                      show=False)# ,interaction_index='$\\sigma_{ap,CNL}$')
-            shap.dependence_plot('$\\widetilde{C}_{42}$', shap_values[3], X_test,
-                                 show=False)#, interaction_index='$|\\widetilde{C}_{40}|$')
-
-        figure = plt.gcf()
-        figure.set_size_inches(4.6, 3)
-        plt.tight_layout()
-        # cb = plt.colorbar(x)
-        # cb.set_ylabel("")
-
-        plt.gca().spines['right'].set_visible(True)
-        plt.gca().spines['top'].set_visible(True)
-        # plt.xticks(fontsize=14)
-        # plt.yticks(fontsize=14)
-        # plt.xlabel("")
-        # plt.ylabel("")
-
-        # plt.show()
-        plt.savefig(self.save_path + "shap_dep_sc_64qam.svg")
+    # def dependence_plot(self, model, df_x, df_y):
+    #     print(list(df_x.columns))
+    #     expected_values, shap_values, X_test, y_test = self.get_shape_values(model, df_x, df_y)
+    #     # np.seterr(divide='ignore', invalid='ignore')
+    #     with warnings.catch_warnings():
+    #         warnings.simplefilter('ignore')
+    #         # s = np.array(shap_values)
+    #         # s[s==0] = 0.1
+    #         # s = list(s)
+    #         # shap.dependence_plot('$\\mu^R_{42}$', shap_values[5], X_test,
+    #         #                      show=False)# ,interaction_index='$\\sigma_{ap,CNL}$')
+    #         shap.dependence_plot('$\\widetilde{C}_{42}$', shap_values[3], X_test,
+    #                              show=False)#, interaction_index='$|\\widetilde{C}_{40}|$')
+    #
+    #     figure = plt.gcf()
+    #     figure.set_size_inches(4.6, 3)
+    #     plt.tight_layout()
+    #     # cb = plt.colorbar(x)
+    #     # cb.set_ylabel("")
+    #
+    #     plt.gca().spines['right'].set_visible(True)
+    #     plt.gca().spines['top'].set_visible(True)
+    #     # plt.xticks(fontsize=14)
+    #     # plt.yticks(fontsize=14)
+    #     # plt.xlabel("")
+    #     # plt.ylabel("")
+    #
+    #     # plt.show()
+    #     plt.savefig(self.save_path + "shap_dep_sc_64qam.svg")
 
     # main file
     def main(self):
         # self.train_xgb_cnn()
-        x_data, y_data = self.create_dataset()  # note: pre-processing done in-situ
-        x_data, y_data = self.preprocess_data(x_data, y_data)
-        # # print(x_data.head())
-        # # print(y_data.head())
+        x_data, y_data = self.create_deepsig_set()  # note: pre-processing done in-situ
+        # x_data, y_data = self.preprocess_data(x_data, y_data)
         # self.grid_cv(x_data, y_data)
-        self.classifier(x_data, y_data)
+        self.classifier(x_data, y_data, do_train=True, do_predict=True)
         # model = pickle.load(open(self.save_path+"model.dat",'rb'))
         # self.shap_feature_importance(model, x_data, y_data)
         # self.shap_decision_plot(model, x_data, y_data)
@@ -471,7 +484,10 @@ def explore_results():
 
 
 if __name__ == "__main__":
-    datapath = "/home/rachneet/rf_featurized/vsg_no_cfo_vier_mod/"
-    save_path = "/home/rachneet/thesis_results/xg_boost_vsg_vier_mod/"
-    xgb_obj = XgbModule(datapath, save_path, save_results=True)
-    xgb_obj.main()
+    datapath = "/home/rachneet/featurized_data/dataset_vsg_no_intf_featurized.csv"
+    train_sizes = [0.60, 0.45, 0.30, 0.15]
+    for i in range(len(train_sizes)):
+        str_train_size = "{:.2f}".format(train_sizes[i])
+        save_path = f"/home/rachneet/DATA/results/xgb_vsg_{str_train_size.split('.')[-1]}/"
+        xgb_obj = XgbModule(datapath, save_path, train_size=train_sizes[i], save_results=True)
+        xgb_obj.main()

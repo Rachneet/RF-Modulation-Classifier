@@ -4,8 +4,8 @@ import h5py as h5
 import os
 import glob
 
-import read_h5 as reader
-from read_filtered import sort_matrix_entries, encode_labels
+import data_processing.read_h5 as reader
+from data_processing.read_filtered import sort_matrix_entries, encode_labels
 
 
 # function to generate more samples from iq segments

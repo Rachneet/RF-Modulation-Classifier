@@ -1,29 +1,22 @@
 # inference module for cnn
-import torch
-import numpy as np
-from torch.utils.data import DataLoader
 from torch.autograd import Variable
-from cnn_model import *
-from dataloader import *
 # from train import *
-import csv
 import pandas as pd
 from copy import deepcopy
 from tqdm import tqdm
-from ast import literal_eval
 # torch.cuda.set_device(0)
 
 
 # plotting libraries
 import plotly
-import plotly.express as px
+# import plotly.express as px
 import plotly.figure_factory as ff
-import plotly.graph_objects as go
-import plotly.io as pio
-plotly.io.orca.config.save()
-pio.renderers.default = 'svg'
+# import plotly.graph_objects as go
+# import plotly.io as pio
+# plotly.io.orca.config.save()
+# pio.renderers.default = 'svg'
 
-from lightning_resnet import *
+from models.pytorch_lightning.lightning_resnet import *
 
 def get_evaluation(y_true, y_prob, list_metrics):
 
@@ -497,7 +490,7 @@ if __name__ == "__main__":
     # y = np.arange(0,21,5)
     # y =[0]
     # # y = np.arange(0,21,2)
-    path = datapath + "res_vsg_cfo5/output.csv"
+    path = datapath + "res_mixed_recordings/output.csv"
     df = pd.read_csv(path)
     count, output = compute_results(path,[0, 5, 10, 15, 20])# ['0db', '5db', '10db', '15db', '20db'])
     # # [0,5,10,15,20])

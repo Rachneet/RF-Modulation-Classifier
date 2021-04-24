@@ -1,4 +1,4 @@
-import read_h5 as reader
+import data_processing.read_h5 as reader
 import numpy as np
 import random
 import pandas as pd
@@ -7,7 +7,7 @@ import h5py as h5
 from sklearn import preprocessing
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.sampler import SubsetRandomSampler
-from py_lightning import *
+from models.pytorch_lightning.py_lightning import *
 import math
 from tqdm import tqdm
 from multiprocessing import Pool

@@ -33,9 +33,9 @@ import csv
 from torch.utils.data import DataLoader,SubsetRandomSampler
 from pytorch_lightning.logging.neptune import NeptuneLogger
 
-from py_lightning import *
-from resnet import *
-from lightning_resnet import *
+from models.pytorch_lightning.py_lightning import *
+from models.pytorch.resnet import *
+from models.pytorch_lightning.lightning_resnet import *
 
 BN_TYPES = (torch.nn.BatchNorm1d, torch.nn.BatchNorm2d, torch.nn.BatchNorm3d)
 # --------------------------------------------Utility Functions--------------------------------------------------
