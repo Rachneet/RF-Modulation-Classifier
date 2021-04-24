@@ -52,19 +52,6 @@ def compute_results(csv_path):
 
 def inference(save_path,x_test_gen,y_test_gen,y_test_raw,snr_gen,model_name):
 
-    # x_test,y_test,labels_raw = load_batch(datapath+"vsg_no_intf_sc_normed.h5",batch_size=batch_size,mode='test')
-    # iq, labels, snrs = reader.read_hdf5(path)
-    # test_bound = int(0.80 * labels.shape[0])
-    # training_params = {"batch_size": batch_size,
-    #                    "shuffle": False,
-    #                    "num_workers": 4}
-    # x_test_gen = DataLoader(iq[test_bound:].values, **training_params)
-    # y_test_gen = DataLoader(labels[test_bound:].values, **training_params)
-    # snr_gen = DataLoader(snrs[test_bound:].values, **training_params)
-    # y_test_raw = labels[test_bound:].values
-    # print("Data Loaded...")
-
-
     _labels =[]
     for _, l in enumerate(y_test_raw):
         # print(x)

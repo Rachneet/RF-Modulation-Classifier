@@ -163,16 +163,6 @@ def inference(datapath, test_set, model_name, save_path):
 
 
 def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
-    # cmap = [[30734, 21, 4, 2, 0, 0, 0, 0],
-    #         [258, 25387, 3451, 1562, 0, 0, 1, 0],
-    #         [41, 5030, 6511, 19180, 0, 0, 3, 1],
-    #         [26, 3362, 5378, 22043, 1, 0, 2, 1],
-    #         [2, 0, 0, 2, 8405, 12777, 7898, 1656],
-    #         [0, 0, 0, 0, 8277, 12763, 7924, 1838],
-    #         [1, 0, 0, 0, 754, 4683, 11411, 13623],
-    #         [0, 0, 0, 0, 130, 1528, 7230, 21859]]
-    #
-    # num_samples = [30761, 30659, 30766, 30813, 30740, 30802, 30472, 30747]
 
     temp2 = []
     for i in range(len(cmap)):
@@ -195,8 +185,6 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
          "OFDM <br>BPSK", "OFDM <br>QPSK", "OFDM 16-<br>QAM", "OFDM 64-<br>QAM"]
 
     y = list(reversed(x))
-
-    # fig = px.imshow(cmap)
 
     # change each element of z to type string for annotations
     z_text = [[str(y) for y in x] for x in np.array(temp2[::-1])]
@@ -297,8 +285,7 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
                      #         color="black"
                      #     ))
                      )
-    # 400 465
-    # 600 650
+
     for i in range(len(fig.layout.annotations)):
         fig.layout.annotations[i].font.size = 15
     # fig.show()
@@ -309,8 +296,6 @@ def plot_confusion_matrix(cmap,num_samples,fig_name,snr):
 
 def test_sequential(path):
     df = pd.read_csv(path+"output.csv", delimiter=",", quoting=csv.QUOTE_MINIMAL)
-    # print(df.tail())
-    # print(df.shape)
     mod_schemes = ["SC_BPSK", "SC_QPSK", "SC_16QAM", "SC_64QAM",
                    "OFDM_BPSK", "OFDM_QPSK", "OFDM_16QAM", "OFDM_64QAM"]
     # combine signals to form one large segment
@@ -374,8 +359,7 @@ def test_sequential(path):
     # remove entries where all predictions are correct
     # output = output.loc[output.incorrect_idx != []]
     output = output.sample(frac=1).reset_index(drop=True)
-    # print(output.head(20))
-    # print(output.head(50))
+
     sirs = [5,10,15,20,25]
     # labels = [0,1,2,3,4,5,6,7]
     groups = output.groupby(['True_label','sir'])
@@ -525,6 +509,3 @@ if __name__ == "__main__":
     # print(df2.head())
 
 # ------------------------------------------------------------------------------------------------------------
-
-
-
