@@ -1,7 +1,7 @@
-# RF_Modulation_Classifier
-Project: Deep Learning features for RF Modulation Classification
+# RF Modulation Classification
 
-Introduction:
+
+## Introduction
 
 Emerging mobile network technologies such as 5G promise high data rates with increased
 reliability and low latency. However, the implementation of these technologies
@@ -17,3 +17,10 @@ comprehensive analysis of the performance of algorithms under the influence of n
 hardware heterogeneity, Carrier Frequency Offset (CFO), and modulated co-channel
 interference is performed. Further, a method to explain model predictions is also
 discussed.
+
+## Models
+
+1. XGBoost
+2. CNN
+3. ResNet-101
+
