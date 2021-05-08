@@ -474,7 +474,7 @@ if __name__ == "__main__":
     # y = np.arange(0,21,5)
     # y =[0]
     # # y = np.arange(0,21,2)
-    path = datapath + "res_mixed_recordings/output.csv"
+    path = datapath + "xgb_vsg_15/output.csv"
     df = pd.read_csv(path)
     count, output = compute_results(path,[0, 5, 10, 15, 20])# ['0db', '5db', '10db', '15db', '20db'])
     # # [0,5,10,15,20])

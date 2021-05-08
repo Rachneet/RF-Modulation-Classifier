@@ -1,48 +1,28 @@
-import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import numpy as np
-import random
-from torch.nn import functional as F
-from torch.utils.data import DataLoader, SequentialSampler, Subset, Dataset
-from sklearn import preprocessing
-import time
+from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.sampler import SubsetRandomSampler
-import h5py as h5
+
+import pytorch_lightning as pl
+from pytorch_lightning import Trainer
+from pytorch_lightning.loggers.neptune import NeptuneLogger
+
 import math
 import os
-from pytorch_lightning import Trainer
-from argparse import ArgumentParser
-# from test_tube import Experiment
-# from comet_ml import Experiment
-# from pytorch_lightning.logging import CometLogger
-# from pytorch_lightning.loggers import TestTubeLogger
-from pytorch_lightning.loggers.neptune import NeptuneLogger
-from sklearn import metrics
-from collections import OrderedDict
 import csv
-# from scikitplot.metrics import plot_confusion_matrix
-import matplotlib.pyplot as plt
+import h5py as h5
+from argparse import ArgumentParser
+from collections import OrderedDict
+
+from sklearn import metrics
+
 from data_processing.intf_processing import *
-from argparse import Namespace
+
+from dotenv import load_dotenv
+load_dotenv()
+
 torch.manual_seed(4)  # for reproducibility of results
 
-from sklearn.decomposition import FastICA
-from sklearn.exceptions import ConvergenceWarning
-import warnings
-warnings.simplefilter('always',ConvergenceWarning)
-
-# ================================================Visualization=============================================
-
-# comet_logger = CometLogger(
-#     api_key="gKzrti6C84TsoTTyqlT5OHarD",
-#     workspace="rachneet", # Optional
-#     project_name="Master_Thesis" # Optional
-#     # rest_api_key=os.environ["COMET_REST_KEY"], # Optional
-#     # experiment_name="default" # Optional
-# )
-
-# ===========================================================================================================
 
 # custom dataloader
 class MyDataset(Dataset):
@@ -101,12 +81,7 @@ class DatasetFromHDF5(Dataset):
             label = file[self.labels][item]
             snr = file[self.snrs][item]
             features = self.features
-        # ----------- Blind source separation ------------------------
-        # x = np.expand_dims(data, axis=0)
-        # x = x.reshape(-1, 2048)
-        # S = compute_ica(x)
-        # out = np.dot(S, x)
-        # signals = out.reshape(-1, 1024, 2)
+
         # --------------------- Featurize data ------------------------
         if self.feature_flag:
             features = featurize(data)
@@ -137,8 +112,7 @@ class LightningCNN(pl.LightningModule):
         self.test_dataset = None
         self.all_true, self.all_pred, self.all_snr = [], [], []  # for final metrics calculation
         self.hparams = hparams
-        # self.model = torch.load("/home/rachneet/thesis_results/trained_cnn_vsg_cfo5_all",map_location="cuda:0")
-        # print(vars(hparams))
+
         # layer 1
         self.conv1 = nn.Sequential(
             nn.Conv2d(hparams.in_dims, hparams.filters, hparams.kernel_size[0],padding=2),
@@ -338,7 +312,7 @@ class LightningCNN(pl.LightningModule):
             'test_acc': test_acc,
             'true_label': y,
             'pred_label': y_hat,
-            'snrs' : z,
+            'snrs': z,
         })
 
         return output
@@ -442,26 +416,17 @@ class LightningCNN(pl.LightningModule):
     def test_dataloader(self):
         return self.test_dataset
 
-# ==================================================================================================================
-
-# class test_callback(pl.Callback):
-#
-#     def on_test_end(self,trainer,output):
-#         print("Test ended")
-#         print(trainer)
-#         print(output)
 # ----------------------------------------Testing the model-----------------------------------------------
 
 # function to test the model separately
-def test_lightning(hparams):
+def inference(hparams):
 
     model = LightningCNN.load_from_checkpoint(
-    checkpoint_path='/home/rachneet/thesis_results/vsg_vier_mod/epoch=15.ckpt',
-    # hparams=hparams,
+    checkpoint_path='/home/rachneet/thesis_results/intf_ofdm_snr10_all/epoch=29.ckpt',
+    hparams=hparams,
     map_location=None
     )
 
-    #-----------------------------------------------------------------------------------------
     dataset = DatasetFromHDF5(hparams.data_path, 'iq', 'labels', 'snrs', hparams.featurize)
     num_train = len(dataset)
     indices = list(range(num_train))
@@ -490,14 +455,8 @@ def test_lightning(hparams):
                                    shuffle=hparams.shuffle, num_workers=hparams.num_workers,
                                    sampler=test_sampler)
 
-    #---------------------------------------------------------------------------------------
-    # model = torch.load("/home/rachneet/thesis_results/vsg_vier_mod", map_location="cuda:0")
-    # exp = Experiment(name='cnn_train_cfo5_test_cfo1',save_dir=CHECKPOINTS_DIR)
-    # logger = TestTubeLogger('tb_logs', name='CNN')
-    # callback = [test_callback()]
-    # print(neptune_logger.experiment.name)
-    model_checkpoint = pl.callbacks.ModelCheckpoint(filepath=CHECKPOINTS_DIR)
-    trainer = Trainer(gpus=hparams.gpus, checkpoint_callback=model_checkpoint)
+    model_checkpoint = pl.callbacks.ModelCheckpoint(CHECKPOINTS_DIR)
+    trainer = Trainer(gpus=hparams.gpus, checkpoint_callback=True)
     trainer.test(model, test_dataloaders=test_dataset)
     # Save checkpoints folder
     neptune_logger.experiment.log_artifact(CHECKPOINTS_DIR)
@@ -505,11 +464,11 @@ def test_lightning(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/home/rachneet/thesis_results/vsg_deepsig_mod/'
+CHECKPOINTS_DIR = '/home/rachneet/thesis_results/vsg_intf_ofdm_gen_rw/'
 neptune_logger = NeptuneLogger(
     api_key=os.environ.get("NEPTUNE_API_KEY"),
     project_name="rachneet/sandbox",
-    experiment_name="vsg_deepsig_mod",   # change this for new runs
+    experiment_name="vsg_intf_ofdm_gen_rw",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -520,7 +479,7 @@ def main(hparams):
     # exp = Experiment(save_dir=os.getcwd())
     if not os.path.exists(CHECKPOINTS_DIR):
         os.makedirs(CHECKPOINTS_DIR)
-    model_checkpoint = pl.callbacks.ModelCheckpoint(filepath=CHECKPOINTS_DIR)
+    model_checkpoint = pl.callbacks.ModelCheckpoint(CHECKPOINTS_DIR)
     early_stop_callback = pl.callbacks.EarlyStopping(
         monitor='val_loss',
         min_delta=0.00,
@@ -552,7 +511,7 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_new.hdf5"
+    path = "/home/rachneet/rf_dataset_inets/mixed_parameters/no_cfo/usrp/intf_vsg/dataset_mixed_recordings_1024.h5"
     out_path = "/home/rachneet/thesis_results/"
 
     parser = ArgumentParser()
@@ -570,30 +529,11 @@ if __name__=="__main__":
     parser.add_argument('--kernel_size', type=list, nargs='+', default=[3,3,3,3,3,3])
     parser.add_argument('--pool_size', default=3)
     parser.add_argument('--fc_neurons', type=int, default=128)
-    parser.add_argument('--n_classes', default=4)
+    parser.add_argument('--n_classes', default=8)
     parser.add_argument('--n_features', default=10)
     parser.add_argument('--featurize', default=False)
     args = parser.parse_args()
-    #
+
     # main(args)
 
-    test_lightning(args)
-    # file = h5.File(path,'r')
-    # iq, labels, snrs = file['iq'],file['labels'],file['snrs']
-    # print(iq.shape)
-    # x = len(np.unique(iq,axis=0))
-    # print(x)
-    # if x == iq.shape[0]:
-    #     print('No duplicates')
-    # else:
-    #     print('Duplicates exist')
-
-    # data = MyDataset("/home/rachneet/rf_dataset_inets/deepsig_digital_mod.csv")
-    # training_generator = DataLoader(data, batch_size=512)
-    # for iter, batch in enumerate(training_generator):
-    #     # get the inputs
-    #     print(batch)
-    #     break
-
-
-
+    inference(args)
