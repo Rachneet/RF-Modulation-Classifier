@@ -1,28 +1,21 @@
-from data_processing.Receiver import *
-from data_processing.dataloader import *
-from models.pytorch.cnn_model import *
-import torch
 from torch.autograd import Variable
-import matplotlib.pyplot as plt
 # import librosa
 # import librosa.display
-import os
-# import cv2
-# import gc
-import csv
 from ast import literal_eval
 from tqdm import tqdm
+# import commpy
+# import cv2
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 # plotting libraries
 import plotly
-# import commpy
-# import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objs as go
-# import plotly.io as pio
-# plotly.io.orca.config.save()
-# pio.renderers.default = 'svg'
+from visualization.utils import update_axis, update_layout, save_fig, draw_grid_lines
+
+from data_processing.Receiver import *
+from data_processing.dataloader import *
+from models.pytorch.cnn_model import *
 
 
 def visualize_signal(iq_signal):
@@ -114,9 +107,6 @@ def save_cnn_features():
         y_pred = np.array(np.argmax(test_prob, -1))
         y_true = np.array(np.argmax(test_true, -1))
         act_features = np.array(act_features).squeeze()
-        print(np.array(act_features).shape)
-        # print(y_pred)
-        # print(y_true)
         break
 
         # if not os.path.exists(output_path):
@@ -135,7 +125,6 @@ def save_cnn_features():
         #         hf["true_labels"].resize((hf["true_labels"].shape[0] + y_true.shape[0]), axis=0)
         #         hf["true_labels"][-y_true.shape[0]:] = y_true
         #         print(hf['features'].shape)
-
 
 
 def plot_activations(iq_sample):
@@ -317,18 +306,13 @@ def plot_iq(iq_sample,fig_name):
     # plt.yticks([])
     # plt.legend(loc="upper right")
     plt.savefig(fig_name)
-
     plt.close()
 
 
 def generate_image_dset(iq,labels,output_dir,mode=None):
 
-    # output_dir='/media/backup/Arsenal/rf_dataset_inets/image_dataset/'
-    # if not os.path.exists(output_dir+"train"):
-    #     os.makedirs(output_dir+"train")
-
     mods = [0,1,2,3,4,5,6,7]
-    if  mode=="train":
+    if mode == "train":
         for i in tqdm(range(int(0.80*iq.shape[0]))):
             label = label_idx(labels[i])
             if label in mods:
@@ -336,13 +320,11 @@ def generate_image_dset(iq,labels,output_dir,mode=None):
                 if not os.path.exists(path):
                     os.makedirs(path)
                 plot_iq(iq[i], path + "/Fig_" + str(i) + "_mod_" + str(label_idx(labels[i])) + ".png")
-                # if len([name for name in os.listdir(path)])==70000:
-                #     mods.remove(label)
-                if i==70000:
+                if i == 70000:
                     break
             else:
                 continue
-    elif mode=="test":
+    elif mode == "test":
         for i in tqdm(range(int(0.80*iq.shape[0]),int(0.81*iq.shape[0]))):
             label = label_idx(labels[i])
             if label in mods:
@@ -350,10 +332,6 @@ def generate_image_dset(iq,labels,output_dir,mode=None):
                 if not os.path.exists(path):
                     os.makedirs(path)
                 plot_iq(iq[i], path + "/Fig_" + str(i) + "_mod_" + str(label_idx(labels[i])) + ".png")
-                # if len([name for name in os.listdir(path)])==250:
-                #     mods.remove(label)
-                # if len(mods)==0:
-                #     break
             else:
                 continue
 
@@ -433,13 +411,7 @@ def deep_dream(iq_sample):
 
             if index==5:
                 break
-        # plot_iq(activations.features.squeeze(),'signal_test.png')
-        # print(activations.features.shape)
-        # print(activations.features[0,31])
-        # print(activations.features[0, 25])
-        # print(torch.argmax(activations.features.squeeze()))
-        # print(torch.argmax(activations.features,dim=1)[0][0].item())
-        # print(torch.argmax(activations.features, dim=2)[0][0].item())
+
         loss = -torch.mean(activations.features[0,
                 torch.argmax(activations.features,dim=1)[0][0].item()])
         print('Iteration:', str(i), 'Loss:', "{0:.2f}".format(loss.detach().cpu().data.numpy()))
@@ -880,35 +852,10 @@ def draw_comparison_chart():
 
 def plt_tl_chart():
     sirs = ['0 dB','5 dB', '10 dB', '15 dB', '20 dB', '0-20 dB']
-    # acc = [0.82,0.86,0.87,0.88,0.89]
-    # acc2 = [0.83,0.86,0.86,0.87,0.87]
-    # acc3 = [0.71,0.80,0.86,0.87,0.87]
-    # intf tl cases in order
-    # acc = [0.72,0.76,0.79,0.80,0.77]
-    # acc2 = [0.62,0.74,0.77,0.78,0.73]
-    # acc = [0.75,0.80,0.80,0.81,0.79]
-    # acc2 = [0.71,0.80,0.82,0.82,0.79]
-    # acc = [0.69,0.78,0.80,0.82,0.77]
-    # acc2 = [0.66,0.76,0.79,0.80,0.75]
-    # vsg usrp tl
-    # acc = [0.61, 0.83, 0.94, 0.99, 0.99, 0.87]   # tl vsg
-    # acc2 = [0.55, 0.74, 0.85, 0.91, 0.93, 0.80]
-    # acc=[0.57,0.79,0.91,0.98,0.99,0.85]          # tl usrp
-    # acc2 = [0.56, 0.74, 0.86, 0.93, 0.94, 0.81]
-    # vsg cfo1
-    # acc = [0.58, 0.80, 0.93, 0.98, 0.99, 0.86]
-    # acc2 = [0.75, 0.98, 1.0, 1.0, 1.0, 0.95]
-    # vsg cfo5
-    # acc = [0.59, 0.81, 0.94, 0.99, 1.0, 0.87]
-    # acc2 = [0.71, 0.97, 1.0, 1.0, 1.0, 0.94]
     acc = [0.69, 0.82, 0.92, 1.0, 1.0, 0.88]
     acc2 = [0.62, 0.79, 0.83, 0.84, 0.85, 0.79]
 
-
-
-
     fig = go.Figure()
-    # fig = plotly.subplots.make_subplots(specs=[[{"secondary_y": True}]], print_grid=True)
     fig.add_trace(go.Bar(
         x=sirs,
         y=acc,
@@ -1085,96 +1032,59 @@ def plt_tl_chart():
 
 def train_fraction_effect():
     snrs = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB']
-    frac15 = [0.55, 0.74, 0.85, 0.91, 0.93]
-    frac30 = [0.59, 0.8, 0.91, 0.97, 0.99]
-    frac45 = [0.59, 0.81, 0.92, 0.98, 0.99]
-    frac60 = [0.6, 0.82, 0.93, 0.98, 0.99]
-    frac75 = [0.61, 0.83, 0.94, 0.99, 0.99]
-    y_dict = {'15': frac15, '30': frac30, '45': frac45, '60': frac60, '75': frac75}
+    xgb_train_size_acc = [[0.463, 0.578, 0.651, 0.714, 0.755], [0.465, 0.583, 0.656, 0.725, 0.775],
+                          [0.467, 0.584, 0.659, 0.732, 0.787], [0.469, 0.586, 0.66, 0.738, 0.797],
+                          [0.466, 0.583, 0.661, 0.75, 0.823]]
+    cnn_train_size_acc = [[0.55, 0.74, 0.85, 0.91, 0.93], [0.59, 0.8, 0.91, 0.97, 0.99],
+                          [0.59, 0.81, 0.92, 0.98, 0.99], [0.6, 0.82, 0.93, 0.98, 0.99],
+                          [0.61, 0.83, 0.94, 0.99, 0.99]]
+
+    xgb_sample = [[0.381, 0.519, 0.607, 0.67, 0.718], [0.431, 0.565, 0.649, 0.719, 0.775],
+                  [0.466, 0.583, 0.661, 0.75, 0.823], [0.512, 0.619, 0.709, 0.795, 0.856]]
+    cnn_sample = [[0.474, 0.654, 0.794, 0.888, 0.919], [0.536, 0.74, 0.871, 0.952, 0.975],
+                  [0.609, 0.83, 0.942, 0.986, 0.995], [0.68, 0.9, 0.983, 0.998, 0.999]]
 
     fig = go.Figure()
-    # fig = plotly.subplots.make_subplots(specs=[[{"secondary_y": True}]], print_grid=True)
-    # blue #23aaff, red apple #ff6555, moss green #66c56c, mustard yellow #f4b247
     names = ['15','30','45','60', '75']
     fracs = ['15%','30%','45%','60%', '75%']
     colors = ['rgba(255, 101, 85, 1)','rgba(35, 170, 255, 1)','rgba(244, 178, 71, 1)','rgba(102, 197, 108, 1)',
               'rgb(159,130,206)']
 
-    for i in range(len(names)):
-        fig.add_trace(go.Scatter(x=snrs,y=y_dict[names[i]],
-                                 name="         ",
-            # name=fracs[i],
-            mode='lines+markers',marker_color=colors[i],
-            # marker_color='#f4b247', marker_line_color='#ff7f0e',
-            # width=0.25
-        ))
+    # 2 separate loops due to plotly's legend placement issue
+    for xgb, color in zip(xgb_sample, colors):
+        fig.add_trace(go.Scatter(x=snrs, y=xgb,
+                                 name="           ",
+                                 mode='lines+markers',
+                                 marker_symbol="circle",
+                                 marker_color=color,
+                                 showlegend=False,
+                                 line=dict(
+                                     dash="dash",
+                                 )
+                                 ))
+    for cnn, color in zip(cnn_sample, colors):
+        fig.add_trace(go.Scatter(x=snrs, y=cnn,
+                                 name="           ",
+                                 mode='lines+markers',
+                                 marker_symbol="circle",
+                                 marker_color=color,
+                                 line=dict(
+                                     dash="solid",
+                                 )
+                                 ))
 
-    line_ax = [0.5,0.6,0.7,0.8,0.9,1]
-    for i in line_ax:
-        fig.add_shape(type="line",x0=-0.3,y0=i,x1=4.3,y1=i,
-            line=dict(
-                color="grey",
-                width=1,
-                dash="dashdot",
-            ),
-        )
+    line_ax = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    draw_grid_lines(fig, line_ax)
+    update_axis(fig, "x")
+    update_axis(fig, "y")
 
-    fig.update_yaxes(automargin=True, showline=True, ticks="", mirror=True,
-                     linecolor='black', linewidth=1,
-                     tickfont=dict(color="black",family='times new roman',size=16),
-                     title=dict(font=dict( color="black",# family="sans-serif",size=15,
-                    ),
-                    # text='Classification accuracy'
-                    ))
-
-    fig.update_xaxes(automargin=True, side='bottom', showline=True, ticks='inside',
-                     mirror=True, linecolor='black', linewidth=1,
-                     tickfont=dict(color="black",family='times new roman',size=16),
-                     title=dict(font=dict(
-                             # family="sans-serif",
-                             # size=15,
-                             color="black"
-                         ),
-                         # text='SNR(dB)'
-                     ))
-
-    fig.update_traces(marker_line_width=2)
-    # fig.add_annotation(dict(font=dict(color="black", size=16,family='times new roman'),
-    #                         x=0.95,
-    #                         y=0.30,
-    #                         showarrow=False,
-    #                         # text="Number of IQ samples per signal segment N:",
-    #                         xref="paper",
-    #                         yref="paper"))
-    fig.update_layout(
-        margin=go.layout.Margin(
-            l=0,  # left margin
-            r=110,  # right margin  130
-            b=160,  # bottom margin
-            t=20,  # top margin
-        ),
-        # title_text='<b>Model Scalability with Number of IQ Samples',
-        # title_x=0.50, title_y=0.90,
-        xaxis={"mirror": "all"},
-        paper_bgcolor='white',plot_bgcolor='rgba(0,0,0,0)',
-        width=500,height=500,
-        legend=dict(
-            bordercolor='black',
-            borderwidth=1,
-            bgcolor='rgba(0,0,0,0)',orientation='h',
-            itemsizing='constant',x=0.22,y=0.3,
-            font=dict(size=12, color="black",family='times new roman'),traceorder='normal'
-        ),
-    )
-    plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=500, filename='train_chart.html', image='svg')
+    fig.update_traces(marker_line_width=1)
+    update_layout(fig, width=500, height=500, showlegend=True, legend_x=0.22, legend_y=1.15, legend_orientation='h')
+    save_fig(fig, figname='sample_chart.html', width=600, height=500)
 
 
 def plot_tl_line_chart():
     colors = ['rgba(255, 101, 85, 1)', 'rgba(35, 170, 255, 1)', 'rgba(244, 178, 71, 1)', 'rgba(42, 187, 155, 1)']
-    # colors = ['#1f77b4',  # muted blue
-    #         '#ff7f0e',  # safety orange
-    #         '#2ca02c',  # cooked asparagus green
-    #           ]
     # hw tl
     norm_lab = [0.61, 0.83, 0.94, 0.99, 0.99]
     norm_sdr = [0.57, 0.79, 0.91, 0.98, 0.99]
@@ -1182,19 +1092,6 @@ def plot_tl_line_chart():
     tl_sdr_lab = [0.551, 0.744, 0.847, 0.907, 0.93]
     mismatch_lab_sdr = [0.53, 0.66, 0.73, 0.75, 0.76]
     mismatch_sdr_lab = [0.51, 0.55, 0.57, 0.49, 0.42]
-
-    # intf tl
-    norm_bpsk = [0.72, 0.76, 0.79, 0.8]
-    norm_16qam = [0.75, 0.8, 0.8, 0.81]
-    norm_ofdm = [0.69, 0.78, 0.8, 0.82]
-
-    tl_no_intf_bpsk = [0.623, 0.736, 0.773, 0.781]
-    tl_no_intf_16qam = [0.705, 0.802, 0.816, 0.823]
-    tl_no_intf_ofdm = [0.661, 0.757, 0.789, 0.804]
-
-    mismatch_no_intf_bpsk = [0.35, 0.54, 0.68, 0.69]
-    mismatch_no_intf_16qam = [0.37, 0.61, 0.75, 0.77]
-    mismatch_no_intf_ofdm = [0.38, 0.65, 0.73, 0.75]
 
 
     x = ['0 dB','5 dB', '10 dB', '15 dB', '20 dB']
@@ -1261,7 +1158,7 @@ def plot_tl_line_chart():
     #                )
     #                ))
 
-    line_ax = [ 0.5, 0.6, 0.7, 0.8, 0.9, 1]  # change
+    line_ax = [0.5, 0.6, 0.7, 0.8, 0.9, 1]  # change
     for i in line_ax:
         fig.add_shape(type="line", x0=-0.3, y0=i, x1=4.3, y1=i,  # change
                       line=dict(
@@ -1323,175 +1220,63 @@ def plot_tl_line_chart():
 def plot_line_chart():
     colors = ['rgba(255, 101, 85, 1)', 'rgba(35, 170, 255, 1)', 'rgba(244, 178, 71, 1)', 'rgba(42, 187, 155, 1)']
 
-    xgb_hw = [[0.466, 0.583, 0.661, 0.75, 0.823], [0.466, 0.592, 0.679, 0.773, 0.834]]
-    cnn_hw = [[0.61, 0.83, 0.94, 0.99, 0.99], [0.57, 0.79, 0.91, 0.98, 0.99]]
-    res_hw = [[0.753, 0.98, 1.0, 1.0, 1.0], [0.604, 0.878, 0.977, 0.998, 1.0]]
-
-    xgb_cfo = [[0.473, 0.592, 0.675, 0.765, 0.837], [0.429, 0.586, 0.665, 0.729, 0.788]]
-    cnn_cfo = [[0.577, 0.801, 0.927, 0.98, 0.992], [0.592, 0.814, 0.937, 0.986, 0.995]]
-    res_cfo = [[0.753, 0.983, 1, 1, 1], [0.709, 0.966, 0.999, 1, 1]]
-
-    xgb_intf = [[0.447, 0.51, 0.537, 0.564], [0.509, 0.566, 0.584, 0.584], [0.524, 0.591, 0.614, 0.611]]
-    cnn_intf = [[0.72, 0.76, 0.79, 0.8], [0.75, 0.8, 0.8, 0.81],[0.69, 0.78, 0.8, 0.82]]
-    res_intf = [[0.86, 0.89, 0.89, 0.89], [0.81, 0.85, 0.86, 0.86], [0.78, 0.86, 0.87, 0.87]]
-
-    cfo1 = [0.603, 0.829, 0.941, 0.986, 0.995]
-    cfo2 = [0.594, 0.828, 0.939, 0.986, 0.994, 0.868]
-    cfo3 = [0.569, 0.801, 0.926, 0.980, 0.991, 0.853]
-    cfo4 = [0.586, 0.814, 0.936, 0.987, 0.995, 0.863]
-
-    intf1 = [0.35, 0.54, 0.68, 0.69]
-    intf2 = [0.37, 0.61, 0.75, 0.77]
-    intf3 = [0.38, 0.65, 0.73, 0.75]
-
-    # hw tl
-    norm_lab = [0.61, 0.83, 0.94, 0.99, 0.99]
-    norm_sdr = [0.57, 0.79, 0.91, 0.98, 0.99]
-    tl_lab = [0.561, 0.742, 0.859, 0.926, 0.942]
-    tl_sdr = []
-    mismatch_lab = [0.53, 0.66, 0.73, 0.75, 0.76]
-    mismatch_sdr = [0.51, 0.55, 0.57, 0.49, 0.42]
+    xgb_cfo = [[0.449, 0.541, 0.585, 0.615, 0.585], [0.385, 0.496, 0.544, 0.549, 0.52]]
+    cnn_cfo = [[0.603, 0.829, 0.941, 0.986, 0.995], [0.594, 0.828, 0.939, 0.986, 0.994]]
 
     x = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB']
     fig = go.Figure()
 
-    # fig.add_trace(go.Scatter(x=x, y=cfo1, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
-    #                          name='     <br>                                              '))
-    # fig.add_trace(go.Scatter(x=x, y=cfo2, mode="lines+markers", marker_symbol='circle', marker_color=colors[1],
-    #                          name='       <br>                                             '))
-    # fig.add_trace(go.Scatter(x=x, y=cfo3, mode="lines+markers", marker_symbol='circle', marker_color=colors[2],
-    #                          name='           <br>                          '))
-    # fig.add_trace(go.Scatter(x=x, y=cfo4, mode="lines+markers", marker_symbol='circle', marker_color=colors[3],
-    #                          name='         <br>                            '))
-    # fig.add_trace(go.Scatter(x=x, y=cfo4, mode="lines+markers", marker_symbol='circle', marker_color=colors[3],
-    #                          name='                                                    '))
-    # fig.add_trace(go.Scatter(x=x, y=r_bpsk, mode="lines+markers", marker_symbol='circle', marker_color=colors[1],
-    #                          name='                                                '))
+    # num_models = 2
+    # num_impairments = 3
+    # results_intf = [xgb_intf, cnn_intf]
+    marker_symbol = ["circle", "square"]
+    # dash = ["dash", "solid"]
     #
+    # for i in range(num_impairments):
+    #     for j in range(num_models):
+    #         fig.add_trace(go.Scatter(x=x, y=results_intf[j][i],
+    #                                  mode="lines+markers",
+    #                                  marker_symbol=marker_symbol[j],
+    #                                  marker_color=colors[i],
+    #                                  name=" "*33 + "<br>" + " "*33,
+    #                                  line=dict(
+    #                                      dash=dash[j],
+    #                                  )
+    #                                  ))
+    i = 0
+    for xgb, color in zip(xgb_cfo, colors):
+        fig.add_trace(go.Scatter(x=x, y=xgb,
+                                 name=" "*20 + "<br>" + " "*20,
+                                 mode='lines+markers',
+                                 marker_symbol= marker_symbol[i],
+                                 marker_color=color,
+                                 showlegend=False,
+                                 line=dict(
+                                     dash="dash",
+                                 )
+                                 ))
+        i += 1
+    i = 0
+    for cnn, color in zip(cnn_cfo, colors):
+        fig.add_trace(go.Scatter(x=x, y=cnn,
+                                 name=" "*33 + "<br>" + " "*33,
+                                 mode='lines+markers',
+                                 marker_symbol=marker_symbol[i],
+                                 marker_color=color,
+                                 line=dict(
+                                     dash="solid",
+                                 )
+                                 ))
+        i += 1
 
-    line_ax = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]  # change
-    for i in line_ax:
-        fig.add_shape(type="line", x0=-0.3, y0=i, x1=4.3, y1=i,  # change
-                      line=dict(
-                          color="lightgray",
-                          width=1,
-                          dash="dash",
-                      ),
-                      )
+    line_ax = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    draw_grid_lines(fig, line_ax, color="lightgray", x_len=4.3)
+    update_axis(fig, "x")
+    update_axis(fig, "y", tick0=0.4, range=[0.3, 1.05])
 
-    num_models = 2
-    results_hw = [xgb_hw, cnn_hw, res_hw]
-    marker_symbol = ["circle", "square", "diamond"]
-    dash = ["solid", "dash", "dot"]
-    # for each model
-    for i in range(num_models):
-        # for each interference
-        for j in range(len(results_hw)):
-            fig.add_trace(go.Scatter(x=x, y=results_hw[j][i],
-                                     mode="lines+markers",
-                                     marker_symbol=marker_symbol[i],
-                                     marker_color=colors[j],
-                                     name='                                        ',
-                                     line=dict(
-                                         # color="grey",
-                                         # width=1,
-                                         dash=dash[i],
-                                     )
-                                     ))
-
-    # fig.add_trace(go.Scatter(x=x, y=r_16qam, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
-    #                          name='                                                 ',
-    #                          line=dict(
-    #                              # color="grey",
-    #                              # width=1,
-    #                              dash="dashdot",
-    #                          )
-    #                          ))
-    #
-    # fig.add_trace(go.Scatter(x=x, y=c_16qam, mode="lines+markers", marker_symbol='square', marker_color=colors[0],
-    #                          name='                                                ',
-    #                          line=dict(
-    #                              # color="grey",
-    #                              # width=1,
-    #                              dash="dashdot",
-    #                          )
-    #                          ))
-    # fig.add_trace(go.Scatter(x=x, y=r_16qam, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
-    #                          name='                                                 ',
-    #                          line=dict(
-    #                              # color="grey",
-    #                              # width=1,
-    #                              dash="dashdot",
-    #                          )
-    #                          ))
-    #
-    # fig.add_trace(go.Scatter(x=x, y=c_ofdm, mode="lines+markers", marker_symbol='diamond', marker_color=colors[0],
-    #                          name='                                               ',
-    #                          line=dict(
-    #                              # color="grey",
-    #                              # width=1,
-    #                              dash="dot",
-    #                          )
-    #                          ))
-    #
-    # fig.add_trace(go.Scatter(x=x, y=r_ofdm, mode="lines+markers", marker_symbol='diamond', marker_color=colors[1],
-    #                              name='                                                ',
-    #                              line=dict(
-    #                                  # color="grey",
-    #                                  # width=1,
-    #                                  dash="dot",
-    #                              )
-    #                              ))
-
-
-
-    fig.update_yaxes(automargin=True, showline=True, ticks="", mirror=True,
-                     linecolor='black', linewidth=1,
-                     tickfont=dict(color="black", family='times new roman', size=16),
-                     tick0=0.4,  # change
-                     dtick=0.1,
-                     range=[0.4, 1.05],
-                     title=dict(font=dict(color="black",  # family="sans-serif",size=15,
-                                          ),
-                                # text='Accuracy')
-                                ))
-
-    fig.update_xaxes(automargin=True, side='bottom', showline=True, ticks='inside',
-                     mirror=True, linecolor='black', linewidth=1,
-                     tickfont=dict(color="black", family='times new roman', size=16),
-                     # tick0=0.5,
-                     # dtick=0.1,
-                     # range=[0.5, 1.05],
-                     title=dict(font=dict(
-                         # family="sans-serif",
-                         # size=15,
-                         color="black"
-                     ),
-                         # text='SNR'
-                     ))
-
-    fig.update_traces(marker_line_width=2)
-    fig.update_layout(
-        margin=go.layout.Margin(
-            l=0,  # left margin
-            r=110,  # right margin  130
-            b=160,  # bottom margin
-            t=20,  # top margin
-        ),
-        # title_text='<b>Model Scalability with Number of IQ Samples',
-        # title_x=0.50, title_y=0.90,
-        xaxis={"mirror": "all"},
-        paper_bgcolor='white', plot_bgcolor='rgba(0,0,0,0)',
-        # width=500, height=500,
-        legend=dict(
-            bordercolor='black',
-            borderwidth=1,
-            bgcolor='rgba(0,0,0,0)', orientation='h',
-            itemsizing='constant', x=1.05, y=0.9,
-            font=dict(size=12, color="black", family='times new roman'), traceorder='normal'
-        ),
-    )
-    plotly.offline.plot(figure_or_data=fig, image_width=500, image_height=400, filename='hw_comp.html', image='svg')
+    fig.update_traces(marker_line_width=1)
+    update_layout(fig, width=500, height=500, showlegend=True, legend_x=0.05, legend_y=1.20, legend_orientation='h')
+    save_fig(fig, figname='gen_cfo.html', width=500, height=400)
 
 
 def scalability_chart():
@@ -1898,16 +1683,6 @@ def sequential_chart():
         "OFDM_BPSK", "OFDM_QPSK", "OFDM_16QAM", "OFDM_64QAM"]
 
     fig = go.Figure()
-    # blue #23aaff, red apple #ff6555, moss green #66c56c, mustard yellow #f4b247
-    # colors = ['#23aaff',  #  blue
-    #         'rgb(253,141,60)',  # orange
-    #         '#66c56c',  # moss green
-    #        'rgb(159,130,206)',  # muted purple
-    #         '#f4b247',  # mustard yellow
-    #         '#ff6555',  # red apple
-    #         'rgb(247,104,161)',  # pink
-    #         'rgb(104,171,184)'   # teal
-    #           ]
     colors = [
         '#1f77b4',  # muted blue
         '#ff7f0e',  # safety orange
@@ -1934,18 +1709,6 @@ def sequential_chart():
             # print(len(preds))
             for j in range(len(preds)):
                 sum_preds[j] += preds[j]
-        # print(sum_preds)
-        # print("------------------------------------")
-        #
-        # if total != []:
-        #     for i in range(len(sum_preds)):
-        #         # print("total: ", total)
-        #         sum = 0
-        #         sum = sum_preds[i] + total[i]
-        #         total[i] = sum
-        # else:
-        #     total.extend(sum_preds)
-        # print("total : ", total)
 
         if names[i] == "SC_BPSK":
             fig.add_trace(go.Bar(x=x, y=norm(sum_preds), orientation='v', name=names[i], marker=dict(
@@ -2081,8 +1844,8 @@ def draw_activation(x):
 
 def deepsig_plots():
 
-    # x = np.arange(-20,21,2)
-    x = np.arange(0, 21, 5)
+    x = np.arange(-20,21,2)
+    # x = np.arange(0, 21, 5)
     # x = ['-20 dB', '-10 dB', '0 dB', '10 dB', '20 dB']
     # x = ['0 dB', '5 dB', '10 dB', '15 dB', '20 dB']
     # y_xgb = [0.04, 0.04, 0.05, 0.05, 0.06, 0.07, 0.12, 0.19, 0.28, 0.33, 0.43, 0.55, 0.63, 0.67, 0.71,
@@ -2103,50 +1866,49 @@ def deepsig_plots():
     # y_tl = [0.25, 0.25, 0.25, 0.26, 0.25, 0.28, 0.33, 0.45, 0.53, 0.7, 0.83, 0.88, 0.92, 0.94, 0.97, 0.97, 0.97, 0.97,
     #         0.97, 0.97, 0.97, 0.72]
 
-    # c_lab = [0.608, 0.830, 0.941, 0.986, 0.994]
-    # c_sdr = [0.571, 0.785, 0.914, 0.979, 0.991]
-    # r_lab = [0.753, 0.980, 1.0, 1.0, 1.0]
-    # r_sdr = [0.604, 0.878, 0.977, 0.998, 1.0]
+    # xgb deepsig
+    xgb_tr = [0.265, 0.248, 0.246, 0.25, 0.239, 0.244, 0.26, 0.367, 0.505, 0.549, 0.711, 0.8,
+              0.833, 0.866, 0.898, 0.923, 0.936, 0.94, 0.934, 0.939, 0.943]
+    xgb_gen = [0.244, 0.244, 0.245, 0.259, 0.245, 0.258, 0.254, 0.245, 0.256, 0.398, 0.639,
+               0.559, 0.552, 0.554, 0.63, 0.61, 0.589, 0.703, 0.681, 0.723, 0.73]
 
-    c_cfo1 = [0.577, 0.801, 0.927, 0.98, 0.992]
-    r_cfo1 = [0.753, 0.983, 1, 1, 1]
-    c_cfo5 = [0.592, 0.814, 0.937, 0.986, 0.995]
-    r_cfo5 = [0.709, 966, 0.999, 1, 1]
-
-    tr = [0.258, 0.251, 0.248, 0.238, 0.257, 0.266, 0.346, 0.47, 0.562, 0.667, 0.775, 0.823, 0.875, 0.94, 0.981, 0.989,
+    # cnn deepsig
+    cnn_tr = [0.258, 0.251, 0.248, 0.238, 0.257, 0.266, 0.346, 0.47, 0.562, 0.667, 0.775, 0.823, 0.875, 0.94, 0.981, 0.989,
           0.992, 0.991, 0.992, 0.993, 0.993]
-    gen = [0.255, 0.254, 0.253, 0.244, 0.257, 0.249, 0.251, 0.247, 0.246, 0.261, 0.254, 0.41, 0.418, 0.246, 0.249,
+    cnn_gen = [0.255, 0.254, 0.253, 0.244, 0.257, 0.249, 0.251, 0.247, 0.246, 0.261, 0.254, 0.41, 0.418, 0.246, 0.249,
            0.261, 0.246, 0.25, 0.246, 0.25, 0.248]
-    tl = [0.25, 0.253, 0.258, 0.235, 0.255, 0.252, 0.26, 0.31, 0.417, 0.536, 0.696, 0.791, 0.827, 0.894, 0.925, 0.938,
+    cnn_tl = [0.25, 0.253, 0.258, 0.235, 0.255, 0.252, 0.26, 0.31, 0.417, 0.536, 0.696, 0.791, 0.827, 0.894, 0.925, 0.938,
           0.962, 0.948, 0.957, 0.954, 0.955]
 
     # 'rgba(35, 170, 255, 1)'
     # 'Traditional <br>Learning'  'Transfer <br>Learning'
     colors = ['rgba(255, 101, 85, 1)', 'rgba(35, 170, 255, 1)', 'rgba(244, 178, 71, 1)']
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=x, y=c_cfo1, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
-                             name='                                          '))
-    fig.add_trace(go.Scatter(x=x, y=c_cfo5, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
-                             name='                                          '))
-    # fig.add_trace(go.Scatter(x=x, y=tl, mode="lines+markers", marker_symbol='diamond', marker_color=colors[2],
-    #                          name='                               ',
-    #                          # line=dict(
-    #                          #     # color="grey",
-    #                          #     # width=1,
-    #                          #     dash="dashdot",
-    #                          # )
-    #                          ))
+    fig.add_trace(go.Scatter(x=x, y=cnn_tr, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
+                             name=" "*40 + "<br>" + " "*40,))
+    fig.add_trace(go.Scatter(x=x, y=cnn_gen, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
+                             name=" "*40 + "<br>" + " "*40,))
+    fig.add_trace(go.Scatter(x=x, y=cnn_tl, mode="lines+markers", marker_symbol='diamond', marker_color=colors[2],
+                             name=" "*40 + "<br>" + " "*40,
+                             ))
 
-    fig.add_trace(go.Scatter(x=x, y=r_cfo1, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
+    fig.add_trace(go.Scatter(x=x, y=xgb_tr, mode="lines+markers", marker_symbol='circle', marker_color=colors[0],
                              name='                               ',
+                             showlegend=False,
                              line=dict(
                                  # color="grey",
                                  # width=1,
-                                 dash="dashdot",
+                                 dash="dash",
                              )
                              ))
-    fig.add_trace(go.Scatter(x=x, y=r_cfo5, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
-                             name='                               '
+    fig.add_trace(go.Scatter(x=x, y=xgb_gen, mode="lines+markers", marker_symbol='square', marker_color=colors[1],
+                             name='                               ',
+                             showlegend=False,
+                             line=dict(
+                                 # color="grey",
+                                 # width=1,
+                                 dash="dash",
+                             )
                              ))
 
     line_ax = [0.2, 0.4, 0.6, 0.8, 1]
@@ -2171,7 +1933,7 @@ def deepsig_plots():
     #                   ),
     #                   )
 
-    fig.update_yaxes(showline=True, mirror=True, ticks='outside',
+    fig.update_yaxes(showline=True, mirror=True,
                      linecolor='black', linewidth=1,
                      tickfont=dict(family='Times New Roman', color="black", size=16),
                      tick0=0,
@@ -2182,7 +1944,7 @@ def deepsig_plots():
                                 # text="Classification accuracy"
                                 ))
 
-    fig.update_xaxes(side='bottom', showline=True, ticks='outside',
+    fig.update_xaxes(side='bottom', showline=True, ticks='inside',
                      mirror=True, linecolor='black', linewidth=1,
                      tickfont=dict(family='Times New Roman', color="black", size=16),
                      tick0=-20,
@@ -2217,7 +1979,7 @@ def deepsig_plots():
         )
     )
 
-    plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=450, filename='cfo_comp.html', image='svg')
+    plotly.offline.plot(figure_or_data=fig, image_width=600, image_height=450, filename='gen_deepsig.html', image='svg')
     # pass
 
 
@@ -2299,120 +2061,9 @@ def plot_lpf():
 
     fig.update_traces(marker_line_width=0.8)
     plotly.offline.plot(figure_or_data=fig, image_width=700, image_height=380, filename='lpf.html', image='svg')
-    # pass
-
-    # fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8, 7))
-    #
-    # for ax, y, label in zip([ax1, ax2],
-    #                  [20 * np.log10(abs(h)), np.unwrap(np.angle(h)) / np.pi],
-    #                  ["Magnitude [dB]", "Phase [$\\pi^{-1}$]"]):
-    #
-    #     ax.plot(w, y)
-    #     ax.set_xlim([0, min(srate / 2e6, (freq_noise[1] + 2 * bw_noise) / 1e6)])
-    #     ax.fill_between([0, bw_signal / 1e6 / 2], -200, 200,
-    #                     facecolor=color_bw_signal, label='Signal band')
-    #     noise_offset = freq_noise[1] - freq
-    #     noise_freq_idx = np.array([(noise_offset - bw_noise / 2) / 1e6,
-    #                                (noise_offset + bw_noise / 2) / 1e6])
-    #     ax.fill_between(noise_freq_idx, -200, 200,
-    #                     facecolor=color_bw_noise, label='Noise band')
-    #     ax.set_ylim([min(y), max(y) + 0.1 * abs(min(y))])
-    #     ax.set_ylabel(label)
-    #     ax.set_title("Frequency response of the low-pass filter")
-    #     ax.set_xlabel("Frequency [MHz]")
-    #     ax.legend(loc=1)
-    #
-    # ax1.set_ylim([-80, 5])
-    #
-    # # -3dB point
-    # x, y = w[np.argmin(abs(abs(h) - np.sqrt(0.5)))], 20 * np.log10(np.sqrt(0.5))
-    # ax1.plot(x, y, 'ob', markersize=4, color='red')
-    # ax1.annotate('%5.2fdB @\n%5.2f MHz' % (y, x),
-    #     xy=(x, y),
-    #     xytext=(10, 0),
-    #     textcoords='offset points',
-    #     ha='left',
-    #     va='center')
-    #
-    # # attenuation @ f_c
-    # x, y = bw_signal / 2e6, 20 * np.log10(abs(h[np.argmin(abs(w - bw_signal / 2e6))]))
-    # ax1.plot(x, y, 'og', markersize=4, color='red')
-    # ax1.annotate('%5.2fdB @\n%5.2f MHz' % (y, x),
-    #     xy=(x, y),
-    #     xytext=(-10, -5),
-    #     textcoords='offset points',
-    #     ha='right',
-    #     va='center')
-    #
-    # # average noise attenuation
-    # noise_idx = np.array(np.arange(noise_freq_idx[0] * (w.size / (srate / 2e6)),
-    #                                noise_freq_idx[1] * (w.size / (srate / 2e6)), 1), dtype=int)
-    # avg_mag_noise = 10 * np.log10(np.mean(abs(h[noise_idx])**2))
-    # ax1.plot(noise_freq_idx, [avg_mag_noise] * 2, 'r')
-    #
-    # x, y = np.mean(noise_freq_idx), avg_mag_noise
-    # ax1.annotate('average noise\nattenuation: %5.2fdB' % avg_mag_noise,
-    #     xy=(x, y),
-    #     xytext=(25, 30),
-    #     arrowprops=dict(facecolor='black', shrink=0.05, width=1, headwidth=8, headlength=8),
-    #     textcoords='offset points',
-    #     ha='center',
-    #     va='bottom')
-    #
-    # plt.tight_layout()
-    # # plt.show()
-    # # plt.show()
-    # plt.savefig("test.svg")
 
 
-if __name__=="__main__":
-    # plot_tl_line_chart()
-    plot_line_chart()
-    # plot_lpf()
-    # plot_barchart()
-    # train_fraction_effect()
-    # x = np.arange(-10,10,0.2)
-    # draw_activation(x)
-    # draw_comparison_chart()
-    # scalability_chart()
-    # n = 4
-    # plot_barchart()
-    # plot_heatmap()
-    # plt_tl_chart()
-    # for i in range(16):
-    #     b = bin(i)[2:].zfill(n)
-    #     print(b)
-    # dataloader.load_batch("/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5")
-    # data = np.load("/media/backup/Arsenal/rf_dataset_inets/dataset_interpretation.npz", allow_pickle=True)
-    # iq = data['matrix']
-    # labels = data['labels']
-
-    # deep_dream(iq[0])
-    # print(iq.shape)
-    # print("Modulation: {}".format(labels[:35]))  # bpsk
-    # print(np.array(iq[0]))
-    # print(label_idx(labels[0]))
-    # plot_activations(iq[13])
-    # plot_iq(iq[32],fig_name='signal_test.png')
-    # visualizing_filters(iq[32])
-
-    # save_cnn_features()
-    # path="/media/backup/Arsenal/rf_dataset_inets/dataset_intf_free_no_cfo_vsg_snr20_1024.h5"
-    # iq, labels, snrs = reader.read_hdf5(path)
-    # # reader.shuffle(iq,labels,snrs)
-    #
-    # # analyze data
-    # df = pd.DataFrame()
-    # df['iq'] = list(map(lambda x: x, iq))
-    # df['normalized_iq'] = df.iq.apply(lambda x: preprocessing.scale(x, with_mean=False))
-    # df.drop('iq', axis=1, inplace=True)
-    # df['labels'] = list(map(lambda x: x, labels))
-    # df = df.sample(frac=1, random_state=4)
-    #
-    # output_dir = '/media/backup/Arsenal/rf_dataset_inets/fig_dataset/'
-    # generate_image_dset(df['normalized_iq'].values,df['labels'].values,output_dir,"test ")
-
-    # plot_melspectrogram(iq[13],'test.png')
-    # sequential_chart()
-    # norm(0)
-    # pass
+if __name__ == "__main__":
+    # plot_line_chart()
+    train_fraction_effect()
+    # deepsig_plots()

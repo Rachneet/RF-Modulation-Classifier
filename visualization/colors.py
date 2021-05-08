@@ -23,6 +23,22 @@ color_array = [(0.12156862745098039, 0.4666666666666667, 0.7058823529411765),
                (0.09019607843137255, 0.7450980392156863, 0.8117647058823529),
                (0.6196078431372549, 0.8549019607843137, 0.8980392156862745)]
 
+plotly_colors = ['#1f77b4',  # muted blue
+                 '#ff7f0e',  # safety orange
+                 '#2ca02c',  # cooked asparagus green
+                 '#23aaff',  # blue
+                 '#ff6555',  # red apple
+                 '#66c56c',  # moss green
+                 '#f4b247'   # mustard yellow
+                 '#d62728',  # brick red
+                 '#9467bd',  # muted purple
+                 '#8c564b',  # chestnut brown
+                 '#e377c2',  # raspberry yogurt pink
+                 '#bcbd22',  # curry yellow-green
+                 'rgb(247,104,161)',  # pink
+                 'rgb(104,171,184)'   # teal
+                ]
+
 color_array_solid = color_array[::2]
 color_array_shade = color_array[1::2]
 
