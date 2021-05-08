@@ -96,7 +96,8 @@ def featurize(df, i, row):
     fs = fs[abs(fs) <= dummyReceiver.bw_signal / 2]
 
     # autocorrelation
-    Psi = (np.correlate(r, np.roll(r[:-500], 50), mode='valid') / np.var(r) / N)
+    # Psi = (np.correlate(r, np.roll(r[:-500], 50), mode='valid') / np.var(r) / N)
+    Psi = (np.correlate(r, np.roll(r, 50), mode='valid') / np.var(r) / N)  # for 256 sample size
     # include noise in sigma!!!
 
     # Moments
@@ -175,7 +176,7 @@ def filter_from_csv(path):
 
 
 def main():
-    dataset = "/home/rachneet/datasets/vsg_all_512.h5"
+    dataset = "/home/rachneet/datasets/dataset_deepsig_vier_new.hdf5"
     h5fr = h5.File(dataset, 'r')
     dset1 = list(h5fr.keys())[0]
     dset2 = list(h5fr.keys())[1]
@@ -206,7 +207,7 @@ def main():
         final_df = final_df.append(df, ignore_index=True)
         remaining_data -= chunk_size
 
-    final_df.to_csv("/home/rachneet/featurized_data/dataset_vsg_512_featurized.csv",
+    final_df.to_csv("/home/rachneet/featurized_data/dataset_deepsig_digital_featurized.csv",
                     encoding='utf-8', index=False)
 
 
