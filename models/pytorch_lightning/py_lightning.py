@@ -16,7 +16,8 @@ from collections import OrderedDict
 
 from sklearn import metrics
 
-from data_processing.intf_processing import *
+# from data_processing.intf_processing import *
+import numpy as np
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -209,7 +210,11 @@ class LightningCNN(pl.LightningModule):
         # exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3)   # dynamic reduction based on val_loss
         # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[9,18,27],gamma=0.1)
-        return [optimizer],[scheduler]
+        return {
+            'optimizer': optimizer,
+            'lr_scheduler': scheduler,
+            'monitor': 'val_loss'
+        }
 
     def cross_entropy_loss(self,logits, labels):
         loss = nn.CrossEntropyLoss()
@@ -464,11 +469,11 @@ def inference(hparams):
     neptune_logger.experiment.stop()
 
 # -------------------------------------------------------------------------------------------------------------------
-CHECKPOINTS_DIR = '/home/rachneet/thesis_results/vsg_intf_ofdm_gen_rw/'
+CHECKPOINTS_DIR = '/home/rachneet/thesis_results/mixed_impairments_cnn/'
 neptune_logger = NeptuneLogger(
     api_key=os.environ.get("NEPTUNE_API_KEY"),
     project_name="rachneet/sandbox",
-    experiment_name="vsg_intf_ofdm_gen_rw",   # change this for new runs
+    experiment_name="mixed_impairments_cnn",   # change this for new runs
 )
 
 # ---------------------------------------MAIN FUNCTION TRAINER-------------------------------------------------------
@@ -487,8 +492,11 @@ def main(hparams):
         verbose=False,
         mode='min'
     )
-    trainer = Trainer(logger=neptune_logger,gpus=hparams.gpus,max_nb_epochs=hparams.max_epochs,
-                      add_log_row_interval=100,log_save_interval=200, checkpoint_callback=model_checkpoint,)
+    trainer = Trainer(logger=neptune_logger,
+                      gpus=hparams.gpus,
+                      max_epochs=hparams.max_epochs,
+                      checkpoint_callback=True,
+                      callbacks=[model_checkpoint])
                       # early_stop_callback=early_stop_callback)
     trainer.fit(model)
     # load best model
@@ -511,7 +519,7 @@ def main(hparams):
 
 if __name__=="__main__":
 
-    path = "/home/rachneet/rf_dataset_inets/mixed_parameters/no_cfo/usrp/intf_vsg/dataset_mixed_recordings_1024.h5"
+    path = "/home/rachneet/rf_dataset_inets/mixed_all_impairments.h5"
     out_path = "/home/rachneet/thesis_results/"
 
     parser = ArgumentParser()
@@ -534,6 +542,5 @@ if __name__=="__main__":
     parser.add_argument('--featurize', default=False)
     args = parser.parse_args()
 
-    # main(args)
-
-    inference(args)
+    main(args)
+    # inference(args)
