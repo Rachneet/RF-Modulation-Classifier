@@ -28,11 +28,15 @@ import numpy as np
 import math
 from sklearn import metrics
 import os
+from argparse import Namespace
 import csv
 from torch.utils.data import DataLoader,SubsetRandomSampler
 from pytorch_lightning.loggers.neptune import NeptuneLogger
 
 from models.pytorch_lightning.py_lightning import LightningCNN, DatasetFromHDF5
+
+from dotenv import load_dotenv
+load_dotenv()
 
 BN_TYPES = (torch.nn.BatchNorm1d, torch.nn.BatchNorm2d, torch.nn.BatchNorm3d)
 # --------------------------------------------Utility Functions--------------------------------------------------
@@ -66,7 +70,7 @@ def _recursive_freeze(module:nn.Module, train_bn: bool = True):
             _recursive_freeze(module=child, train_bn=train_bn)
 
 
-def freeze(module:nn.Module, n:Optional[int]=None, train_bn:bool=True):
+def freeze(module: nn.Module, n: Optional[int] = None, train_bn: bool = True):
     """
     freezes the layers upto n index
     """
@@ -338,16 +342,12 @@ class TransferLearningModel(pl.LightningModule):
                                        shuffle=self.hparams.shuffle, num_workers=self.hparams.num_workers,
                                        sampler=test_sampler)
 
-
-    @pl.data_loader
     def train_dataloader(self):
         return self.train_dataset
 
-    @pl.data_loader
     def val_dataloader(self):
         return self.val_dataset
 
-    @pl.data_loader
     def test_dataloader(self):
         return self.test_dataset
 
@@ -355,17 +355,23 @@ class TransferLearningModel(pl.LightningModule):
     def add_model_specific_args(parent_parser):
 
         parser = argparse.ArgumentParser(parents=[parent_parser])
-        # model = torch.load("/home/rachneet/thesis_results/vsg_vier_mod/epoch=15.ckpt",map_location='cuda:0')
+        # model = torch.load("/home/rachneet/thesis_results/cnn_vsg_all/model",map_location='cuda:0')
+        hparams = Namespace(batch_size=512,
+                  data_path='',
+                  fc_neurons=128, featurize=False, filters=64, gpus=[0], in_dims=2, kernel_size=[3, 3, 3, 3, 3, 3],
+                  learning_rate=0.01, max_epochs=30, momentum=0.9, n_classes=8, n_features=10, num_workers=10,
+                  output_path='/home/rachneet/thesis_results/', pool_size=3, shuffle=False)
 
         model = LightningCNN.load_from_checkpoint(
-            checkpoint_path='/home/rachneet/thesis_results/vsg_vier_mod/epoch=15.ckpt',
-            map_location=None
+            checkpoint_path='/home/rachneet/thesis_results/intf_ofdm_snr10_all/epoch=29.ckpt',
+            hparams=hparams,
+            map_location='cuda:0'
         )
         parser.add_argument('--backbone', default=model)
         parser.add_argument('--epochs',default=15,type=int)
         parser.add_argument('--batch-size',default=512,type=int)
         parser.add_argument('--shuffle', default=False, type=bool)
-        parser.add_argument('--gpus', default=0, type=int)
+        parser.add_argument('--gpus', default=[0], type=list)
         parser.add_argument('--lr','--learning-rate',default=1e-2,type=float)
         parser.add_argument('--momentum', default=0.9)
         parser.add_argument('--lr-scheduler-gamma',default=1e-1,type=float)
@@ -379,33 +385,33 @@ class TransferLearningModel(pl.LightningModule):
         parser.add_argument('--kernel_size', type=list, nargs='+', default=[3, 3, 3, 3, 3, 3])
         parser.add_argument('--pool_size', default=3)
         parser.add_argument('--fc_neurons', default=128)
-        parser.add_argument('--n_classes', default=4)
+        parser.add_argument('--n_classes', default=8)
 
         return parser
 
 # =========================================NEPTUNE AI===============================================================
 
 
-CHECKPOINTS_DIR = '/home/rachneet/thesis_results/tl_vsg_deepsig_new/'           # change this
+CHECKPOINTS_DIR = '/home/rachneet/thesis_results/tl_vsg_intf_16qam_rw/'           # change this
 neptune_logger = NeptuneLogger(
     api_key=os.environ.get("NEPTUNE_API_KEY"),
     project_name="rachneet/sandbox",
-    experiment_name="tl_vsg_deepsig_new",   # change this  for new runs
+    experiment_name="tl_vsg_intf_16qam_rw",   # change this  for new runs
 )
 
 # ===================================================================================================================
 
-def test_lightning(hparams: argparse.Namespace):
+
+def inference(hparams: argparse.Namespace):
     model = TransferLearningModel.load_from_checkpoint(
-        CHECKPOINTS_DIR + 'epoch=14.ckpt'
+        CHECKPOINTS_DIR + 'epoch=14-step=61739.ckpt'
     )
 
-    # exp = Experiment(name='test_vsg20',save_dir=os.getcwd())
-    # logger = TestTubeLogger('tb_logs', name='CNN')
-    # callback = [test_callback()]
-    # print(neptune_logger.experiment.name)
-    model_checkpoint = pl.callbacks.ModelCheckpoint(filepath=CHECKPOINTS_DIR)
-    trainer = pl.Trainer(logger=neptune_logger, gpus=hparams.gpus, checkpoint_callback=model_checkpoint)
+    model_checkpoint = pl.callbacks.ModelCheckpoint(CHECKPOINTS_DIR)
+    trainer = pl.Trainer(logger=neptune_logger,
+                         gpus=hparams.gpus,
+                         checkpoint_callback=True,
+                         callbacks=[model_checkpoint])
     dataset = DatasetFromHDF5(hparams.data_path, 'iq', 'labels', 'snrs')
     num_train = len(dataset)
     indices = list(range(num_train))
@@ -433,7 +439,8 @@ def test_lightning(hparams: argparse.Namespace):
 
 
 def main(hparams: argparse.Namespace) -> None:
-    """Train the model.
+    """
+    Train the model.
     Args:
         hparams: Model hyper-parameters
     """
@@ -442,7 +449,7 @@ def main(hparams: argparse.Namespace) -> None:
 
     if not os.path.exists(CHECKPOINTS_DIR):   # redundant maybe
         os.makedirs(CHECKPOINTS_DIR)
-    model_checkpoint = pl.callbacks.ModelCheckpoint(filepath=CHECKPOINTS_DIR)
+    model_checkpoint = pl.callbacks.ModelCheckpoint(CHECKPOINTS_DIR)
 
     early_stop_callback = pl.callbacks.EarlyStopping(
         monitor='val_loss',
@@ -453,22 +460,24 @@ def main(hparams: argparse.Namespace) -> None:
     )
 
     trainer = pl.Trainer(logger=neptune_logger,
-        gpus=hparams.gpus,
-        max_nb_epochs=hparams.max_epochs,
-        checkpoint_callback=model_checkpoint)
+                         gpus=hparams.gpus,
+                         checkpoint_callback=True,
+                         callbacks=[model_checkpoint],
+                         max_epochs=hparams.max_epochs
+                         )
 
     # trainer.fit(model)
-    # # load best model for testing
-    # file_name = ''
-    # for subdir, dirs, files in os.walk(CHECKPOINTS_DIR):
-    #     for file in files:
-    #         if file[-4:] == 'ckpt':
-    #             file_name = file
+    # load best model for testing
+    file_name = ''
+    for subdir, dirs, files in os.walk(CHECKPOINTS_DIR):
+        for file in files:
+            if file[-4:] == 'ckpt':
+                file_name = file
 
     model = TransferLearningModel.load_from_checkpoint(
-        checkpoint_path=CHECKPOINTS_DIR+"epoch=14.ckpt",
-        # hparams=hparams,
-        # map_location="cuda:0"
+        checkpoint_path=CHECKPOINTS_DIR+file_name,
+        hparams=hparams,
+        map_location="cuda:0"
     )
 
     trainer.test(model)
@@ -477,7 +486,7 @@ def main(hparams: argparse.Namespace) -> None:
 
 
 def get_args() -> argparse.Namespace:
-    root_path = "/home/rachneet/rf_dataset_inets/dataset_deepsig_vier_new.hdf5"
+    root_path = "/home/rachneet/rf_dataset_inets/mixed_parameters/no_cfo/usrp/intf_vsg/dataset_mixed_recordings_1024.h5"
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument('--data_path',default=root_path, help='path to dataset')
     parser = TransferLearningModel.add_model_specific_args(parent_parser)
@@ -492,21 +501,9 @@ def get_args() -> argparse.Namespace:
 #     model = TransferLearningModel(hparams, data_path=hparams.data_path)
 #     model_dict = self.state_dict()
 
+
 if __name__ == "__main__":
-    # model = CNN(n_classes=8)
-    # _recursive_freeze(model)
-    # x = [1,2,3,4,5,6]
-    # print(x[-2:])
-    # print(x[:-2])
-    # x = torch.tensor([[1,2,3,1],[1,2,3,4]])
-    # print(x.shape)
-    # x = x.flatten()
-    # print(x.shape)
-    # true = torch.tensor([1,2,3,0])
-    # print(torch.eq(pred,true).sum().detach().cpu().data.numpy())
-    # correct = (torch.eq(pred,true).sum().detach().cpu().data.numpy()/list(pred.size())[0])
-    # print(torch.tensor(correct))
+
     main(get_args())
-    # test_lightning(get_args())
+    # inference(get_args())
     # obj = TransferLearningModel()
-    # pass
