@@ -3,9 +3,11 @@ import numpy as np
 import h5py as h5
 import os
 import glob
+from tqdm import tqdm
 
 import data_processing.read_h5 as reader
 from data_processing.read_filtered import sort_matrix_entries, encode_labels
+from data_processing.dataloader import label_idx, create_set
 
 
 def exrapolate_data():
@@ -69,3 +71,56 @@ def exrapolate_data():
                     hf["snrs"].resize((hf["snrs"].shape[0] + batch_snrs.shape[0]), axis=0)
                     hf["snrs"][-batch_snrs.shape[0]:] = batch_snrs
                     print(hf['iq'].shape)
+
+
+def sample_signals_from_dataset(data_path, out_path):
+    """
+    Sample signals from complete dataset
+    :param data_path: [str] path to data to be sampled
+    :param out_path: [str] save path for the sampled set
+    :return: None
+    """
+    iq, labels, snrs = reader.read_hdf5(data_path)
+    # print(len(labels))
+    # count = 0
+    # for l in labels:
+    #     if label_idx(l) == 0:
+    #         count += 1
+    # print(count)
+    threshold = int(0.2 * 153600)
+    mods = [0, 1, 2, 3, 4, 5, 6, 7]
+    for mod in mods:
+        count0, count5, count10, count15, count20 = 0, 0, 0, 0, 0
+        for i in tqdm(range(iq.shape[0])):
+            if label_idx(labels[i]) == mod:
+                if snrs[i] == 0:
+                    if count0 < threshold:
+                        create_set(out_path, iq[i], labels[i], snrs[i])
+                        count0 += 1
+
+                elif snrs[i] == 5:
+                    if count5 < threshold:
+                        create_set(out_path, iq[i], labels[i], snrs[i])
+                        count5 += 1
+
+                elif snrs[i] == 10:
+                    if count10 < threshold:
+                        create_set(out_path, iq[i], labels[i], snrs[i])
+                        count10 += 1
+
+                elif snrs[i] == 15:
+                    if count15 < threshold:
+                        create_set(out_path, iq[i], labels[i], snrs[i])
+                        count15 += 1
+
+                elif snrs[i] == 20:
+                    if count20 < threshold:
+                        create_set(out_path, iq[i], labels[i], snrs[i])
+                        count20 += 1
+        print(count0, count5, count10, count15, count20)
+
+
+if __name__ == '__main__':
+    path = "/home/rachneet/rf_dataset_inets/interference_free/no_cfo/usrp/usrp_no_intf_all_normed.h5"
+    out_path = "/home/rachneet/rf_dataset_inets/usrp_no_intf_20_percent_sampled.h5"
+    sample_signals_from_dataset(path, out_path)
